@@ -6,35 +6,35 @@ class PemodelanSae:
         self._var_sae = None
 
     @property
-    def getVariabelIndependen(self):
+    def variabel_independen(self):
         return self._variabel_independen
 
-    @getVariabelIndependen.setter
-    def setVariabelIndependen(self, value):
+    @variabel_independen.setter
+    def variabel_independen(self, value):
         self._variabel_independen = value
 
     @property
-    def getVariabelDependen(self):
+    def variabel_dependen(self):
         return self._variabel_dependen
 
-    @getVariabelDependen.setter
-    def setVariabelDependen(self, value):
+    @variabel_dependen.setter
+    def variabel_dependen(self, value):
         self._variabel_dependen = value
 
     @property
-    def getHasilSae(self):
+    def hasil_sae(self):
         return self._hasil_sae
 
-    @getHasilSae.setter
-    def setHasilSae(self, value):
+    @hasil_sae.setter
+    def hasil_sae(self, value):
         self._hasil_sae = value
 
     @property
-    def getVarSae(self):
+    def var_sae(self):
         return self._var_sae
 
-    @getVarSae.setter
-    def setVarSae(self, value):
+    @var_sae.setter
+    def var_sae(self, value):
         self._var_sae = value
     
     def __str__(self):
