@@ -1,0 +1,5 @@
+from PemodelanSae import PemodelanSAE
+
+class SaeEblup(PemodelanSAE):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
