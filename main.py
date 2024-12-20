@@ -1,10 +1,26 @@
+from PyQt6.QtWidgets import QApplication
 import sys
-from PyQt6 import QtCore, QtGui, QtWidgets
+from controller.TableController import TableController
 from view.MainWindow import MainWindow
+from model.TableModel import TableModel
+from view.CsvDialogOption import CSVOptionsDialog
+import pandas as pd
 
+def main():
+    app = QApplication(sys.argv)
 
+    # Inisialisasi model, view, dan controller
+    data = pd.DataFrame([], columns=["Columns 1", "Columns 2", "Columns 3"])  # Dengan beberapa kolom
+    model1 = TableModel(data)
+    model2 = TableModel(data)
+    view = MainWindow()  # View (Tampilan utama)
+    controller = TableController(model1, model2, view)
 
-app=QtWidgets.QApplication(sys.argv)
-window=MainWindow()
-window.show()
-app.exec()
+    # Tampilkan window utama
+    view.show()
+
+    # Mulai aplikasi
+    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()

@@ -34,10 +34,32 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if role == Qt.ItemDataRole.EditRole:
-            self._data.iloc[index.row(), index.column()] = value
-            self.dataChanged.emit(index, index, [Qt.ItemDataRole.EditRole])
-            return True
+            row = index.row()
+            column = index.column()
+
+            column_name = self._data.columns[column]
+            
+            # Periksa tipe data kolom
+            if self._data[column_name].dtype in ['float64', 'int64']:
+                try:
+                    # Jika value berupa string yang bisa dikonversi menjadi angka
+                    if isinstance(value, str):
+                        value = float(value)  # Mengonversi value ke float
+
+                    # Set nilai ke DataFrame jika konversi berhasil
+                    self._data.iloc[row, column] = value
+                    return True
+                except ValueError:
+                    # Jika value tidak bisa dikonversi, tampilkan pesan error
+                    print(f"Invalid numeric value: {value} for column {column_name}")
+                    return False
+            else:
+                # Jika kolom adalah string atau tipe lainnya, biarkan nilai sebagai string
+                self._data.iloc[row, column] = value
+                return True
+
         return False
+
     
     def set_data(self, new_data):
         if isinstance(new_data, pd.DataFrame):
@@ -46,3 +68,6 @@ class TableModel(QtCore.QAbstractTableModel):
             self.endResetModel()
         else:
             raise ValueError("Data must be a pandas DataFrame")
+    
+    def get_data(self):
+        return pd.DataFrame(self._data)
