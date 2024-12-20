@@ -12,7 +12,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAE Pisan v0.1")
 
         # Inisialisasi model untuk kedua sheet dengan data kosong
-        self.model1 = TableModel(pd.DataFrame("", index=range(1000), columns=["Column 1", "Column 2", "Column 3"]))
+        self.model1 = TableModel(pd.DataFrame("", index=range(1000), columns=["Column 1", "Column 2", "Column 3", "Column 4", "Column 5", "Column 6", "Column 7", "Column8"]))
         self.model2 = TableModel(pd.DataFrame("", index=range(1000),columns=["Nilai Estimasi", "Standar Error", "CV"]))
 
         # Inisialisasi UI
