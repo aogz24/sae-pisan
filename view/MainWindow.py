@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QPushButton, QHBoxLayout, QMenuBar
+from PyQt6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QPushButton, QHBoxLayout, QMenuBar, QAbstractItemView
 import pandas as pd
 from model.TableModel import TableModel
 from PyQt6.QtCore import Qt
@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.table_view2 = QTableView(self.tab2)
         self.table_view2.setModel(self.model2)
         tab2_layout = QVBoxLayout(self.tab2)
+        self.table_view2.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         tab2_layout.addWidget(self.table_view2)
 
         # Menambahkan tab ke tab widget
