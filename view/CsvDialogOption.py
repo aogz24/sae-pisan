@@ -10,7 +10,7 @@ class CSVOptionsDialog(QDialog):
 
         self.file_path = None
         self.separator = ","
-        self.header = True  # Default opsi header True (kolom pertama sebagai header)
+        self.header = True
 
         self.init_ui()
 
@@ -67,8 +67,12 @@ class CSVOptionsDialog(QDialog):
         sep = self.separator_input.text()
         hdr = 0 if self.header_checkbox.isChecked() else None
         try:
-            preview_data = pd.read_csv(self.file_path, sep=sep, header=hdr, nrows=10)
+            preview_data = pd.read_csv(self.file_path, sep=sep, header=hdr, nrows=10).head()
             model = QStandardItemModel()
+            
+            if not self.header_checkbox.isChecked():
+                preview_data.columns = [f"Column {i+1}" for i in range(preview_data.shape[1])]
+            
             model.setHorizontalHeaderLabels(preview_data.columns.tolist())
 
             for row in preview_data.values:

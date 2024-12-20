@@ -9,14 +9,17 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("SAE Pisan v0.1")
+        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1")
 
         # Inisialisasi model untuk kedua sheet dengan data kosong
-        self.model1 = TableModel(pd.DataFrame("", index=range(1000), columns=["Column 1", "Column 2", "Column 3", "Column 4", "Column 5", "Column 6", "Column 7", "Column8"]))
-        self.model2 = TableModel(pd.DataFrame("", index=range(1000),columns=["Nilai Estimasi", "Standar Error", "CV"]))
+        columns = [f"Column {i+1}" for i in range(30)]
+        self.model1 = TableModel(pd.DataFrame("", index=range(1000), columns=columns))
+        self.model2 = TableModel(pd.DataFrame("", index=range(1000),columns=["Estimated Value", "Standar Error", "CV"]))
 
         # Inisialisasi UI
         self.init_ui()
+        
+        self.showMaximized()
 
     def init_ui(self):
         # Membuat QTabWidget untuk menampilkan dua sheet secara vertikal
@@ -57,10 +60,12 @@ class MainWindow(QMainWindow):
 
         # Membuat menu File -> Load dan Save
         self.load_action = QAction("Load CSV", self)
-        self.save_action = QAction("Save CSV", self)
+        self.save_action = QAction("Save Data", self)
+        self.save_data_output_action = QAction("Save Data Output", self)
 
         self.file_menu.addAction(self.load_action)
         self.file_menu.addAction(self.save_action)
+        self.file_menu.addAction(self.save_data_output_action)
 
         # Menetapkan ukuran default
         self.resize(800, 600)
