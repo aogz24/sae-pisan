@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
-from PyQt6.QtGui import QKeySequence
+from PyQt6.QtGui import QKeySequence, QUndoStack
 from PyQt6.QtCore import Qt
+from service.EditDataCommand import EditDataCommand
 import pandas as pd
 
 class SpreadsheetWidgetModel(QTableWidget):
@@ -13,21 +14,61 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.setHorizontalHeaderLabels(data.columns.tolist())
         self.populate_table()
         self.setSelectionMode(QTableWidget.SelectionMode.ContiguousSelection)  # Aktifkan seleksi
+        
+        self.undo_stack = QUndoStack(self)
+        self.setRowCount(data.shape[0])
+        self.setColumnCount(data.shape[1])
+        self.setHorizontalHeaderLabels(data.columns.tolist())
+        self.populate_table()
+        self.setSelectionMode(QTableWidget.SelectionMode.ContiguousSelection)
+        
+        # Koneksi sinyal itemChanged ke handler
+        self.itemChanged.connect(self.handle_item_changed)
+        self.previous_value = None  # Untuk menyimpan nilai sebelumnya
+        self.is_updating = False    # Flag untuk mencegah recursive updates
+    
+    def handle_item_changed(self, item):
+        """Handle perubahan nilai dalam sel"""
+        if self.is_updating:
+            return
 
+        row = item.row()
+        column = item.column()
+        new_value = item.text()
+        
+        # Ambil nilai sebelumnya dari DataFrame
+        old_value = str(self.data.iloc[row, column])
+        
+        if new_value != old_value:
+            # Buat dan push command ke undo stack
+            command = EditDataCommand(self, row, column, old_value, new_value)
+            self.undo_stack.push(command)
+            
+            # Update DataFrame
+            self.is_updating = True
+            self.data.iloc[row, column] = new_value
+            self.is_updating = False
+
+    
     def populate_table(self):
         """Isi tabel dengan data dari model."""
+        self.blockSignals(True)  # Block signals sementara mengisi tabel
         for row in range(self.data.shape[0]):
             for col in range(self.data.shape[1]):
                 item = QTableWidgetItem(str(self.data.iloc[row, col]))
                 self.setItem(row, col, item)
+        self.blockSignals(False)
 
     def update_table(self, data):
         """Perbarui tabel dengan data baru."""
+        self.blockSignals(True)
         self.data = data
-        self.setRowCount(data.shape[0])  # Perbarui jumlah baris
+        self.setRowCount(data.shape[0])
         self.setColumnCount(data.shape[1])
         self.setHorizontalHeaderLabels(data.columns.tolist())
         self.populate_table()
+        self.blockSignals(False)
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Down and self.currentRow()==self.rowCount() - 1:
@@ -38,6 +79,10 @@ class SpreadsheetWidgetModel(QTableWidget):
             self.copy_selection()
         elif event.matches(QKeySequence.StandardKey.Paste):
             self.paste_selection()
+        elif event.matches(QKeySequence.StandardKey.Undo):
+            self.undo()
+        elif event.matches(QKeySequence.StandardKey.Redo):
+            self.redo()
         else:
             super().keyPressEvent(event)
 
@@ -109,3 +154,21 @@ class SpreadsheetWidgetModel(QTableWidget):
                 row_data.append(item.text() if item else "")
             data.append(row_data)
         return pd.DataFrame(data)
+    
+    def can_undo(self):
+        return self.undo_stack.canUndo()
+
+    def can_redo(self):
+        return self.undo_stack.canRedo()
+
+    def undo(self):
+        if self.can_undo():
+            self.undo_stack.undo()
+
+    def redo(self):
+        if self.can_redo():
+            self.undo_stack.redo()
+
+    def get_data(self):
+        """Ambil data dari tabel dan kembalikan sebagai DataFrame."""
+        return self.data.copy()
