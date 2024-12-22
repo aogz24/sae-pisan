@@ -84,6 +84,15 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
+    def add_column(self, sheet_number):
+        """Sinkronisasi data ketika kolom baru ditambahkan di SpreadsheetWidget."""
+        if sheet_number == 1:
+            # Tambahkan kolom baru di DataFrame data1
+            new_column = pd.DataFrame("", index=self.data1.index, columns=[f"Column {self.data1.shape[1] + 1}"])
+            self.data1 = pd.concat([self.data1, new_column], axis=1)
+        elif sheet_number == 2:
+            pass  # Tidak digunakan untuk Sheet 2
+    
     def update_table(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:

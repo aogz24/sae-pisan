@@ -30,7 +30,12 @@ class SpreadsheetWidgetModel(QTableWidget):
         if event.key() == Qt.Key.Key_Down:
             current_row = self.currentRow()
             if current_row == self.rowCount() - 1:
+                print(self.currentColumn())
                 self.add_row()
+        if event.key() == Qt.Key.Key_Right:
+            curent_columns = self.currentColumn()
+            if curent_columns == self.columnCount()-1:
+                self.add_column()
         super().keyPressEvent(event)
 
     def add_row(self):
@@ -40,6 +45,14 @@ class SpreadsheetWidgetModel(QTableWidget):
         for col in range(self.columnCount()):
             self.setItem(current_row_count, col, QTableWidgetItem(""))
         self.main_window.add_row(1)  # Panggil metode di MainWindow untuk sinkronisasi
+    
+    def add_column(self):
+        """Tambahkan kolom kosong baru ke tabel."""
+        current_column_count = self.columnCount()
+        self.setColumnCount(current_column_count + 1)
+        for row in range(self.rowCount()):
+            self.setItem(row, current_column_count, QTableWidgetItem(""))
+        self.main_window.add_column(1)  # Panggil metode di MainWindow untuk sinkronisasi
     
     def get_data(self):
         """Ambil data dari tabel dan kembalikan sebagai DataFrame."""
