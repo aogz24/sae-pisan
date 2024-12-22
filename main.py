@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication
 import sys
-from controller.TableController import TableController
+from controller.FileController import FileController
 from view.MainWindow import MainWindow
 from model.TableModel import TableModel
 from view.CsvDialogOption import CSVOptionsDialog
@@ -14,7 +14,7 @@ def main():
     model1 = TableModel(data)
     model2 = TableModel(data)
     view = MainWindow()  # View (Tampilan utama)
-    controller = TableController(model1, model2, view)
+    controller = FileController(model1, model2, view)
 
     # Tampilkan window utama
     view.show()
