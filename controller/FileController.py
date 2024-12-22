@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import QMessageBox, QFileDialog
 import pandas as pd
 from view.CsvDialogOption import CSVOptionsDialog
 
-
 class FileController:
     def __init__(self, model1, model2, view):
         self.model1 = model1
