@@ -36,18 +36,20 @@ class SpreadsheetWidgetModel(QTableWidget):
         column = item.column()
         new_value = item.text()
         
-        # Ambil nilai sebelumnya dari DataFrame
-        old_value = str(self.data.iloc[row, column])
-        
-        if new_value != old_value:
-            # Buat dan push command ke undo stack
-            command = EditDataCommand(self, row, column, old_value, new_value)
-            self.undo_stack.push(command)
+        # Pastikan indeks berada dalam batas DataFrame
+        if row < self.data.shape[0] and column < self.data.shape[1]:
+            # Ambil nilai sebelumnya dari DataFrame
+            old_value = str(self.data.iloc[row, column])
             
-            # Update DataFrame
-            self.is_updating = True
-            self.data.iloc[row, column] = new_value
-            self.is_updating = False
+            if new_value != old_value:
+                # Buat dan push command ke undo stack
+                command = EditDataCommand(self, row, column, old_value, new_value)
+                self.undo_stack.push(command)
+                
+                # Update DataFrame
+                self.is_updating = True
+                self.data.iloc[row, column] = new_value
+                self.is_updating = False
 
     
     def populate_table(self):
