@@ -1,5 +1,4 @@
-from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtCore import Qt
 import pandas as pd
@@ -31,14 +30,10 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.populate_table()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Down:
-            current_row = self.currentRow()
-            if current_row == self.rowCount() - 1:
-                self.add_row()
-        elif event.key() == Qt.Key.Key_Right:
-            current_column = self.currentColumn()
-            if current_column == self.columnCount() - 1:  # Perbaikan: Sesuaikan indeks kolom terakhir
-                self.add_column()
+        if event.key() == Qt.Key.Key_Down and self.currentRow()==self.rowCount() - 1:
+            self.add_row()
+        elif event.key() == Qt.Key.Key_Right and self.currentColumn()==self.columnCount() - 1:
+            self.add_column()
         elif event.matches(QKeySequence.StandardKey.Copy):
             self.copy_selection()
         elif event.matches(QKeySequence.StandardKey.Paste):
@@ -52,7 +47,7 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.setRowCount(current_row_count + 1)
         for col in range(self.columnCount()):
             self.setItem(current_row_count, col, QTableWidgetItem(""))
-        self.main_window.add_row(1)  # Panggil metode di MainWindow untuk sinkronisasi
+        self.main_window.add_row(1)  
     
     def add_column(self):
         """Tambahkan kolom kosong baru ke tabel."""
@@ -62,7 +57,7 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.setHorizontalHeaderItem(current_column_count, QTableWidgetItem(new_column_label))
         for row in range(self.rowCount()):
             self.setItem(row, current_column_count, QTableWidgetItem(""))
-        self.main_window.add_column(1)  # Panggil metode di MainWindow untuk sinkronisasi
+        self.main_window.add_column(1)
 
     def copy_selection(self):
         """Salin data yang dipilih ke clipboard."""
@@ -74,9 +69,17 @@ class SpreadsheetWidgetModel(QTableWidget):
         for selection in selected_ranges:
             rows = range(selection.topRow(), selection.bottomRow() + 1)
             cols = range(selection.leftColumn(), selection.rightColumn() + 1)
-            copied_data.append([self.item(row, col).text() if self.item(row, col) else "" for col in cols for row in rows])
+            # Membuat list untuk setiap baris
+            for row in rows:
+                row_data = [
+                    self.item(row, col).text() if self.item(row, col) else ""
+                    for col in cols
+                ]
+                copied_data.append(row_data)
 
+        # Gabungkan setiap baris dengan tab, dan setiap baris dipisahkan oleh newline
         clipboard_data = "\n".join(["\t".join(row) for row in copied_data])
+        print(clipboard_data)  # Debugging output
         QApplication.clipboard().setText(clipboard_data)
 
     def paste_selection(self):
