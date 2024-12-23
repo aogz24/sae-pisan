@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar,
+    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar,QMenu,
     QAbstractItemView
 )
 from PyQt6.QtCore import Qt
@@ -61,9 +61,10 @@ class MainWindow(QMainWindow):
 
         # Membuat menu bar
         self.menu_bar = self.menuBar()
-        self.file_menu = self.menu_bar.addMenu("File")
 
         # Membuat menu File -> Load dan Save
+        self.file_menu = self.menu_bar.addMenu("File")
+
         self.load_action = QAction("Load CSV", self)
         self.save_action = QAction("Save Data", self)
         self.save_data_output_action = QAction("Save Data Output", self)
@@ -71,6 +72,92 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.load_action)
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
+
+        # Menu "Exploration"
+        menu_exploration = self.menu_bar.addMenu("Exploration")
+
+        action_summary_data = QAction("Summary Data", self)
+        action_summary_data.triggered.connect(lambda: print("Exploration -> Summary Data selected"))
+        action_normality_test = QAction("Normality Test", self)
+        action_normality_test.triggered.connect(lambda: print("Exploration -> Normality Test selected"))
+        action_scatterplot = QAction("Scatterplot", self)
+        action_scatterplot.triggered.connect(lambda: print("Exploration -> Scatterplot selected"))
+        action_correlation_matrix = QAction("Correlation Matrix", self)
+        action_correlation_matrix.triggered.connect(lambda: print("Exploration -> Correlation Matrix selected"))
+        action_box_plot = QAction("Box Plot", self)
+        action_box_plot.triggered.connect(lambda: print("Exploration -> Box Plot selected"))
+        action_line_plot = QAction("Line Plot", self)
+        action_line_plot.triggered.connect(lambda: print("Exploration -> Line Plot selected"))
+        action_histogram = QAction("Histogram", self)
+        action_histogram.triggered.connect(lambda: print("Exploration -> Histogram selected"))
+        action_multicollinearity = QAction("Multicollinearity", self)
+        action_multicollinearity.triggered.connect(lambda: print("Exploration -> Multicollinearity selected"))
+        action_variable_selection = QAction("Variable Selection", self)
+        action_variable_selection.triggered.connect(lambda: print("Exploration -> Variable Selection selected"))
+
+        menu_exploration.addAction(action_summary_data)
+        menu_exploration.addAction(action_normality_test)
+        menu_exploration.addAction(action_scatterplot)
+        menu_exploration.addAction(action_correlation_matrix)
+        menu_exploration.addAction(action_box_plot)
+        menu_exploration.addAction(action_line_plot)
+        menu_exploration.addAction(action_histogram)
+        menu_exploration.addAction(action_multicollinearity)
+        menu_exploration.addAction(action_variable_selection)
+
+        # Menu "Model"
+        menu_model = self.menu_bar.addMenu("Model")
+
+        # Submenu "Area Level"
+        menu_area_level = QMenu("Area Level", self)
+        action_eblup_area = QAction("EBLUP", self)
+        action_eblup_area.triggered.connect(lambda: print("Area Level -> EBLUP selected"))
+        action_hb_beta = QAction("HB Beta", self)
+        action_hb_beta.triggered.connect(lambda: print("Area Level -> HB Beta selected"))
+        menu_area_level.addAction(action_eblup_area)
+        menu_area_level.addAction(action_hb_beta)
+
+        # Submenu "Unit Level"
+        menu_unit_level = QMenu("Unit Level", self)
+        action_eblup_unit = QAction("EBLUP", self)
+        action_eblup_unit.triggered.connect(lambda: print("Unit Level -> EBLUP selected"))
+        action_hb_normal = QAction("HB Normal", self)
+        action_hb_normal.triggered.connect(lambda: print("Unit Level -> HB Normal selected"))
+        menu_unit_level.addAction(action_eblup_unit)
+        menu_unit_level.addAction(action_hb_normal)
+
+        # Submenu "Pseudo"
+        menu_pseudo = QMenu("Pseudo", self)
+        action_eblup_pseudo = QAction("EBLUP", self)
+        action_eblup_pseudo.triggered.connect(lambda: print("Pseudo -> EBLUP selected"))
+        menu_pseudo.addAction(action_eblup_pseudo)
+
+        # Submenu "Projection"
+        menu_projection = QMenu("Projection", self)
+        action_linear_regression = QAction("Linear Regression", self)
+        action_linear_regression.triggered.connect(lambda: print("Projection -> Linear Regression selected"))
+        action_logistic_regression = QAction("Logistic Regression", self)
+        action_logistic_regression.triggered.connect(lambda: print("Projection -> Logistic Regression selected"))
+        action_svm = QAction("SVM", self)
+        action_svm.triggered.connect(lambda: print("Projection -> SVM selected"))
+        action_gboost = QAction("GBoost", self)
+        action_gboost.triggered.connect(lambda: print("Projection -> GBoost selected"))
+        menu_projection.addAction(action_linear_regression)
+        menu_projection.addAction(action_logistic_regression)
+        menu_projection.addAction(action_svm)
+        menu_projection.addAction(action_gboost)
+
+        # Menambahkan submenu ke menu "Model"
+        menu_model.addMenu(menu_area_level)
+        menu_model.addMenu(menu_unit_level)
+        menu_model.addMenu(menu_pseudo)
+        menu_model.addMenu(menu_projection)
+
+        # Menu "About"
+        menu_about = self.menu_bar.addMenu("About")
+        action_about_info = QAction("About This App", self)
+        action_about_info.triggered.connect(lambda: print("About -> About This App selected"))
+        menu_about.addAction(action_about_info)
 
         # Menetapkan ukuran default
         self.resize(800, 600)
