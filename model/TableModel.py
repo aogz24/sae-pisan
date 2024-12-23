@@ -1,6 +1,6 @@
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
-import pandas as pd
+import polars as pl
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data):
@@ -9,7 +9,7 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
-            value = self._data.iloc[index.row(), index.column()]
+            value = self._data[index.row(), index.column()]
             return str(value)
 
     def rowCount(self, index):
@@ -23,7 +23,7 @@ class TableModel(QtCore.QAbstractTableModel):
             if orientation == Qt.Orientation.Horizontal:
                 return str(self._data.columns[section])
             if orientation == Qt.Orientation.Vertical:
-                return str(self._data.index[section])
+                return str(section + 1)  # Polars does not have an index like Pandas
 
     def flags(self, index):
         return (
@@ -40,14 +40,14 @@ class TableModel(QtCore.QAbstractTableModel):
             column_name = self._data.columns[column]
             
             # Periksa tipe data kolom
-            if self._data[column_name].dtype in ['float64', 'int64']:
+            if self._data[column_name].dtype in [pl.Float64, pl.Int64]:
                 try:
                     # Jika value berupa string yang bisa dikonversi menjadi angka
                     if isinstance(value, str):
                         value = float(value)  # Mengonversi value ke float
 
                     # Set nilai ke DataFrame jika konversi berhasil
-                    self._data.iloc[row, column] = value
+                    self._data = self._data.with_column(pl.lit(value).alias(column_name)).with_row(row)
                     return True
                 except ValueError:
                     # Jika value tidak bisa dikonversi, tampilkan pesan error
@@ -55,19 +55,18 @@ class TableModel(QtCore.QAbstractTableModel):
                     return False
             else:
                 # Jika kolom adalah string atau tipe lainnya, biarkan nilai sebagai string
-                self._data.iloc[row, column] = value
+                self._data = self._data.with_column(pl.lit(value).alias(column_name)).with_row(row)
                 return True
 
         return False
 
-    
     def set_data(self, new_data):
-        if isinstance(new_data, pd.DataFrame):
+        if isinstance(new_data, pl.DataFrame):
             self.beginResetModel()
             self._data = new_data
             self.endResetModel()
         else:
-            raise ValueError("Data must be a pandas DataFrame")
+            raise ValueError("Data must be a Polars DataFrame")
     
     def get_data(self):
-        return pd.DataFrame(self._data)
+        return self._data

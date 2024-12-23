@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar,QMenu,
+    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
     QAbstractItemView
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
-import pandas as pd
+import polars as pl
 from model.TableModel import TableModel
 from model.SpreadsheetWidgetModel import SpreadsheetWidgetModel
 
@@ -16,8 +16,12 @@ class MainWindow(QMainWindow):
 
         # Data awal untuk Sheet 1 dan Sheet 2
         columns = [f"Column {i+1}" for i in range(30)]
-        self.data1 = pd.DataFrame("", index=range(10), columns=columns)
-        self.data2 = pd.DataFrame("", index=range(10), columns=["Estimated Value", "Standar Error", "CV"])
+        self.data1 = pl.DataFrame({col: [""] * 10 for col in columns})
+        self.data2 = pl.DataFrame({
+            "Estimated Value": [""] * 10,
+            "Standar Error": [""] * 10,
+            "CV": [""] * 10
+        })
 
         # Model untuk Sheet 2
         self.model1 = TableModel(self.data1)
@@ -166,8 +170,8 @@ class MainWindow(QMainWindow):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
         if sheet_number == 1:
             # Tambahkan baris baru di DataFrame data1
-            new_row = pd.DataFrame("", index=[self.data1.shape[0]], columns=self.data1.columns)
-            self.data1 = pd.concat([self.data1, new_row], ignore_index=True)
+            new_row = pl.DataFrame({col: [""] for col in self.data1.columns})
+            self.data1 = pl.concat([self.data1, new_row])
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
@@ -175,14 +179,18 @@ class MainWindow(QMainWindow):
         """Sinkronisasi data ketika kolom baru ditambahkan di SpreadsheetWidget."""
         if sheet_number == 1:
             # Tambahkan kolom baru di DataFrame data1
-            new_column = pd.DataFrame("", index=self.data1.index, columns=[f"Column {self.data1.shape[1] + 1}"])
-            self.data1 = pd.concat([self.data1, new_column], axis=1)
+            new_column_name = f"Column {self.data1.shape[1] + 1}"
+            new_column = pl.DataFrame({new_column_name: [""] * self.data1.shape[0]})
+            self.data1 = pl.concat([self.data1, new_column], how="horizontal")
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table(self, sheet_number, model):
+    def update_table_load(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
-            self.spreadsheet.update_table(model.get_data())
+            if model.get_data().shape[0] > 100:
+                self.spreadsheet.update_table(model.get_data()[:100, :])      
+            else:
+                self.spreadsheet.update_table(model.get_data())
         elif sheet_number == 2:
             self.table_view2.setModel(model)

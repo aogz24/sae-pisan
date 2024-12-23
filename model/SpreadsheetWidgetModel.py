@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
 from PyQt6.QtGui import QKeySequence, QUndoStack
 from PyQt6.QtCore import Qt
 from service.EditDataCommand import EditDataCommand
-import pandas as pd
+import polars as pl
 
 class SpreadsheetWidgetModel(QTableWidget):
     def __init__(self, parent, data):
@@ -11,14 +11,14 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.data = data
         self.setRowCount(data.shape[0])  # Set jumlah baris awal
         self.setColumnCount(data.shape[1])  # Set jumlah kolom sesuai data
-        self.setHorizontalHeaderLabels(data.columns.tolist())
+        self.setHorizontalHeaderLabels(data.columns)
         self.populate_table()
         self.setSelectionMode(QTableWidget.SelectionMode.ContiguousSelection)  # Aktifkan seleksi
         
         self.undo_stack = QUndoStack(self)
         self.setRowCount(data.shape[0])
         self.setColumnCount(data.shape[1])
-        self.setHorizontalHeaderLabels(data.columns.tolist())
+        self.setHorizontalHeaderLabels(data.columns)
         self.populate_table()
         self.setSelectionMode(QTableWidget.SelectionMode.ContiguousSelection)
         
@@ -39,7 +39,7 @@ class SpreadsheetWidgetModel(QTableWidget):
         # Pastikan indeks berada dalam batas DataFrame
         if row < self.data.shape[0] and column < self.data.shape[1]:
             # Ambil nilai sebelumnya dari DataFrame
-            old_value = str(self.data.iloc[row, column])
+            old_value = str(self.data[row, column])
             
             if new_value != old_value:
                 # Buat dan push command ke undo stack
@@ -48,7 +48,7 @@ class SpreadsheetWidgetModel(QTableWidget):
                 
                 # Update DataFrame
                 self.is_updating = True
-                self.data.iloc[row, column] = new_value
+                self.data[row, column] = new_value
                 self.is_updating = False
 
     
@@ -57,7 +57,7 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.blockSignals(True)  # Block signals sementara mengisi tabel
         for row in range(self.data.shape[0]):
             for col in range(self.data.shape[1]):
-                item = QTableWidgetItem(str(self.data.iloc[row, col]))
+                item = QTableWidgetItem(str(self.data[row, col]))
                 self.setItem(row, col, item)
         self.blockSignals(False)
 
@@ -67,15 +67,15 @@ class SpreadsheetWidgetModel(QTableWidget):
         self.data = data
         self.setRowCount(data.shape[0])
         self.setColumnCount(data.shape[1])
-        self.setHorizontalHeaderLabels(data.columns.tolist())
+        self.setHorizontalHeaderLabels(data.columns)
         self.populate_table()
         self.blockSignals(False)
 
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Down and self.currentRow()==self.rowCount() - 1:
+        if event.key() == Qt.Key.Key_Down and self.currentRow() == self.rowCount() - 1:
             self.add_row()
-        elif event.key() == Qt.Key.Key_Right and self.currentColumn()==self.columnCount() - 1:
+        elif event.key() == Qt.Key.Key_Right and self.currentColumn() == self.columnCount() - 1:
             self.add_column()
         elif event.matches(QKeySequence.StandardKey.Copy):
             self.copy_selection()
@@ -155,7 +155,7 @@ class SpreadsheetWidgetModel(QTableWidget):
                 item = self.item(row, col)
                 row_data.append(item.text() if item else "")
             data.append(row_data)
-        return pd.DataFrame(data)
+        return pl.DataFrame(data)
     
     def can_undo(self):
         return self.undo_stack.canUndo()
@@ -173,4 +173,15 @@ class SpreadsheetWidgetModel(QTableWidget):
 
     def get_data(self):
         """Ambil data dari tabel dan kembalikan sebagai DataFrame."""
-        return self.data.copy()
+        return self.data.clone()
+    
+    def append_table(self, new_data):
+        """Tambahkan data baru ke tabel yang ada."""
+        start_row = self.rowCount()
+        end_row = start_row + new_data.shape[0]
+        
+        self.setRowCount(end_row)
+        for row in range(new_data.shape[0]):
+            for col in range(new_data.shape[1]):
+                item = QTableWidgetItem(str(new_data[row, col]))
+                self.setItem(start_row + row, col, item)
