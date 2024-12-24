@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView, QMessageBox
+    QAbstractItemView, QMessageBox, QApplication
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence
 import polars as pl
 from model.TableModel import TableModel
 from model.SpreadsheetWidgetModel import SpreadsheetWidgetModel
@@ -38,7 +38,8 @@ class MainWindow(QMainWindow):
 
         # Membuat widget untuk tab pertama (Sheet 1) dengan SpreadsheetWidget
         self.tab1 = QWidget()
-        self.spreadsheet = SpreadsheetWidgetModel(self, self.model1.get_data())
+        self.spreadsheet = QTableView(self.tab1)
+        self.spreadsheet.setModel(self.model1)
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
 
@@ -188,10 +189,57 @@ class MainWindow(QMainWindow):
     def update_table(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
-            if model.get_data().shape[0] > 100:
-                self.spreadsheet.update_table(model.get_data()[:100, :])
-                QMessageBox.information(self.tab_widget,"Informasi", "Only 10,000 records are displayed due to data exceeding 10,000, but full data can be analyzed.")  
-            else:
-                self.spreadsheet.update_table(model.get_data())
+            self.spreadsheet.setModel(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
+            
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts for copy, paste, undo, and redo."""
+        if event.matches(QKeySequence.StandardKey.Copy):
+            self.copy_selection()
+        elif event.matches(QKeySequence.StandardKey.Paste):
+            self.paste_selection()
+        elif event.matches(QKeySequence.StandardKey.Undo):
+            self.undo_action()
+        elif event.matches(QKeySequence.StandardKey.Redo):
+            self.redo_action()
+        else:
+            super().keyPressEvent(event)
+
+    def copy_selection(self):
+        """Copy selected cells to clipboard."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()        
+        if selection:
+            data = '\n'.join(['\t'.join([self.model1.data(index, Qt.ItemDataRole.DisplayRole) for index in row]) for row in self.group_by_row(selection)])
+            clipboard = QApplication.clipboard()
+            clipboard.setText(data)
+
+    def paste_selection(self):
+        """Paste clipboard content to selected cells."""
+        clipboard = QApplication.clipboard()
+        data = clipboard.text().split('\n')
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            start_row = selection[0].row()
+            start_col = selection[0].column()
+            for i, row in enumerate(data):
+                for j, value in enumerate(row.split('\t')):
+                    index = self.model1.index(start_row + i, start_col + j)
+                    self.model1.setData(index, value, Qt.ItemDataRole.EditRole)
+                    
+    def undo_action(self):
+        """Undo the last action."""
+        self.model1.undo()
+
+    def redo_action(self):
+        """Redo the last undone action."""
+        self.model1.redo()
+
+    def group_by_row(self, selection):
+        """Group selected indexes by row."""
+        rows = {}
+        for index in selection:
+            if index.row() not in rows:
+                rows[index.row()] = []
+            rows[index.row()].append(index)
+        return [rows[row] for row in sorted(rows)]

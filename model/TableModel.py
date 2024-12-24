@@ -1,11 +1,16 @@
-from PyQt6 import QtCore
+from PyQt6.QtWidgets import QTableWidgetItem
+from PyQt6.QtGui import QUndoCommand
 from PyQt6.QtCore import Qt
 import polars as pl
+from PyQt6 import QtCore, QtGui, QtWidgets
+from service.EditDataCommand import EditDataCommand
+from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data):
         super().__init__()
         self._data = data
+        self.undo_stack = QUndoStack()
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
@@ -23,7 +28,7 @@ class TableModel(QtCore.QAbstractTableModel):
             if orientation == Qt.Orientation.Horizontal:
                 return str(self._data.columns[section])
             if orientation == Qt.Orientation.Vertical:
-                return str(section + 1)  # Polars does not have an index like Pandas
+                return str(section + 1)
 
     def flags(self, index):
         return (
@@ -38,26 +43,28 @@ class TableModel(QtCore.QAbstractTableModel):
             column = index.column()
 
             column_name = self._data.columns[column]
-            
-            # Periksa tipe data kolom
-            if self._data[column_name].dtype in [pl.Float64, pl.Int64]:
-                try:
-                    # Jika value berupa string yang bisa dikonversi menjadi angka
-                    if isinstance(value, str):
-                        value = float(value)  # Mengonversi value ke float
+            dtype = self._data[column_name].dtype
 
-                    # Set nilai ke DataFrame jika konversi berhasil
-                    self._data = self._data.with_column(pl.lit(value).alias(column_name)).with_row(row)
+            old_value = self._data[row, column]
+
+            if dtype in [pl.Float64, pl.Int64]:
+                try:
+                    if isinstance(value, str):
+                        value = float(value)
+                    self._data[row, column] = value
+                    self.dataChanged.emit(index, index)
+                    command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
+                    self.undo_stack.push(command)
                     return True
                 except ValueError:
-                    # Jika value tidak bisa dikonversi, tampilkan pesan error
                     print(f"Invalid numeric value: {value} for column {column_name}")
                     return False
             else:
-                # Jika kolom adalah string atau tipe lainnya, biarkan nilai sebagai string
-                self._data = self._data.with_column(pl.lit(value).alias(column_name)).with_row(row)
+                self._data[row, column] = value
+                self.dataChanged.emit(index, index)
+                command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
+                self.undo_stack.push(command)
                 return True
-
         return False
 
     def set_data(self, new_data):
@@ -69,4 +76,23 @@ class TableModel(QtCore.QAbstractTableModel):
             raise ValueError("Data must be a Polars DataFrame")
     
     def get_data(self):
+        print(self._data)
         return self._data
+
+    def copy(self, index):
+        if index.isValid():
+            value = self.data(index, Qt.ItemDataRole.DisplayRole)
+            clipboard = QtGui.QGuiApplication.clipboard()
+            clipboard.setText(value)
+
+    def paste(self, index):
+        if index.isValid():
+            clipboard = QtGui.QGuiApplication.clipboard()
+            value = clipboard.text()
+            self.setData(index, value)
+
+    def undo(self):
+        self.undo_stack.undo()
+
+    def redo(self):
+        self.undo_stack.redo()

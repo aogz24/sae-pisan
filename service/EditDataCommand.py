@@ -5,9 +5,9 @@ import pandas as pd
 
 class EditDataCommand(QUndoCommand):
     """Command untuk mengubah data dalam sel"""
-    def __init__(self, table_widget, row, column, old_value, new_value):
+    def __init__(self, model, row, column, old_value, new_value):
         super().__init__()
-        self.table = table_widget
+        self.model = model  # Model passed as argument
         self.row = row
         self.column = column
         self.old_value = old_value
@@ -16,20 +16,12 @@ class EditDataCommand(QUndoCommand):
 
     def undo(self):
         """Kembalikan ke nilai sebelumnya"""
-        # Update tabel widget
-        self.table.blockSignals(True)  # Hindari infinite loop
-        item = QTableWidgetItem(str(self.old_value))
-        self.table.setItem(self.row, self.column, item)
-        # Update dataframe
-        self.table.data[self.row, self.column] = self.old_value
-        self.table.blockSignals(False)
+        # Update model data
+        self.model._data[self.row, self.column] = self.old_value
+        self.model.dataChanged.emit(self.model.createIndex(self.row, self.column), self.model.createIndex(self.row, self.column))
 
     def redo(self):
         """Terapkan perubahan baru"""
-        # Update tabel widget
-        self.table.blockSignals(True)  # Hindari infinite loop
-        item = QTableWidgetItem(str(self.new_value))
-        self.table.setItem(self.row, self.column, item)
-        # Update dataframe
-        self.table.data[self.row, self.column] = self.new_value
-        self.table.blockSignals(False)
+        # Update model data
+        self.model._data[self.row, self.column] = self.new_value
+        self.model.dataChanged.emit(self.model.createIndex(self.row, self.column), self.model.createIndex(self.row, self.column))
