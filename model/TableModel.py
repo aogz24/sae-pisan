@@ -7,10 +7,12 @@ from service.EditDataCommand import EditDataCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data):
+    def __init__(self, data, batch_size=1000):
         super().__init__()
         self._data = data
         self.undo_stack = QUndoStack()
+        self.batch_size = batch_size
+        self.loaded_rows = min(batch_size, self._data.shape[0])
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
@@ -18,7 +20,7 @@ class TableModel(QtCore.QAbstractTableModel):
             return str(value)
 
     def rowCount(self, index):
-        return self._data.shape[0]
+        return self.loaded_rows
 
     def columnCount(self, index):
         return self._data.shape[1]
@@ -71,6 +73,7 @@ class TableModel(QtCore.QAbstractTableModel):
         if isinstance(new_data, pl.DataFrame):
             self.beginResetModel()
             self._data = new_data
+            self.loaded_rows = min(self.batch_size, self._data.shape[0])
             self.endResetModel()
         else:
             raise ValueError("Data must be a Polars DataFrame")
@@ -96,3 +99,13 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def redo(self):
         self.undo_stack.redo()
+
+    def canFetchMore(self, index):
+        return self.loaded_rows < self._data.shape[0]
+
+    def fetchMore(self, index):
+        remaining_rows = self._data.shape[0] - self.loaded_rows
+        rows_to_fetch = min(self.batch_size, remaining_rows)
+        self.beginInsertRows(QtCore.QModelIndex(), self.loaded_rows, self.loaded_rows + rows_to_fetch - 1)
+        self.loaded_rows += rows_to_fetch
+        self.endInsertRows()
