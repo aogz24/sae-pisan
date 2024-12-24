@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView
+    QAbstractItemView, QMessageBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction
@@ -185,11 +185,12 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table_load(self, sheet_number, model):
+    def update_table(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
             if model.get_data().shape[0] > 100:
-                self.spreadsheet.update_table(model.get_data()[:100, :])      
+                self.spreadsheet.update_table(model.get_data()[:100, :])
+                QMessageBox.information(self.tab_widget,"Informasi", "Only 10,000 records are displayed due to data exceeding 10,000, but full data can be analyzed.")  
             else:
                 self.spreadsheet.update_table(model.get_data())
         elif sheet_number == 2:

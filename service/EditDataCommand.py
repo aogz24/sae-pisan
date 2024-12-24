@@ -21,7 +21,7 @@ class EditDataCommand(QUndoCommand):
         item = QTableWidgetItem(str(self.old_value))
         self.table.setItem(self.row, self.column, item)
         # Update dataframe
-        self.table.data.iloc[self.row, self.column] = self.old_value
+        self.table.data[self.row, self.column] = self.old_value
         self.table.blockSignals(False)
 
     def redo(self):
@@ -31,5 +31,5 @@ class EditDataCommand(QUndoCommand):
         item = QTableWidgetItem(str(self.new_value))
         self.table.setItem(self.row, self.column, item)
         # Update dataframe
-        self.table.data.iloc[self.row, self.column] = self.new_value
+        self.table.data[self.row, self.column] = self.new_value
         self.table.blockSignals(False)
