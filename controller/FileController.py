@@ -38,10 +38,6 @@ class FileController:
                 data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
-            # Your existing code to load CSV
-            end_time = time.time()
-            load_time = end_time - start_time
-            QMessageBox.information(self.view, "Load Time", f"File loaded in {load_time:.2f} seconds")
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
         finally:
