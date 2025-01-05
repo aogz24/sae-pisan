@@ -6,11 +6,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence
 import polars as pl
 from model.TableModel import TableModel
-from model.SpreadsheetWidgetModel import SpreadsheetWidgetModel
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from model.TableModel import TableModel
-from model.SpreadsheetWidgetModel import SpreadsheetWidgetModel
 
 class MainWindow(QMainWindow):
     def __init__(self):

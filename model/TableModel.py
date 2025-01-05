@@ -50,24 +50,24 @@ class TableModel(QtCore.QAbstractTableModel):
             old_value = self._data[row, column]
 
             if dtype in [pl.Float64, pl.Int64]:
-                try:
-                    if isinstance(value, str):
-                        value = float(value)
+                if isinstance(value, (int, float)):  # Check that the value is numeric
                     self._data[row, column] = value
                     self.dataChanged.emit(index, index)
                     command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
                     self.undo_stack.push(command)
                     return True
-                except ValueError:
-                    print(f"Invalid numeric value: {value} for column {column_name}")
+                else:
+                    print(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
                     return False
             else:
+                # For non-numeric columns, directly set the value without conversion
                 self._data[row, column] = value
                 self.dataChanged.emit(index, index)
                 command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
                 self.undo_stack.push(command)
                 return True
         return False
+
 
     def set_data(self, new_data):
         if isinstance(new_data, pl.DataFrame):

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog
 import polars as pl
 from view.CsvDialogOption import CSVOptionsDialog
 import time
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QCoreApplication
 
 
 class FileController:
@@ -17,7 +17,6 @@ class FileController:
         self.view.save_data_output_action.triggered.connect(self.save_data_output)
 
     def load_csv(self):
-        start_time = time.time()
         """Muat file CSV ke model pertama."""
         dialog = CSVOptionsDialog(self.view)
         file_path, separator, header = dialog.get_csv_options()
@@ -36,6 +35,13 @@ class FileController:
             else:
                 data = pl.read_csv(file_path, separator=separator, has_header=False)
                 data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            
+            for i in range(1, 101):
+                QCoreApplication.processEvents()
+                progress_dialog.setValue(i)
+                if progress_dialog.wasCanceled():
+                    break
+            
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
         except Exception as e:
