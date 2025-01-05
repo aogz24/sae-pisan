@@ -7,7 +7,7 @@ from service.EditDataCommand import EditDataCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data, batch_size=1000):
+    def __init__(self, data, batch_size=100):
         super().__init__()
         self._data = data
         self.undo_stack = QUndoStack()
@@ -49,8 +49,20 @@ class TableModel(QtCore.QAbstractTableModel):
 
             old_value = self._data[row, column]
 
-            if dtype in [pl.Float64, pl.Int64]:
-                if isinstance(value, (int, float)):  # Check that the value is numeric
+            if dtype == pl.Float64:
+                if isinstance(value, str):
+                    value = float(value)
+                    self._data[row, column] = value
+                    self.dataChanged.emit(index, index)
+                    command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
+                    self.undo_stack.push(command)
+                    return True
+                else:
+                    print(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
+                    return False
+            elif dtype == pl.Int64:
+                if isinstance(value, str):
+                    value = int(value)
                     self._data[row, column] = value
                     self.dataChanged.emit(index, index)
                     command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
@@ -60,7 +72,6 @@ class TableModel(QtCore.QAbstractTableModel):
                     print(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
                     return False
             else:
-                # For non-numeric columns, directly set the value without conversion
                 self._data[row, column] = value
                 self.dataChanged.emit(index, index)
                 command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
