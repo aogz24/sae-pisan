@@ -1,9 +1,19 @@
 import pandas as pd
 import polars as pl
 import time
+import numpy as np
 
-# File path
+# Create a DataFrame with 1e6 rows and 100 columns
+num_rows = int(1e6)
+num_cols = 100
+data = np.random.rand(num_rows, num_cols)
+columns = [f'col_{i}' for i in range(1, num_cols + 1)]
+
+df = pd.DataFrame(data, columns=columns)
+
+# Save the DataFrame to a CSV file
 csv_file = 'data/data_20241223_1000000.csv'
+df.to_csv(csv_file, index=False)
 
 # Load CSV with pandas
 start_time = time.time()
