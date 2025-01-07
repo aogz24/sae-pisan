@@ -1,5 +1,5 @@
-from PemodelanSae import PemodelanSAE
+from SaeModelling import SaeModelling
 
-class SaeHB(PemodelanSAE):
+class SaeHB(SaeModelling):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
