@@ -68,7 +68,6 @@ class CSVOptionsDialog(QDialog):
         hdr = True if self.header_checkbox.isChecked() else False
         try:
             preview_data = pl.read_csv(self.file_path, separator=sep, has_header=hdr).head(10)
-            print(preview_data)
             model = QStandardItemModel()
             
             if not self.header_checkbox.isChecked():
