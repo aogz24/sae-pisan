@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog
 from PyQt6.QtCore import Qt
-import pandas as pd
+import polars as pl
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 class CSVOptionsDialog(QDialog):
@@ -67,7 +67,7 @@ class CSVOptionsDialog(QDialog):
         sep = self.separator_input.text()
         hdr = 0 if self.header_checkbox.isChecked() else None
         try:
-            preview_data = pd.read_csv(self.file_path, sep=sep, header=hdr, nrows=10).head()
+            preview_data = pl.read_csv(self.file_path, sep=sep, header=hdr, nrows=10).head()
             model = QStandardItemModel()
             
             if not self.header_checkbox.isChecked():

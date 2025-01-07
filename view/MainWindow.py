@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea
+    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence
