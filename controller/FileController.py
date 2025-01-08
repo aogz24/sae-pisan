@@ -1,6 +1,9 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog
-import pandas as pd
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog
+import polars as pl
 from view.CsvDialogOption import CSVOptionsDialog
+import time
+from PyQt6.QtCore import Qt, QCoreApplication
+
 
 class FileController:
     def __init__(self, model1, model2, view):
@@ -21,18 +24,30 @@ class FileController:
         if not file_path:  # Jika file tidak dipilih
             return
 
+        progress_dialog = QProgressDialog("Loading CSV...", "Cancel", 0, 100, self.view)
+        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        progress_dialog.show()
+
         try:
             # Baca data dari CSV dengan atau tanpa header
             if header:
-                data = pd.read_csv(file_path, sep=separator, header=0)
+                data = pl.read_csv(file_path, separator=separator, has_header=True)
             else:
-                data = pd.read_csv(file_path, sep=separator, header=None)
+                data = pl.read_csv(file_path, separator=separator, has_header=False)
                 data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
-
+            
+            for i in range(1, 101):
+                QCoreApplication.processEvents()
+                progress_dialog.setValue(i)
+                if progress_dialog.wasCanceled():
+                    break
+            
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
+        finally:
+            progress_dialog.setValue(100)
 
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
@@ -42,6 +57,10 @@ class FileController:
         )
         
         if file_path:
+            progress_dialog = QProgressDialog("Saving data...", "Cancel", 0, 100, self.view)
+            progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+            progress_dialog.show()
+
             try:
                 if selected_filter == "CSV Files (*.csv)":
                     self.save_as_csv(file_path, self.model1)
@@ -55,6 +74,8 @@ class FileController:
                 QMessageBox.information(self.view, "Success", "File saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
+            finally:
+                progress_dialog.setValue(100)
 
     def save_data_output(self):
         """Simpan data dari model kedua (Sheet 2)."""
@@ -64,6 +85,10 @@ class FileController:
         )
         
         if file_path:
+            progress_dialog = QProgressDialog("Saving output data...", "Cancel", 0, 100, self.view)
+            progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+            progress_dialog.show()
+
             try:
                 if selected_filter == "CSV Files (*.csv)":
                     self.save_as_csv(file_path, self.model2)
@@ -77,23 +102,25 @@ class FileController:
                 QMessageBox.information(self.view, "Success", "Output file saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
+            finally:
+                progress_dialog.setValue(100)
 
     def save_as_csv(self, file_path, model):
         """Simpan data sebagai CSV."""
         data = model.get_data()
-        data.to_csv(file_path, index=False)
+        data.write_csv(file_path)
 
     def save_as_excel(self, file_path, model):
         """Simpan data sebagai Excel."""
         data = model.get_data()
-        data.to_excel(file_path, index=False)
+        data.write_excel(file_path)
 
     def save_as_json(self, file_path, model):
         """Simpan data sebagai JSON."""
         data = model.get_data()
-        data.to_json(file_path, orient="records", lines=True)
+        data.write_json(file_path, orient="records", lines=True)
 
     def save_as_txt(self, file_path, model):
         """Simpan data sebagai file teks."""
         data = model.get_data()
-        data.to_csv(file_path, index=False, sep="\t")
+        data.write_csv(file_path, separator="\t")
