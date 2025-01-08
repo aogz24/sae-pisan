@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
 import sys
 from controller.FileController import FileController
 from view.MainWindow import MainWindow
@@ -22,6 +23,8 @@ def main():
     view = MainWindow()  # View (Tampilan utama)
     controller = FileController(model1, model2, view)
 
+    # icon aplication
+    view.setWindowIcon(QIcon('assets/icon.svg'))
     # Tampilkan window utama
     view.show()
 

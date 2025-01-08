@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy
+    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar,
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence, QIcon
 import polars as pl
 from model.TableModel import TableModel
 import matplotlib.pyplot as plt
@@ -178,62 +178,52 @@ class MainWindow(QMainWindow):
         action_about_info.triggered.connect(lambda: print("About -> About This App selected"))
         menu_about.addAction(action_about_info)
 
+        # Tool Bar
+        self.toolBar = QToolBar(self)
+        self.toolBar.setIconSize(QSize(45, 35))
+        self.toolBar.setObjectName("toolBar")
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolBar)  # Perbaikan dilakukan di sini
+
+        # Actions for Toolbar
+        self.actionLoad_CSV = QAction(self)  # Menggunakan self untuk referensi instance
+        icon_load = QIcon("resources/icons/open.svg")
+        self.actionLoad_CSV.setIcon(icon_load)
+        self.actionLoad_CSV.setText("Load CSV")
+        self.toolBar.addAction(self.actionLoad_CSV)
+
+        self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
+        icon_save = QIcon("resources/icons/save.svg")
+        self.actionSave_Data.setIcon(icon_save)
+        self.actionSave_Data.setText("Save Data")
+        self.toolBar.addAction(self.actionSave_Data)
+
+        self.actionUndo = QAction(self)
+        icon_undo = QIcon("resources/icons/undo.svg")
+        self.actionUndo.setIcon(icon_undo)
+        self.actionUndo.setText("Undo")
+        self.toolBar.addAction(self.actionUndo)
+
+        self.actionRedo = QAction(self)
+        icon_redo = QIcon("resources/icons/redo.svg")
+        self.actionRedo.setIcon(icon_redo)
+        self.actionRedo.setText("Redo")
+        self.toolBar.addAction(self.actionRedo)
+
+        # Add spacer to push following items to the right
+        spacer = QWidget(self)
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.toolBar.addWidget(spacer)
+
+        # Add "Setting" button to the right
+        self.actionSetting = QAction(self)
+        icon_setting = QIcon("resources/icons/setting.svg")
+        self.actionSetting.setIcon(icon_setting)
+        self.actionSetting.setText("Setting")
+        self.toolBar.addAction(self.actionSetting)
+
+
         # Menetapkan ukuran default
         self.resize(800, 600)
-
-    def plot_scatterplot(self):
-        """Plot a scatterplot based on the data in Sheet 2."""
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.scatter(self.data2["Estimated Value"], self.data2["Standar Error"])
-        ax.set_title("Scatterplot")
-        ax.set_xlabel("Estimated Value")
-        ax.set_ylabel("Standar Error")
-        self.display_graph(fig)
-
-    def plot_correlation_matrix(self):
-        """Plot a correlation matrix based on the data in Sheet 2."""
-        fig, ax = plt.subplots(figsize=(5, 4))
-        cax = ax.matshow(self.data2.corr().to_numpy(), cmap='coolwarm')
-        fig.colorbar(cax)
-        ax.set_xticks(range(len(self.data2.columns)))
-        ax.set_yticks(range(len(self.data2.columns)))
-        ax.set_xticklabels(self.data2.columns, rotation=90)
-        ax.set_yticklabels(self.data2.columns)
-        ax.set_title("Correlation Matrix")
-        self.display_graph(fig)
-
-    def plot_box_plot(self):
-        """Plot a box plot based on the data in Sheet 2."""
-        fig, ax = plt.subplots(figsize=(5, 4))
-        self.data2.to_pandas().boxplot(ax=ax)
-        ax.set_title("Box Plot")
-        self.display_graph(fig)
-
-    def plot_line_plot(self):
-        """Plot a line plot based on the data in Sheet 2."""
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.plot(self.data2["Estimated Value"], label="Estimated Value")
-        ax.plot(self.data2["Standar Error"], label="Standar Error")
-        ax.set_title("Line Plot")
-        ax.legend()
-        self.display_graph(fig)
-
-    def plot_histogram(self):
-        """Plot a histogram based on the data in Sheet 2."""
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.hist(self.data2["Estimated Value"], bins=10, alpha=0.5, label="Estimated Value")
-        ax.hist(self.data2["Standar Error"], bins=10, alpha=0.5, label="Standar Error")
-        ax.set_title("Histogram")
-        ax.legend()
-        self.display_graph(fig)
-
-    def display_graph(self, fig):
-        """Display the given matplotlib figure in the graph widget."""
-        canvas = FigureCanvas(fig)
-        canvas.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        canvas.setFixedSize(500, 400)  # Set fixed size for the canvas
-        self.graph_layout.addWidget(canvas)
-        canvas.draw()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
@@ -262,7 +252,7 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
-            
+
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
         if event.matches(QKeySequence.StandardKey.Copy):
@@ -296,7 +286,7 @@ class MainWindow(QMainWindow):
                 for j, value in enumerate(row.split('\t')):
                     index = self.model1.index(start_row + i, start_col + j)
                     self.model1.setData(index, value, Qt.ItemDataRole.EditRole)
-                    
+
     def undo_action(self):
         """Undo the last action."""
         self.model1.undo()
@@ -313,4 +303,3 @@ class MainWindow(QMainWindow):
                 rows[index.row()] = []
             rows[index.row()].append(index)
         return [rows[row] for row in sorted(rows)]
-  
