@@ -137,3 +137,38 @@ class TableModel(QtCore.QAbstractTableModel):
         self.beginInsertRows(QtCore.QModelIndex(), self.loaded_rows, self.loaded_rows + rows_to_fetch - 1)
         self.loaded_rows += rows_to_fetch
         self.endInsertRows()
+    
+    def addRowsBefore(self, index, count):
+        if index.isValid() and count > 0:
+            row = index.row()
+            new_rows = [{col: "" for col in self._data.columns} for _ in range(count)]
+            self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
+            self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
+            self.loaded_rows += count
+            self.endInsertRows()
+
+    def addRowsAfter(self, index, count):
+        if index.isValid() and count > 0:
+            row = index.row() + 1
+            new_rows = [{col: "" for col in self._data.columns} for _ in range(count)]
+            self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
+            self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
+            self.loaded_rows += count
+            self.endInsertRows()
+    
+    def addColumnBefore(self, index, count):
+        if index.isValid() and count > 0:
+            column = index.column()
+            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            self.beginResetModel()
+            self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
+            self.endResetModel()
+
+    def addColumnAfter(self, index, count):
+        if index.isValid() and count > 0:
+            column = index.column() + 1
+            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            self.beginResetModel()
+            self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
+            self.endResetModel()
+    

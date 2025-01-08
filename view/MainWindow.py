@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar,
+    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog
 )
 from PyQt6.QtCore import Qt, QSize, QModelIndex, QItemSelectionModel 
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence, QIcon
@@ -259,6 +259,41 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
+    def add_row_before(self, num_rows):
+        """Add rows before the selected row in the specified sheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            selected_row = selection[0].row()
+            self.model1.addRowsBefore(self.model1.index(selected_row, 0), num_rows)
+            self.update_table(1, self.model1)
+    
+    def add_row_after(self, num_rows):
+        """Add rows after the selected row in the specified sheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            selected_row = selection[0].row()
+            self.model1.addRowsAfter(self.model1.index(selected_row, 0), num_rows)
+            self.update_table(1, self.model1)
+    
+    def add_column_before(self, num_columns):
+        """Add columns before the selected column in the specified sheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            selected_column = selection[0].column()
+            self.model1.addColumnBefore(self.model1.index(0, selected_column), num_columns)
+            self.update_table(1, self.model1)
+
+    def add_column_after(self, num_columns):
+        """Add columns after the selected column in the specified sheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            selected_column = selection[0].column()
+            for _ in range(num_columns):
+                new_column_name = f"Column {self.data1.shape[1] + 1}"
+                new_column = pl.DataFrame({new_column_name: [""] * self.data1.shape[0]})
+                self.data1 = pl.concat([self.data1[:, :selected_column + 1], new_column, self.data1[:, selected_column + 1:]], how="horizontal")
+                self.update_table(1, TableModel(self.data1))
+    
     def add_column(self, sheet_number):
         """Sinkronisasi data ketika kolom baru ditambahkan di SpreadsheetWidget."""
         if sheet_number == 1:
@@ -385,3 +420,31 @@ class MainWindow(QMainWindow):
                 end_col = self.model2.columnCount(self.model2.index(0, 0)) - 1
                 self.table_view2.setCurrentIndex(self.model2.index(start_row, end_col))
                 self.table_view2.selectionModel().select(self.model2.index(start_row, end_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+                
+    def show_add_row_before_dialog(self):
+        """Show a dialog to select which sheet to add a row to."""
+        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
+        if ok:
+            for _ in range(num_rows):
+                self.add_row_before(num_rows)
+    
+    def show_add_row_after_dialog(self):
+        """Show a dialog to select which sheet to add a row to."""
+        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
+        if ok:
+            for _ in range(num_rows):
+                self.add_row_after(num_rows)
+    
+    def show_add_column_before_dialog(self):
+        """Show a dialog to select which sheet to add a row to."""
+        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
+        if ok:
+            for _ in range(num_rows):
+                self.add_column_before(num_rows)
+    
+    def show_add_column_after_dialog(self):
+        """Show a dialog to select which sheet to add a row to."""
+        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
+        if ok:
+            for _ in range(num_rows):
+                self.add_column_after(num_rows)
