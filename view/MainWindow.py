@@ -36,21 +36,39 @@ class MainWindow(QMainWindow):
     def show_context_menu(self, position):
         context_menu = QMenu(self)
 
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        has_selection = bool(selection)
+
         add_row_before_action = QAction("Add Row Before", self)
         add_row_before_action.triggered.connect(self.show_add_row_before_dialog)
+        add_row_before_action.setEnabled(has_selection)
         context_menu.addAction(add_row_before_action)
 
         add_row_after_action = QAction("Add Row After", self)
         add_row_after_action.triggered.connect(self.show_add_row_after_dialog)
+        add_row_after_action.setEnabled(has_selection)
         context_menu.addAction(add_row_after_action)
 
         add_column_before_action = QAction("Add Column Before", self)
         add_column_before_action.triggered.connect(self.show_add_column_before_dialog)
+        add_column_before_action.setEnabled(has_selection)
         context_menu.addAction(add_column_before_action)
 
         add_column_after_action = QAction("Add Column After", self)
         add_column_after_action.triggered.connect(self.show_add_column_after_dialog)
+        add_column_after_action.setEnabled(has_selection)
         context_menu.addAction(add_column_after_action)
+
+        delete_row_action = QAction("Delete Row", self)
+        delete_row_action.triggered.connect(self.confirm_delete_selected_rows)
+        delete_row_action.setEnabled(has_selection)
+        context_menu.addAction(delete_row_action)
+
+        delete_column_action = QAction("Delete Column", self)
+        delete_column_action.triggered.connect(self.confirm_delete_selected_columns)
+        delete_column_action.setEnabled(has_selection)
+        context_menu.addAction(delete_column_action)
+        
         context_menu.exec(self.spreadsheet.viewport().mapToGlobal(position))
 
     def init_ui(self):
