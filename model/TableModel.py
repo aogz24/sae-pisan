@@ -50,33 +50,50 @@ class TableModel(QtCore.QAbstractTableModel):
             old_value = self._data[row, column]
 
             if dtype == pl.Float64:
-                if isinstance(value, str):
-                    value = float(value)
-                    self._data[row, column] = value
-                    self.dataChanged.emit(index, index)
-                    command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
-                    self.undo_stack.push(command)
-                    return True
-                else:
-                    print(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
-                    return False
-            elif dtype == pl.Int64:
-                if isinstance(value, str):
-                    value = int(value)
-                    self._data[row, column] = value
-                    self.dataChanged.emit(index, index)
-                    command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
-                    self.undo_stack.push(command)
-                    return True
-                else:
-                    print(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
-                    return False
-            else:
-                self._data[row, column] = value
-                self.dataChanged.emit(index, index)
-                command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
-                self.undo_stack.push(command)
-                return True
+                try:
+                    if isinstance(value, str):
+                        value = float(value)
+                except ValueError:
+                    error_dialog = QtWidgets.QMessageBox()
+                    error_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                    error_dialog.setText(f"Invalid value: {value} for column {column_name}. Expected a numeric value.")
+                    error_dialog.setInformativeText("Do you want to set the column as a string?")
+                    error_dialog.setWindowTitle("Invalid Input")
+                    error_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                    error_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                    ret = error_dialog.exec()
+
+                    if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                        dtype = pl.Utf8
+                        self._data = self._data.with_columns([pl.col(column_name).cast(dtype)])
+                    else:
+                        return False
+
+            if dtype == pl.Int64:
+                try:
+                    if isinstance(value, str):
+                        value = int(value)
+                except ValueError:
+                    error_dialog = QtWidgets.QMessageBox()
+                    error_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                    error_dialog.setText(f"Invalid value: {value} for column {column_name}. Expected an integer value.")
+                    error_dialog.setInformativeText("Do you want to set column to a string?")
+                    error_dialog.setWindowTitle("Invalid Input")
+                    error_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                    error_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                    ret = error_dialog.exec()
+
+                    if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                        dtype = pl.Utf8
+                        self._data = self._data.with_columns([pl.col(column_name).cast(dtype)])
+                    else:
+                        return False
+
+            self._data[row, column] = value
+            self.dataChanged.emit(index, index)
+            command = EditDataCommand(self, row, column, old_value, value)  # Pass row, column to command
+            self.undo_stack.push(command)
+            return True
         return False
 
 
