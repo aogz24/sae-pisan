@@ -3,3 +3,4 @@
 data/*.csv
 .codegpt
 /sae-env
+.codegpt
