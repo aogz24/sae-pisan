@@ -190,7 +190,6 @@ class MainWindow(QMainWindow):
         icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
         self.actionLoad_CSV.setIcon(icon_load)
         self.actionLoad_CSV.setText("Load CSV")
-        self.actionLoad_CSV.triggered.connect(lambda: print("Load CSV clicked"))
         self.toolBar.addAction(self.actionLoad_CSV)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance

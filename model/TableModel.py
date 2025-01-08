@@ -52,6 +52,8 @@ class TableModel(QtCore.QAbstractTableModel):
             if dtype == pl.Float64:
                 try:
                     if isinstance(value, str):
+                        if value.count(',') == 1 and value.replace(',', '').isdigit():
+                            value = value.replace(',', '.')
                         value = float(value)
                 except ValueError:
                     error_dialog = QtWidgets.QMessageBox()
