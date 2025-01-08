@@ -24,7 +24,7 @@ def main():
     controller = FileController(model1, model2, view)
 
     # icon aplication
-    view.setWindowIcon(QIcon('resources/icons/icon.svg'))
+    view.setWindowIcon(QIcon('assets/icon.svg'))
     # Tampilkan window utama
     view.show()
 

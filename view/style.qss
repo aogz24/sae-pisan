@@ -1,0 +1,48 @@
+QMainWindow {
+    background-color: #EAEAEA; /* light-gray */
+}
+
+QTabWidget::pane {
+    background: #FFFFFF; /* white */
+}
+
+QTabBar::tab {
+    background: #BFBEBE; /* secondary-gray */
+    color: #5A5759; /* primary-gray */
+    padding: 10px;
+}
+
+QTabBar::tab:selected {
+    background: #95C843; /* primary-green */
+    color: #FFFFFF; /* white */
+}
+
+QToolBar {
+    background: #EAEAEA; /* light-gray */
+}
+
+QMenuBar {
+    background-color: #2BA3E2; /* primary-blue */
+    color: white;
+}
+
+QMenuBar::item {
+    background-color: #2BA3E2; /* primary-blue */
+    color: white;
+}
+
+QMenuBar::item:selected {
+    background-color: #005999; /* darker blue */
+}
+
+QTableView {
+    background-color: #FFFFFF; /* white */
+    gridline-color: #BFBEBE; /* secondary-gray */
+    color: #5A5759; /* primary-gray */
+}
+
+QTableView::item:selected {
+    background-color: #95C843; /* primary-green */
+    color: #FFFFFF; /* white */
+}
+
