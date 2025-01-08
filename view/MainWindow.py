@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
     QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar,
 )
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QModelIndex, QItemSelectionModel 
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence, QIcon
 import polars as pl
 from model.TableModel import TableModel
@@ -212,6 +212,27 @@ class MainWindow(QMainWindow):
         self.actionRedo.setText("Redo")
         self.actionRedo.triggered.connect(self.redo_action)
         self.toolBar.addAction(self.actionRedo)
+        
+        # Shortcuts for "Go to Start/End Row/Column"
+        self.go_to_start_row_action = QAction(self)
+        self.go_to_start_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Up))
+        self.go_to_start_row_action.triggered.connect(self.go_to_start_row)
+        self.addAction(self.go_to_start_row_action)
+
+        self.go_to_end_row_action = QAction(self)
+        self.go_to_end_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Down))
+        self.go_to_end_row_action.triggered.connect(self.go_to_end_row)
+        self.addAction(self.go_to_end_row_action)
+
+        self.go_to_start_column_action = QAction(self)
+        self.go_to_start_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Left))
+        self.go_to_start_column_action.triggered.connect(self.go_to_start_column)
+        self.addAction(self.go_to_start_column_action)
+
+        self.go_to_end_column_action = QAction(self)
+        self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
+        self.go_to_end_column_action.triggered.connect(self.go_to_end_column)
+        self.addAction(self.go_to_end_column_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)
@@ -307,3 +328,60 @@ class MainWindow(QMainWindow):
                 rows[index.row()] = []
             rows[index.row()].append(index)
         return [rows[row] for row in sorted(rows)]
+    
+    def go_to_start_row(self):
+        """Move the selection to the start row while keeping the column the same."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            start_col = selection[0].column()
+            self.spreadsheet.setCurrentIndex(self.model1.index(0, start_col))
+            self.spreadsheet.selectionModel().select(self.model1.index(0, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+
+    def go_to_end_row(self):
+        """Move the selection to the end row while keeping the column the same."""
+        if self.tab_widget.currentIndex() == 0:
+            selection = self.spreadsheet.selectionModel().selectedIndexes()
+            if selection:
+                start_col = selection[0].column()
+                end_row = self.model1.rowCount(QModelIndex()) - 1
+                self.spreadsheet.setCurrentIndex(self.model1.index(end_row, start_col))
+                self.spreadsheet.selectionModel().select(self.model1.index(end_row, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+        elif self.tab_widget.currentIndex() == 1:
+            selection = self.table_view2.selectionModel().selectedIndexes()
+            if selection:
+                start_col = selection[0].column()
+                end_row = self.model2.rowCount(QModelIndex()) - 1
+                self.table_view2.setCurrentIndex(self.model2.index(end_row, start_col))
+                self.table_view2.selectionModel().select(self.model2.index(end_row, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+
+    def go_to_start_column(self):
+        """Move the selection to the start column while keeping the row the same."""
+        if self.tab_widget.currentIndex() == 0:
+            selection = self.spreadsheet.selectionModel().selectedIndexes()
+            if selection:
+                start_row = selection[0].row()
+                self.spreadsheet.setCurrentIndex(self.model1.index(start_row, 0))
+                self.spreadsheet.selectionModel().select(self.model1.index(start_row, 0), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+        elif self.tab_widget.currentIndex() == 1:
+            selection = self.table_view2.selectionModel().selectedIndexes()
+            if selection:
+                start_row = selection[0].row()
+                self.table_view2.setCurrentIndex(self.model2.index(start_row, 0))
+                self.table_view2.selectionModel().select(self.model2.index(start_row, 0), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+
+    def go_to_end_column(self):
+        """Move the selection to the end column while keeping the row the same."""
+        if self.tab_widget.currentIndex() == 0:
+            selection = self.spreadsheet.selectionModel().selectedIndexes()
+            if selection:
+                start_row = selection[0].row()
+                end_col = self.model1.columnCount(self.model1.index(0, 0)) - 1
+                self.spreadsheet.setCurrentIndex(self.model1.index(start_row, end_col))
+                self.spreadsheet.selectionModel().select(self.model1.index(start_row, end_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
+        elif self.tab_widget.currentIndex() == 1:
+            selection = self.table_view2.selectionModel().selectedIndexes()
+            if selection:
+                start_row = selection[0].row()
+                end_col = self.model2.columnCount(self.model2.index(0, 0)) - 1
+                self.table_view2.setCurrentIndex(self.model2.index(start_row, end_col))
+                self.table_view2.selectionModel().select(self.model2.index(start_row, end_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
