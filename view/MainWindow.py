@@ -32,6 +32,26 @@ class MainWindow(QMainWindow):
         # Inisialisasi UI
         self.init_ui()
         self.showMaximized()
+    
+    def show_context_menu(self, position):
+        context_menu = QMenu(self)
+
+        add_row_before_action = QAction("Add Row Before", self)
+        add_row_before_action.triggered.connect(self.show_add_row_before_dialog)
+        context_menu.addAction(add_row_before_action)
+
+        add_row_after_action = QAction("Add Row After", self)
+        add_row_after_action.triggered.connect(self.show_add_row_after_dialog)
+        context_menu.addAction(add_row_after_action)
+
+        add_column_before_action = QAction("Add Column Before", self)
+        add_column_before_action.triggered.connect(self.show_add_column_before_dialog)
+        context_menu.addAction(add_column_before_action)
+
+        add_column_after_action = QAction("Add Column After", self)
+        add_column_after_action.triggered.connect(self.show_add_column_after_dialog)
+        context_menu.addAction(add_column_after_action)
+        context_menu.exec(self.spreadsheet.viewport().mapToGlobal(position))
 
     def init_ui(self):
         # Membuat QTabWidget untuk menampilkan dua sheet secara vertikal
@@ -41,6 +61,8 @@ class MainWindow(QMainWindow):
         # Membuat widget untuk tab pertama (Sheet 1) dengan SpreadsheetWidget
         self.tab1 = QWidget()
         self.spreadsheet = QTableView(self.tab1)
+        self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.spreadsheet.customContextMenuRequested.connect(self.show_context_menu)
         self.spreadsheet.setModel(self.model1)
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
