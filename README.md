@@ -1,17 +1,16 @@
-
 ## Panduan Instalasi
-
 
 1. Install library yang dipakai dengan
 
 ```bash
 pip install pandas Rpython pyqt6
 ```
+
 2. Untuk menjalankan program menggunakan perintah
+
 ```bash
 python3 __main__.py
 ```
-
 
 ## Penulisan Commit 💬
 
@@ -27,14 +26,14 @@ Penulisan pesan commit menggunakan standar dari [European Commission](https://ec
 
 Type yang diizinkan untuk digunakan dalam pesan commit antara lain:
 
--   **feat**: Menambahkan fitur baru
--   **fix**: Memperbaiki bug
--   **docs**: Memperbaiki dokumentasi
--   **style**: Merapikan gaya penulisan kode
--   **refactor**: Mengefisienkan penulisan kode yang tidak menambah fitur
--   **perf**: Mengefisienkan performa
--   **test**: Menambahkan kode testing
--   **chore**: Mengubah konfigurasi tools dan dependency
+- **feat**: Menambahkan fitur baru
+- **fix**: Memperbaiki bug
+- **docs**: Memperbaiki dokumentasi
+- **style**: Merapikan gaya penulisan kode
+- **refactor**: Mengefisienkan penulisan kode yang tidak menambah fitur
+- **perf**: Mengefisienkan performa
+- **test**: Menambahkan kode testing
+- **chore**: Mengubah konfigurasi tools dan dependency
 
 ### Scope
 
@@ -139,3 +138,16 @@ Dalam hal standardisasi kerapian dalam hal penulisan, diharapkan untuk menginsta
 
 Selengkapnya mengenai format penulisan dapat dilihat [disini](https://github.com/airbnb/javascript?tab=readme-ov-file#naming-conventions)
 
+## Panduan membuat executable (.exe)
+
+1. install pyinstaller
+
+```
+pip install pyinstaller
+```
+
+2. jalankan perintah
+
+```
+pyinstaller --windowed main.py --exclude-module PySide6 --exclude-module torch --exclude-module cuda --add-data "assets;assets" --add-data "view;view" -i ./assets/icon.ico
+```

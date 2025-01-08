@@ -6,6 +6,7 @@ from view.MainWindow import MainWindow
 from model.TableModel import TableModel
 from view.CsvDialogOption import CSVOptionsDialog
 import polars as pl
+import os
 
 def main():
     app = QApplication(sys.argv)
@@ -22,13 +23,18 @@ def main():
     model2 = TableModel(data2)
     view = MainWindow()  # View (Tampilan utama)
     controller = FileController(model1, model2, view)
+    
+    def load_stylesheet(self):
+        # Gunakan jalur relatif untuk mengakses style.qss
+        stylesheet_path = os.path.join(os.path.dirname(__file__), 'view', 'style.qss')
+        with open(stylesheet_path, 'r') as file:
+            return file.read()
 
     # icon aplication
-    view.setWindowIcon(QIcon('assets/icon.svg'))
+    view.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'icon.svg')))
     # Tampilkan window utama
     view.show()
-    with open("view/style.qss", "r") as file:
-        app.setStyleSheet(file.read())
+    view.setStyleSheet(load_stylesheet(view))
 
     # Mulai aplikasi
     sys.exit(app.exec())

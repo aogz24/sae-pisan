@@ -7,6 +7,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence
 import polars as pl
 from model.TableModel import TableModel
 import matplotlib.pyplot as plt
+import os
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class MainWindow(QMainWindow):
@@ -186,27 +187,27 @@ class MainWindow(QMainWindow):
 
         # Actions for Toolbar
         self.actionLoad_CSV = QAction(self)  # Menggunakan self untuk referensi instance
-        icon_load = QIcon("assets/open.svg")
+        icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
         self.actionLoad_CSV.setIcon(icon_load)
         self.actionLoad_CSV.setText("Load CSV")
         self.actionLoad_CSV.triggered.connect(lambda: print("Load CSV clicked"))
         self.toolBar.addAction(self.actionLoad_CSV)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
-        icon_save = QIcon("assets/save.svg")
+        icon_save = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'save.svg'))
         self.actionSave_Data.setIcon(icon_save)
         self.actionSave_Data.setText("Save Data")
         self.toolBar.addAction(self.actionSave_Data)
 
         self.actionUndo = QAction(self)
-        icon_undo = QIcon("assets/undo.svg")
+        icon_undo = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'undo.svg'))
         self.actionUndo.setIcon(icon_undo)
         self.actionUndo.setText("Undo")
         self.actionUndo.triggered.connect(self.undo_action)
         self.toolBar.addAction(self.actionUndo)
 
         self.actionRedo = QAction(self)
-        icon_redo = QIcon("assets/redo.svg")
+        icon_redo = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'redo.svg'))
         self.actionRedo.setIcon(icon_redo)
         self.actionRedo.setText("Redo")
         self.actionRedo.triggered.connect(self.redo_action)
@@ -219,7 +220,7 @@ class MainWindow(QMainWindow):
 
         # Add "Setting" button to the right
         self.actionSetting = QAction(self)
-        icon_setting = QIcon("assets/setting.svg")
+        icon_setting = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'setting.svg'))
         self.actionSetting.setIcon(icon_setting)
         self.actionSetting.setText("Setting")
         self.toolBar.addAction(self.actionSetting)

@@ -4,3 +4,5 @@ data/*.csv
 .codegpt
 /sae-env
 .codegpt
+/build
+/dist
