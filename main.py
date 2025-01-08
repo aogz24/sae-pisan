@@ -27,9 +27,12 @@ def main():
     view.setWindowIcon(QIcon('assets/icon.svg'))
     # Tampilkan window utama
     view.show()
+    with open("view/style.qss", "r") as file:
+        app.setStyleSheet(file.read())
 
     # Mulai aplikasi
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
