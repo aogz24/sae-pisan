@@ -149,5 +149,5 @@ pip install pyinstaller
 2. jalankan perintah
 
 ```
-pyinstaller --windowed main.py --exclude-module PySide6 --exclude-module torch --exclude-module cuda --add-data "assets;assets" --add-data "view;view" -i ./assets/icon.ico
+pyinstaller --windowed main.py --exclude-module PySide6 --exclude-module torch --exclude-module cuda --add-data "assets;assets" -i ./assets/icon.ico
 ```

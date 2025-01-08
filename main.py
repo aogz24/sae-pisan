@@ -26,12 +26,12 @@ def main():
     
     def load_stylesheet(self):
         # Gunakan jalur relatif untuk mengakses style.qss
-        stylesheet_path = os.path.join(os.path.dirname(__file__), 'view', 'style.qss')
+        stylesheet_path = os.path.join(os.path.dirname(__file__), 'assets','style', 'style.qss')
         with open(stylesheet_path, 'r') as file:
             return file.read()
 
     # icon aplication
-    view.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'icon.svg')))
+    view.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), 'assets', 'icon.svg')))
     # Tampilkan window utama
     view.show()
     view.setStyleSheet(load_stylesheet(view))

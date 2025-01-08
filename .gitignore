@@ -6,3 +6,4 @@ data/*.csv
 .codegpt
 /build
 /dist
+.codegpt
