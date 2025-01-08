@@ -15,6 +15,8 @@ class FileController:
         self.view.load_action.triggered.connect(self.load_csv)
         self.view.save_action.triggered.connect(self.save_data)
         self.view.save_data_output_action.triggered.connect(self.save_data_output)
+        self.view.actionLoad_CSV.triggered.connect(self.load_csv)
+        self.view.actionSave_Data.triggered.connect(self.save_data)  
 
     def load_csv(self):
         """Muat file CSV ke model pertama."""

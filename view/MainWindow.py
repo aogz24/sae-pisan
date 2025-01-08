@@ -189,6 +189,7 @@ class MainWindow(QMainWindow):
         icon_load = QIcon("assets/open.svg")
         self.actionLoad_CSV.setIcon(icon_load)
         self.actionLoad_CSV.setText("Load CSV")
+        self.actionLoad_CSV.triggered.connect(lambda: print("Load CSV clicked"))
         self.toolBar.addAction(self.actionLoad_CSV)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
@@ -201,12 +202,14 @@ class MainWindow(QMainWindow):
         icon_undo = QIcon("assets/undo.svg")
         self.actionUndo.setIcon(icon_undo)
         self.actionUndo.setText("Undo")
+        self.actionUndo.triggered.connect(self.undo_action)
         self.toolBar.addAction(self.actionUndo)
 
         self.actionRedo = QAction(self)
         icon_redo = QIcon("assets/redo.svg")
         self.actionRedo.setIcon(icon_redo)
         self.actionRedo.setText("Redo")
+        self.actionRedo.triggered.connect(self.redo_action)
         self.toolBar.addAction(self.actionRedo)
 
         # Add spacer to push following items to the right
