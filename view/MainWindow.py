@@ -100,15 +100,15 @@ class MainWindow(QMainWindow):
         action_normality_test = QAction("Normality Test", self)
         action_normality_test.triggered.connect(lambda: print("Exploration -> Normality Test selected"))
         action_scatterplot = QAction("Scatterplot", self)
-        action_scatterplot.triggered.connect(self.plot_scatterplot)
+        action_scatterplot.triggered.connect(lambda: print("Exploration -> Scatterplot Test selected"))
         action_correlation_matrix = QAction("Correlation Matrix", self)
-        action_correlation_matrix.triggered.connect(self.plot_correlation_matrix)
+        action_correlation_matrix.triggered.connect(lambda: print("Exploration -> Matriks Korelasi Test selected"))
         action_box_plot = QAction("Box Plot", self)
-        action_box_plot.triggered.connect(self.plot_box_plot)
+        action_box_plot.triggered.connect(lambda: print("Exploration -> Box plot Test selected"))
         action_line_plot = QAction("Line Plot", self)
-        action_line_plot.triggered.connect(self.plot_line_plot)
+        action_line_plot.triggered.connect(lambda: print("Exploration -> Line Plot Test selected"))
         action_histogram = QAction("Histogram", self)
-        action_histogram.triggered.connect(self.plot_histogram)
+        action_histogram.triggered.connect(lambda: print("Exploration -> Histogram Test selected"))
         action_multicollinearity = QAction("Multicollinearity", self)
         action_multicollinearity.triggered.connect(lambda: print("Exploration -> Multicollinearity selected"))
         action_variable_selection = QAction("Variable Selection", self)
@@ -186,25 +186,25 @@ class MainWindow(QMainWindow):
 
         # Actions for Toolbar
         self.actionLoad_CSV = QAction(self)  # Menggunakan self untuk referensi instance
-        icon_load = QIcon("resources/icons/open.svg")
+        icon_load = QIcon("assets/open.svg")
         self.actionLoad_CSV.setIcon(icon_load)
         self.actionLoad_CSV.setText("Load CSV")
         self.toolBar.addAction(self.actionLoad_CSV)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
-        icon_save = QIcon("resources/icons/save.svg")
+        icon_save = QIcon("assets/save.svg")
         self.actionSave_Data.setIcon(icon_save)
         self.actionSave_Data.setText("Save Data")
         self.toolBar.addAction(self.actionSave_Data)
 
         self.actionUndo = QAction(self)
-        icon_undo = QIcon("resources/icons/undo.svg")
+        icon_undo = QIcon("assets/undo.svg")
         self.actionUndo.setIcon(icon_undo)
         self.actionUndo.setText("Undo")
         self.toolBar.addAction(self.actionUndo)
 
         self.actionRedo = QAction(self)
-        icon_redo = QIcon("resources/icons/redo.svg")
+        icon_redo = QIcon("assets/redo.svg")
         self.actionRedo.setIcon(icon_redo)
         self.actionRedo.setText("Redo")
         self.toolBar.addAction(self.actionRedo)
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
 
         # Add "Setting" button to the right
         self.actionSetting = QAction(self)
-        icon_setting = QIcon("resources/icons/setting.svg")
+        icon_setting = QIcon("assets/setting.svg")
         self.actionSetting.setIcon(icon_setting)
         self.actionSetting.setText("Setting")
         self.toolBar.addAction(self.actionSetting)
