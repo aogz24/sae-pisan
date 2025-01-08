@@ -233,6 +233,12 @@ class MainWindow(QMainWindow):
         self.go_to_end_column_action.triggered.connect(self.go_to_end_column)
         self.addAction(self.go_to_end_column_action)
 
+        # Shortcut for deleting selected rows
+        self.delete_selected_row_action = QAction(self)
+        self.delete_selected_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
+        self.delete_selected_row_action.triggered.connect(self.confirm_delete_selected_rows)
+        self.addAction(self.delete_selected_row_action)
+
         # Add spacer to push following items to the right
         spacer = QWidget(self)
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -447,3 +453,35 @@ class MainWindow(QMainWindow):
         if ok:
             for _ in range(num_rows):
                 self.add_column_after(num_rows)
+    
+    def delete_selected_rows(self):
+        """Delete selected rows in the spreadsheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            rows = sorted(set(index.row() for index in selection), reverse=True)
+            for row in rows:
+                self.model1.deleteRow(self.model1.index(row, 0))
+            self.update_table(1, self.model1)
+
+    def delete_selected_columns(self):
+        """Delete selected columns in the spreadsheet."""
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            columns = sorted(set(index.column() for index in selection), reverse=True)
+            for column in columns:
+                self.model1.deleteColumn(self.model1.index(0, column))
+            self.update_table(1, self.model1)
+    
+    def confirm_delete_selected_rows(self):
+        """Show a confirmation dialog before deleting selected rows."""
+        reply = QMessageBox.question(self, 'Confirm Delete', 'Are you sure you want to delete the selected rows?',
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self.delete_selected_rows()
+
+    def confirm_delete_selected_columns(self):
+        """Show a confirmation dialog before deleting selected columns."""
+        reply = QMessageBox.question(self, 'Confirm Delete', 'Are you sure you want to delete the selected columns?',
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self.delete_selected_columns()

@@ -174,3 +174,18 @@ class TableModel(QtCore.QAbstractTableModel):
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
     
+    def deleteRow(self, index):
+        if index.isValid():
+            row = index.row()
+            self.beginRemoveRows(QtCore.QModelIndex(), row, row)
+            self._data = pl.concat([self._data[:row], self._data[row + 1:]])
+            self.loaded_rows -= 1
+            self.endRemoveRows()
+
+    def deleteColumn(self, index):
+        if index.isValid():
+            column = index.column()
+            self.beginResetModel()
+            self._data = self._data.drop(self._data.columns[column])
+            self.endResetModel()
+    
