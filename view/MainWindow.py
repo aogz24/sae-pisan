@@ -78,11 +78,14 @@ class MainWindow(QMainWindow):
         context_menu.exec(self.spreadsheet.viewport().mapToGlobal(position))
 
     def init_ui(self):
-        # Membuat QTabWidget untuk menampilkan dua sheet secara vertikal
-        self.tab_widget = QTabWidget(self)
-        self.tab_widget.setTabPosition(QTabWidget.TabPosition.South)  # Set tabs di bawah
+        # Membuat splitter utama untuk membagi halaman menjadi dua bagian (kiri dan kanan)
+        self.splitter_main = QSplitter(Qt.Orientation.Horizontal, self)
 
-        # Membuat widget untuk tab pertama (Sheet 1) dengan SpreadsheetWidget
+        # Bagian kiri: QTabWidget untuk dua sheet
+        self.tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
+        self.tab_widget.setTabPosition(QTabWidget.TabPosition.South)
+
+        # Tab pertama (Sheet 1)
         self.tab1 = QWidget()
         self.spreadsheet = QTableView(self.tab1)
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -91,34 +94,39 @@ class MainWindow(QMainWindow):
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
 
-        # Membuat widget untuk tab kedua (Sheet 2) dengan QSplitter horizontal
+        # Tab kedua (Sheet 2)
         self.tab2 = QWidget()
-        self.splitter = QSplitter(Qt.Orientation.Horizontal, self.tab2)
-
-        # Menambahkan tabel ke splitter
-        self.table_view2 = QTableView(self.splitter)
+        self.table_view2 = QTableView(self.tab2)
         self.table_view2.setModel(self.model2)
         self.table_view2.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        # Menambahkan widget untuk grafik ke splitter dengan QScrollArea
-        self.scroll_area = QScrollArea(self.splitter)
-        self.scroll_area.setWidgetResizable(True)
-        self.graph_container = QWidget()
-        self.graph_layout = QVBoxLayout(self.graph_container)
-        self.graph_container.setLayout(self.graph_layout)
-        self.scroll_area.setWidget(self.graph_container)
-
-        # Layout untuk tab kedua
         tab2_layout = QVBoxLayout(self.tab2)
-        tab2_layout.addWidget(self.splitter)
+        tab2_layout.addWidget(self.table_view2)
 
-        # Menambahkan tab ke tab widget
+        # Menambahkan tab ke QTabWidget
         self.tab_widget.addTab(self.tab1, "Data Editor")
         self.tab_widget.addTab(self.tab2, "Output Data")
 
+        # Bagian kanan: QTabWidget untuk output
+        self.output_tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
+        self.output_tab_widget.setTabPosition(QTabWidget.TabPosition.South)
+
+        # Tab untuk output
+        self.output_tab = QWidget()
+        self.scroll_area = QScrollArea(self.output_tab)
+        self.scroll_area.setWidgetResizable(True)
+        self.output_container = QWidget()
+        self.output_layout = QVBoxLayout(self.output_container)
+        self.output_container.setLayout(self.output_layout)
+        self.scroll_area.setWidget(self.output_container)
+        output_tab_layout = QVBoxLayout(self.output_tab)
+        output_tab_layout.addWidget(self.scroll_area)
+
+        # Menambahkan tab ke QTabWidget
+        self.output_tab_widget.addTab(self.output_tab, "Output")
+
         # Membuat layout utama
         layout = QVBoxLayout()
-        layout.addWidget(self.tab_widget)
+        layout.addWidget(self.splitter_main)
 
         # Widget utama dan layout
         central_widget = QWidget(self)
