@@ -8,6 +8,12 @@ import polars as pl
 from model.TableModel import TableModel
 import matplotlib.pyplot as plt
 import os
+from service.AddRow import *
+from service.AddColumn import *
+from service.DeleteRow import *
+from service.DeleteColumn import *
+from service.GoToRow import *
+from service.GoToColumn import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class MainWindow(QMainWindow):
@@ -40,32 +46,32 @@ class MainWindow(QMainWindow):
         has_selection = bool(selection)
 
         add_row_before_action = QAction("Add Row Before", self)
-        add_row_before_action.triggered.connect(self.show_add_row_before_dialog)
+        add_row_before_action.triggered.connect(lambda: show_add_row_before_dialog(self))
         add_row_before_action.setEnabled(has_selection)
         context_menu.addAction(add_row_before_action)
 
         add_row_after_action = QAction("Add Row After", self)
-        add_row_after_action.triggered.connect(self.show_add_row_after_dialog)
+        add_row_after_action.triggered.connect(lambda: show_add_row_after_dialog(self))
         add_row_after_action.setEnabled(has_selection)
         context_menu.addAction(add_row_after_action)
 
         add_column_before_action = QAction("Add Column Before", self)
-        add_column_before_action.triggered.connect(self.show_add_column_before_dialog)
+        add_column_before_action.triggered.connect(lambda: show_add_column_before_dialog(self))
         add_column_before_action.setEnabled(has_selection)
         context_menu.addAction(add_column_before_action)
 
         add_column_after_action = QAction("Add Column After", self)
-        add_column_after_action.triggered.connect(self.show_add_column_after_dialog)
+        add_column_after_action.triggered.connect(lambda: show_add_column_after_dialog(self))
         add_column_after_action.setEnabled(has_selection)
         context_menu.addAction(add_column_after_action)
 
         delete_row_action = QAction("Delete Row", self)
-        delete_row_action.triggered.connect(self.confirm_delete_selected_rows)
+        delete_row_action.triggered.connect(lambda : confirm_delete_selected_rows(self))
         delete_row_action.setEnabled(has_selection)
         context_menu.addAction(delete_row_action)
 
         delete_column_action = QAction("Delete Column", self)
-        delete_column_action.triggered.connect(self.confirm_delete_selected_columns)
+        delete_column_action.triggered.connect(lambda : confirm_delete_selected_columns(self))
         delete_column_action.setEnabled(has_selection)
         context_menu.addAction(delete_column_action)
         
@@ -255,29 +261,29 @@ class MainWindow(QMainWindow):
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
         self.go_to_start_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Up))
-        self.go_to_start_row_action.triggered.connect(self.go_to_start_row)
+        self.go_to_start_row_action.triggered.connect(lambda : go_to_start_row(self))
         self.addAction(self.go_to_start_row_action)
 
         self.go_to_end_row_action = QAction(self)
         self.go_to_end_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Down))
-        self.go_to_end_row_action.triggered.connect(self.go_to_end_row)
+        self.go_to_end_row_action.triggered.connect(lambda : go_to_end_row(self))
         self.addAction(self.go_to_end_row_action)
 
         self.go_to_start_column_action = QAction(self)
         self.go_to_start_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Left))
-        self.go_to_start_column_action.triggered.connect(self.go_to_start_column)
+        self.go_to_start_column_action.triggered.connect(lambda : go_to_start_column(self))
         self.addAction(self.go_to_start_column_action)
 
         self.go_to_end_column_action = QAction(self)
         self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
-        self.go_to_end_column_action.triggered.connect(self.go_to_end_column)
+        self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
 
-        # Shortcut for deleting selected rows
-        self.delete_selected_row_action = QAction(self)
-        self.delete_selected_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
-        self.delete_selected_row_action.triggered.connect(self.confirm_delete_selected_rows)
-        self.addAction(self.delete_selected_row_action)
+        # # Shortcut for deleting selected rows
+        # self.delete_selected_row_action = QAction(self)
+        # self.delete_selected_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
+        # self.delete_selected_row_action.triggered.connect(self.confirm_delete_selected_rows)
+        # self.addAction(self.delete_selected_row_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)
@@ -303,41 +309,6 @@ class MainWindow(QMainWindow):
             self.data1 = pl.concat([self.data1, new_row])
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
-    
-    def add_row_before(self, num_rows):
-        """Add rows before the selected row in the specified sheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            selected_row = selection[0].row()
-            self.model1.addRowsBefore(self.model1.index(selected_row, 0), num_rows)
-            self.update_table(1, self.model1)
-    
-    def add_row_after(self, num_rows):
-        """Add rows after the selected row in the specified sheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            selected_row = selection[0].row()
-            self.model1.addRowsAfter(self.model1.index(selected_row, 0), num_rows)
-            self.update_table(1, self.model1)
-    
-    def add_column_before(self, num_columns):
-        """Add columns before the selected column in the specified sheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            selected_column = selection[0].column()
-            self.model1.addColumnBefore(self.model1.index(0, selected_column), num_columns)
-            self.update_table(1, self.model1)
-
-    def add_column_after(self, num_columns):
-        """Add columns after the selected column in the specified sheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            selected_column = selection[0].column()
-            for _ in range(num_columns):
-                new_column_name = f"Column {self.data1.shape[1] + 1}"
-                new_column = pl.DataFrame({new_column_name: [""] * self.data1.shape[0]})
-                self.data1 = pl.concat([self.data1[:, :selected_column + 1], new_column, self.data1[:, selected_column + 1:]], how="horizontal")
-                self.update_table(1, TableModel(self.data1))
     
     def add_column(self, sheet_number):
         """Sinkronisasi data ketika kolom baru ditambahkan di SpreadsheetWidget."""
@@ -408,120 +379,4 @@ class MainWindow(QMainWindow):
                 rows[index.row()] = []
             rows[index.row()].append(index)
         return [rows[row] for row in sorted(rows)]
-    
-    def go_to_start_row(self):
-        """Move the selection to the start row while keeping the column the same."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            start_col = selection[0].column()
-            self.spreadsheet.setCurrentIndex(self.model1.index(0, start_col))
-            self.spreadsheet.selectionModel().select(self.model1.index(0, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
 
-    def go_to_end_row(self):
-        """Move the selection to the end row while keeping the column the same."""
-        if self.tab_widget.currentIndex() == 0:
-            selection = self.spreadsheet.selectionModel().selectedIndexes()
-            if selection:
-                start_col = selection[0].column()
-                end_row = self.model1.rowCount(QModelIndex()) - 1
-                self.spreadsheet.setCurrentIndex(self.model1.index(end_row, start_col))
-                self.spreadsheet.selectionModel().select(self.model1.index(end_row, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-        elif self.tab_widget.currentIndex() == 1:
-            selection = self.table_view2.selectionModel().selectedIndexes()
-            if selection:
-                start_col = selection[0].column()
-                end_row = self.model2.rowCount(QModelIndex()) - 1
-                self.table_view2.setCurrentIndex(self.model2.index(end_row, start_col))
-                self.table_view2.selectionModel().select(self.model2.index(end_row, start_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-
-    def go_to_start_column(self):
-        """Move the selection to the start column while keeping the row the same."""
-        if self.tab_widget.currentIndex() == 0:
-            selection = self.spreadsheet.selectionModel().selectedIndexes()
-            if selection:
-                start_row = selection[0].row()
-                self.spreadsheet.setCurrentIndex(self.model1.index(start_row, 0))
-                self.spreadsheet.selectionModel().select(self.model1.index(start_row, 0), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-        elif self.tab_widget.currentIndex() == 1:
-            selection = self.table_view2.selectionModel().selectedIndexes()
-            if selection:
-                start_row = selection[0].row()
-                self.table_view2.setCurrentIndex(self.model2.index(start_row, 0))
-                self.table_view2.selectionModel().select(self.model2.index(start_row, 0), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-
-    def go_to_end_column(self):
-        """Move the selection to the end column while keeping the row the same."""
-        if self.tab_widget.currentIndex() == 0:
-            selection = self.spreadsheet.selectionModel().selectedIndexes()
-            if selection:
-                start_row = selection[0].row()
-                end_col = self.model1.columnCount(self.model1.index(0, 0)) - 1
-                self.spreadsheet.setCurrentIndex(self.model1.index(start_row, end_col))
-                self.spreadsheet.selectionModel().select(self.model1.index(start_row, end_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-        elif self.tab_widget.currentIndex() == 1:
-            selection = self.table_view2.selectionModel().selectedIndexes()
-            if selection:
-                start_row = selection[0].row()
-                end_col = self.model2.columnCount(self.model2.index(0, 0)) - 1
-                self.table_view2.setCurrentIndex(self.model2.index(start_row, end_col))
-                self.table_view2.selectionModel().select(self.model2.index(start_row, end_col), QItemSelectionModel.SelectionFlag.ClearAndSelect)
-                
-    def show_add_row_before_dialog(self):
-        """Show a dialog to select which sheet to add a row to."""
-        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
-        if ok:
-            for _ in range(num_rows):
-                self.add_row_before(num_rows)
-    
-    def show_add_row_after_dialog(self):
-        """Show a dialog to select which sheet to add a row to."""
-        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
-        if ok:
-            for _ in range(num_rows):
-                self.add_row_after(num_rows)
-    
-    def show_add_column_before_dialog(self):
-        """Show a dialog to select which sheet to add a row to."""
-        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
-        if ok:
-            for _ in range(num_rows):
-                self.add_column_before(num_rows)
-    
-    def show_add_column_after_dialog(self):
-        """Show a dialog to select which sheet to add a row to."""
-        num_rows, ok = QInputDialog.getInt(self, "Add Row", "Enter number of rows to add:", 1, 1)
-        if ok:
-            for _ in range(num_rows):
-                self.add_column_after(num_rows)
-    
-    def delete_selected_rows(self):
-        """Delete selected rows in the spreadsheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            rows = sorted(set(index.row() for index in selection), reverse=True)
-            for row in rows:
-                self.model1.deleteRow(self.model1.index(row, 0))
-            self.update_table(1, self.model1)
-
-    def delete_selected_columns(self):
-        """Delete selected columns in the spreadsheet."""
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
-            columns = sorted(set(index.column() for index in selection), reverse=True)
-            for column in columns:
-                self.model1.deleteColumn(self.model1.index(0, column))
-            self.update_table(1, self.model1)
-    
-    def confirm_delete_selected_rows(self):
-        """Show a confirmation dialog before deleting selected rows."""
-        reply = QMessageBox.question(self, 'Confirm Delete', 'Are you sure you want to delete the selected rows?',
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            self.delete_selected_rows()
-
-    def confirm_delete_selected_columns(self):
-        """Show a confirmation dialog before deleting selected columns."""
-        reply = QMessageBox.question(self, 'Confirm Delete', 'Are you sure you want to delete the selected columns?',
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            self.delete_selected_columns()
