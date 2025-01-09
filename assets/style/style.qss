@@ -1,26 +1,34 @@
+/* Main window */
 QMainWindow {
     background-color: #EAEAEA; /* light-gray */
 }
 
+/* Tab widget */
 QTabWidget::pane {
     background: #FFFFFF; /* white */
+    border: 1px solid #BFBEBE; /* secondary-gray */
 }
 
 QTabBar::tab {
     background: #BFBEBE; /* secondary-gray */
     color: #5A5759; /* primary-gray */
     padding: 10px;
+    border: 1px solid #EAEAEA; /* light-gray */
 }
 
 QTabBar::tab:selected {
     background: #95C843; /* primary-green */
     color: #FFFFFF; /* white */
+    font-weight: bold;
 }
 
+/* Toolbar */
 QToolBar {
     background: #EAEAEA; /* light-gray */
+    border: none;
 }
 
+/* Menu bar */
 QMenuBar {
     background-color: #2BA3E2; /* primary-blue */
     color: white;
@@ -29,20 +37,53 @@ QMenuBar {
 QMenuBar::item {
     background-color: #2BA3E2; /* primary-blue */
     color: white;
+    padding: 5px 10px;
 }
 
 QMenuBar::item:selected {
     background-color: #005999; /* darker blue */
 }
 
+/* Table view */
 QTableView {
     background-color: #FFFFFF; /* white */
     gridline-color: #BFBEBE; /* secondary-gray */
     color: #5A5759; /* primary-gray */
+    selection-background-color: #A1D9F3; /* soft blue */
+    selection-color: #FFFFFF; /* white */
+    border: 1px solid #EAEAEA; /* light-gray */
 }
 
 QTableView::item:selected {
-    background-color: #95C843; /* primary-green */
+    background-color: #A1D9F3; /* soft blue */
     color: #FFFFFF; /* white */
 }
 
+
+QHeaderView::section {
+    background-color: #BFBEBE; /* secondary-gray */
+    color: #5A5759; /* primary-gray */
+    border: 1px solid #EAEAEA; /* light-gray */
+    padding: 5px;
+    font-weight: bold;
+}
+
+QTableCornerButton::section {
+    background-color: #BFBEBE; /* secondary-gray */
+    border: 1px solid #EAEAEA; /* light-gray */
+}
+
+/* Scrollbars */
+QScrollBar:horizontal, QScrollBar:vertical {
+    background: #EAEAEA; /* light-gray */
+    border: 1px solid #BFBEBE; /* secondary-gray */
+}
+
+QScrollBar::handle:horizontal, QScrollBar::handle:vertical {
+    border-radius: 5px;
+    background: #BFBEBE; /* secondary-gray */
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: #BFBEBE; /* secondary-gray */
+}
