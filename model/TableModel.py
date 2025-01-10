@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import QTableWidgetItem
-from PyQt6.QtGui import QUndoCommand
 from PyQt6.QtCore import Qt
 import polars as pl
 from PyQt6 import QtCore, QtGui, QtWidgets
 from service.EditDataCommand import EditDataCommand
+from service.AddRowCommand import AddRowsCommand
+from service.AddColumnCommand import AddColumnCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -28,7 +29,9 @@ class TableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
-                return str(self._data.columns[section])
+                if section < len(self._data.columns):
+                    return str(self._data.columns[section])
+                return ""
             if orientation == Qt.Orientation.Vertical:
                 return str(section + 1)
 
@@ -109,7 +112,6 @@ class TableModel(QtCore.QAbstractTableModel):
             raise ValueError("Data must be a Polars DataFrame")
     
     def get_data(self):
-        print(self._data)
         return self._data
 
     def copy(self, index):
@@ -142,12 +144,15 @@ class TableModel(QtCore.QAbstractTableModel):
     
     def addRowsBefore(self, index, count):
         if index.isValid() and count > 0:
+            print("Adding rows before")
             row = index.row()
             new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count
             self.endInsertRows()
+            command = AddRowsCommand(self, row, new_rows)
+            self.undo_stack.push(command)
 
     def addRowsAfter(self, index, count):
         if index.isValid() and count > 0:
@@ -157,6 +162,8 @@ class TableModel(QtCore.QAbstractTableModel):
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count
             self.endInsertRows()
+            command = AddRowsCommand(self, row, new_rows)
+            self.undo_stack.push(command)
     
     def addColumnBefore(self, index, count):
         if index.isValid() and count > 0:
@@ -165,6 +172,10 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
+            column_names = list(new_columns.keys())  # Extract column names
+            new_columns_data = list(new_columns.values())  # Extract column data
+            command = AddColumnCommand(self, column_names, new_columns_data)
+            self.undo_stack.push(command)
 
     def addColumnAfter(self, index, count):
         if index.isValid() and count > 0:
@@ -173,6 +184,10 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
+            column_names = list(new_columns.keys())
+            new_columns_data = list(new_columns.values())
+            command = AddColumnCommand(self, column_names, new_columns_data)
+            self.undo_stack.push(command)
     
     def deleteRow(self, index):
         if index.isValid():
