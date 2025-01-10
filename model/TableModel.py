@@ -5,7 +5,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from service.command.EditDataCommand import EditDataCommand
 from service.command.AddRowCommand import AddRowsCommand
 from service.command.AddColumnCommand import AddColumnCommand
-from service.command.DeleteRowCommand import DeleteRowCommand
+from service.command.DeleteRowsCommand import DeleteRowsCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -190,15 +190,14 @@ class TableModel(QtCore.QAbstractTableModel):
             command = AddColumnCommand(self, column_names, new_columns_data)
             self.undo_stack.push(command)
     
-    def deleteRow(self, index):
-        if index.isValid():
-            row = index.row()
-            old_row = self._data[row].to_dict(as_series=False)
-            self.beginRemoveRows(QtCore.QModelIndex(), row, row)
-            self._data = pl.concat([self._data[:row], self._data[row + 1:]])
-            self.loaded_rows -= 1
+    def deleteRows(self, start_row, count):
+        if start_row >= 0 and count > 0:
+            old_rows = self._data[start_row:start_row + count].to_dict(as_series=False)
+            self.beginRemoveRows(QtCore.QModelIndex(), start_row, start_row + count - 1)
+            self._data = pl.concat([self._data[:start_row], self._data[start_row + count:]])
+            self.loaded_rows -= count
             self.endRemoveRows()
-            command = DeleteRowCommand(self, row, old_row)
+            command = DeleteRowsCommand(self, start_row, old_rows)
             self.undo_stack.push(command)
 
     def deleteColumn(self, index):
@@ -209,6 +208,4 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = self._data.drop(column_name)
             self.endResetModel()
-            command = DeleteColumnCommand(self, column, column_name, old_column)
-            self.undo_stack.push(command)
     
