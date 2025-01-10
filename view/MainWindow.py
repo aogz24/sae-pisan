@@ -8,12 +8,9 @@ import polars as pl
 from model.TableModel import TableModel
 import matplotlib.pyplot as plt
 import os
-from service.table.AddRow import *
-from service.table.AddColumn import *
-from service.table.DeleteRow import *
-from service.table.DeleteColumn import *
 from service.table.GoToRow import *
 from service.table.GoToColumn import *
+from view.components.MenuContext import show_context_menu
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class MainWindow(QMainWindow):
@@ -38,44 +35,6 @@ class MainWindow(QMainWindow):
         # Inisialisasi UI
         self.init_ui()
         self.showMaximized()
-    
-    def show_context_menu(self, position):
-        context_menu = QMenu(self)
-
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        has_selection = bool(selection)
-
-        add_row_before_action = QAction("Add Row Before", self)
-        add_row_before_action.triggered.connect(lambda: show_add_row_before_dialog(self))
-        add_row_before_action.setEnabled(has_selection)
-        context_menu.addAction(add_row_before_action)
-
-        add_row_after_action = QAction("Add Row After", self)
-        add_row_after_action.triggered.connect(lambda: show_add_row_after_dialog(self))
-        add_row_after_action.setEnabled(has_selection)
-        context_menu.addAction(add_row_after_action)
-
-        add_column_before_action = QAction("Add Column Before", self)
-        add_column_before_action.triggered.connect(lambda: show_add_column_before_dialog(self))
-        add_column_before_action.setEnabled(has_selection)
-        context_menu.addAction(add_column_before_action)
-
-        add_column_after_action = QAction("Add Column After", self)
-        add_column_after_action.triggered.connect(lambda: show_add_column_after_dialog(self))
-        add_column_after_action.setEnabled(has_selection)
-        context_menu.addAction(add_column_after_action)
-
-        delete_row_action = QAction("Delete Row", self)
-        delete_row_action.triggered.connect(lambda : confirm_delete_selected_rows(self))
-        delete_row_action.setEnabled(has_selection)
-        context_menu.addAction(delete_row_action)
-
-        delete_column_action = QAction("Delete Column", self)
-        delete_column_action.triggered.connect(lambda : confirm_delete_selected_columns(self))
-        delete_column_action.setEnabled(has_selection)
-        context_menu.addAction(delete_column_action)
-        
-        context_menu.exec(self.spreadsheet.viewport().mapToGlobal(position))
 
     def init_ui(self):
         # Membuat splitter utama untuk membagi halaman menjadi dua bagian (kiri dan kanan)
@@ -89,12 +48,12 @@ class MainWindow(QMainWindow):
         self.tab1 = QWidget()
         self.spreadsheet = QTableView(self.tab1)
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.spreadsheet.customContextMenuRequested.connect(self.show_context_menu)
+        self.spreadsheet.customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         self.spreadsheet.setModel(self.model1)
         self.spreadsheet.horizontalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(self.show_context_menu)
+        self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.spreadsheet.verticalHeader().customContextMenuRequested.connect(self.show_context_menu)
+        self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
         self.spreadsheet.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -291,12 +250,6 @@ class MainWindow(QMainWindow):
         self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
-
-        # # Shortcut for deleting selected rows
-        # self.delete_selected_row_action = QAction(self)
-        # self.delete_selected_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
-        # self.delete_selected_row_action.triggered.connect(self.confirm_delete_selected_rows)
-        # self.addAction(self.delete_selected_row_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)
