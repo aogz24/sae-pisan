@@ -91,8 +91,13 @@ class MainWindow(QMainWindow):
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.customContextMenuRequested.connect(self.show_context_menu)
         self.spreadsheet.setModel(self.model1)
+        self.spreadsheet.horizontalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(self.show_context_menu)
+        self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.spreadsheet.verticalHeader().customContextMenuRequested.connect(self.show_context_menu)
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
+        self.spreadsheet.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
         # Tab kedua (Sheet 2)
         self.tab2 = QWidget()

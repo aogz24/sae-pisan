@@ -4,7 +4,7 @@ import sys
 from controller.FileController import FileController
 from view.MainWindow import MainWindow
 from model.TableModel import TableModel
-from view.CsvDialogOption import CSVOptionsDialog
+from view.components.CsvDialogOption import CSVOptionsDialog
 import polars as pl
 import os
 

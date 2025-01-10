@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog
 import polars as pl
-from view.CsvDialogOption import CSVOptionsDialog
+from view.components.CsvDialogOption import CSVOptionsDialog
 import time
 from PyQt6.QtCore import Qt, QCoreApplication
 
