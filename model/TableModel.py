@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QTableWidgetItem
 from PyQt6.QtCore import Qt
 import polars as pl
 from PyQt6 import QtCore, QtGui, QtWidgets
-from service.EditDataCommand import EditDataCommand
-from service.AddRowCommand import AddRowsCommand
-from service.AddColumnCommand import AddColumnCommand
+from service.command.EditDataCommand import EditDataCommand
+from service.command.AddRowCommand import AddRowsCommand
+from service.command.AddColumnCommand import AddColumnCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):

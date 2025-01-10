@@ -8,12 +8,12 @@ import polars as pl
 from model.TableModel import TableModel
 import matplotlib.pyplot as plt
 import os
-from service.AddRow import *
-from service.AddColumn import *
-from service.DeleteRow import *
-from service.DeleteColumn import *
-from service.GoToRow import *
-from service.GoToColumn import *
+from service.table.AddRow import *
+from service.table.AddColumn import *
+from service.table.DeleteRow import *
+from service.table.DeleteColumn import *
+from service.table.GoToRow import *
+from service.table.GoToColumn import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class MainWindow(QMainWindow):
