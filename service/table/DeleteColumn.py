@@ -5,8 +5,7 @@ def delete_selected_columns(parent):
         selection = parent.spreadsheet.selectionModel().selectedIndexes()
         if selection:
             columns = sorted(set(index.column() for index in selection), reverse=True)
-            for column in columns:
-                parent.model1.deleteColumn(parent.model1.index(0, column))
+            parent.model1.deleteColumns(columns[0]-1, len(columns))
             parent.update_table(1, parent.model1)
 
 def confirm_delete_selected_columns(parent):
