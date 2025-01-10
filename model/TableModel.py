@@ -5,6 +5,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from service.command.EditDataCommand import EditDataCommand
 from service.command.AddRowCommand import AddRowsCommand
 from service.command.AddColumnCommand import AddColumnCommand
+from service.command.DeleteRowCommand import DeleteRowCommand
 from PyQt6.QtGui import QKeySequence, QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -192,15 +193,22 @@ class TableModel(QtCore.QAbstractTableModel):
     def deleteRow(self, index):
         if index.isValid():
             row = index.row()
+            old_row = self._data[row].to_dict(as_series=False)
             self.beginRemoveRows(QtCore.QModelIndex(), row, row)
             self._data = pl.concat([self._data[:row], self._data[row + 1:]])
             self.loaded_rows -= 1
             self.endRemoveRows()
+            command = DeleteRowCommand(self, row, old_row)
+            self.undo_stack.push(command)
 
     def deleteColumn(self, index):
         if index.isValid():
             column = index.column()
+            column_name = self._data.columns[column]
+            old_column = self._data[column_name].to_list()
             self.beginResetModel()
-            self._data = self._data.drop(self._data.columns[column])
+            self._data = self._data.drop(column_name)
             self.endResetModel()
+            command = DeleteColumnCommand(self, column, column_name, old_column)
+            self.undo_stack.push(command)
     
