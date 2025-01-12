@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 # Set the number of rows and columns
-rows = 1000
-columns = 100
+rows = 100
+columns = 10
 
 # Create a dataframe with mixed types for each column
 data = {}

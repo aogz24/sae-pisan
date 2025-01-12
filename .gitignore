@@ -7,3 +7,4 @@ data/*.csv
 /build
 /dist
 .codegpt
+coba-sae*.py
