@@ -13,4 +13,5 @@ def loadR(splash):
             })
             """
     ro.r(r_script)
+    splash.showMessage("R is ready", 1)
     
