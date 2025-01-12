@@ -21,12 +21,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1")
 
         # Data awal untuk Sheet 1 dan Sheet 2
-        columns = [f"Column {i+1}" for i in range(5)]
-        self.data1 = pl.DataFrame({col: [""] * 10 for col in columns})
+        columns = [f"Column {i+1}" for i in range(100)]
+        self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({
-            "Estimated Value": [""] * 10,
-            "Standar Error": [""] * 10,
-            "CV": [""] * 10
+            "Estimated Value": [""] * 100,
+            "Standar Error": [""] * 100,
+            "CV": [""] * 100
         })
 
         # Model untuk Sheet 2

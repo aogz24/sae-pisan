@@ -6,7 +6,7 @@ from controller.ExplorationController import ExplorationController
 from view.MainWindow import MainWindow
 from model.TableModel import TableModel
 from view.components.CsvDialogOption import CSVOptionsDialog
-from model.SummaryData import SummaryData
+# from model.SummaryData import SummaryData
 import polars as pl
 import os
 
