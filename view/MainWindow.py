@@ -12,6 +12,7 @@ from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PyQt6.QtWidgets import QLabel
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -20,7 +21,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1")
 
         # Data awal untuk Sheet 1 dan Sheet 2
-        columns = [f"Column {i+1}" for i in range(30)]
+        columns = [f"Column {i+1}" for i in range(5)]
         self.data1 = pl.DataFrame({col: [""] * 10 for col in columns})
         self.data2 = pl.DataFrame({
             "Estimated Value": [""] * 10,
@@ -112,36 +113,26 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.save_data_output_action)
 
         # Menu "Exploration"
-        menu_exploration = self.menu_bar.addMenu("Exploration")
+        self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
-        action_summary_data = QAction("Summary Data", self)
-        action_summary_data.triggered.connect(lambda: print("Exploration -> Summary Data selected"))
-        action_normality_test = QAction("Normality Test", self)
-        action_normality_test.triggered.connect(lambda: print("Exploration -> Normality Test selected"))
-        action_scatterplot = QAction("Scatterplot", self)
-        action_scatterplot.triggered.connect(lambda: print("Exploration -> Scatterplot Test selected"))
-        action_correlation_matrix = QAction("Correlation Matrix", self)
-        action_correlation_matrix.triggered.connect(lambda: print("Exploration -> Matriks Korelasi Test selected"))
-        action_box_plot = QAction("Box Plot", self)
-        action_box_plot.triggered.connect(lambda: print("Exploration -> Box plot Test selected"))
-        action_line_plot = QAction("Line Plot", self)
-        action_line_plot.triggered.connect(lambda: print("Exploration -> Line Plot Test selected"))
-        action_histogram = QAction("Histogram", self)
-        action_histogram.triggered.connect(lambda: print("Exploration -> Histogram Test selected"))
-        action_multicollinearity = QAction("Multicollinearity", self)
-        action_multicollinearity.triggered.connect(lambda: print("Exploration -> Multicollinearity selected"))
-        action_variable_selection = QAction("Variable Selection", self)
-        action_variable_selection.triggered.connect(lambda: print("Exploration -> Variable Selection selected"))
-
-        menu_exploration.addAction(action_summary_data)
-        menu_exploration.addAction(action_normality_test)
-        menu_exploration.addAction(action_scatterplot)
-        menu_exploration.addAction(action_correlation_matrix)
-        menu_exploration.addAction(action_box_plot)
-        menu_exploration.addAction(action_line_plot)
-        menu_exploration.addAction(action_histogram)
-        menu_exploration.addAction(action_multicollinearity)
-        menu_exploration.addAction(action_variable_selection)
+        self.action_summary_data = QAction("Summary Data", self)
+        self.action_normality_test = QAction("Normality Test", self)
+        self.action_scatterplot = QAction("Scatterplot", self)
+        self.action_correlation_matrix = QAction("Correlation Matrix", self)
+        self.action_box_plot = QAction("Box Plot", self)
+        self.action_line_plot = QAction("Line Plot", self)
+        self.action_histogram = QAction("Histogram", self)
+        self.action_multicollinearity = QAction("Multicollinearity", self)
+        self.action_variable_selection = QAction("Variable Selection", self)
+        self.menu_exploration.addAction(self.action_summary_data)
+        self.menu_exploration.addAction(self.action_normality_test)
+        self.menu_exploration.addAction(self.action_scatterplot)
+        self.menu_exploration.addAction(self.action_correlation_matrix)
+        self.menu_exploration.addAction(self.action_box_plot)
+        self.menu_exploration.addAction(self.action_line_plot)
+        self.menu_exploration.addAction(self.action_histogram)
+        self.menu_exploration.addAction(self.action_multicollinearity)
+        self.menu_exploration.addAction(self.action_variable_selection)
 
         # Menu "Model"
         menu_model = self.menu_bar.addMenu("Model")
@@ -345,4 +336,10 @@ class MainWindow(QMainWindow):
                 rows[index.row()] = []
             rows[index.row()].append(index)
         return [rows[row] for row in sorted(rows)]
+    
+    def show_output(self, title, content):
+        """Display output in the Output tab"""
+        label = QLabel(content)
+        self.output_layout.addWidget(label)
+        self.output_tab_widget.setCurrentIndex(0)
 
