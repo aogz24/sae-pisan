@@ -3,11 +3,7 @@ from PyQt6.QtGui import QIcon, QPixmap
 import sys
 from controller.FileController import FileController
 from view.MainWindow import MainWindow
-from model.TableModel import TableModel
-from view.components.CsvDialogOption import CSVOptionsDialog
-import polars as pl
 import os
-import time
 
 def main():
     path= os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
