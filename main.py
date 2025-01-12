@@ -10,8 +10,9 @@ import os
 import time
 
 def main():
-    os.environ['R_HOME'] = 'C:\\Program Files\\R\\R-4.4.2'
-    
+    path= os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
+    os.environ['R_HOME'] = path
+    from service.main.LoadingR import loadR
     app = QApplication(sys.argv)
     
     # Create and display the splash screen
@@ -19,11 +20,7 @@ def main():
     splash = QSplashScreen(splash_pix)
     splash.show()
     
-    import rpy2.robjects as ro
-    from rpy2.robjects import pandas2ri
-    pandas2ri.activate()
-    ro.r('library(sae)')
-    splash.showMessage("Loading R libraries...", 1)
+    loadR(splash)
     
     view = MainWindow()  # View (Tampilan utama)
     controller = FileController(view.model1, view.model2, view)
