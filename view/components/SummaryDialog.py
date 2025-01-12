@@ -95,5 +95,3 @@ class SummaryDialog(QDialog):
     def get_selected_columns(self):
         """Ambil daftar variabel yang dipilih."""
         return [self.selected_list.item(i).text() for i in range(self.selected_list.count())]
-
-    I
