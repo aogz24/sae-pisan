@@ -209,5 +209,3 @@ class TableModel(QtCore.QAbstractTableModel):
             self._data = self._data.select(columns_to_keep)
             self.endResetModel()
             command = DeleteColumnsCommand(self, start_column, old_columns)
-            self.undo_stack.push(command)
-    
