@@ -7,6 +7,7 @@ def loadR(splash):
     r_script = """
             suppressPackageStartupMessages({
                 r_home <- Sys.getenv("R_HOME")
+                print(r_home)
                 if (!require("sae", quietly = TRUE)) install.packages("sae", lib=r_home); library(sae, lib.loc=r_home);
                 if (!require("polars", quietly = TRUE)) install.packages("sae", lib=r_home); library(sae, lib.loc=r_home);
                 if (!require("arrow", quietly = TRUE)) install.packages("arrow", lib=r_home);
