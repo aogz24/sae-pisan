@@ -77,10 +77,10 @@ class ModelingSaeDialog(QDialog):
 
         # Tombol untuk menghasilkan skrip R
         self.generate_r_script_button = QPushButton("Update R Script")
+        self.generate_r_script_button.setFixedWidth(150)
         self.text_script = QLabel("Script R:")
         self.generate_r_script_button.setObjectName("generate_r_script_button")
         self.generate_r_script_button.clicked.connect(lambda: show_r_script(self))
-        main_layout.addWidget(self.generate_r_script_button)
         main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
@@ -90,12 +90,12 @@ class ModelingSaeDialog(QDialog):
 
         # Tombol untuk tindakan dialog
         button_layout = QHBoxLayout()
+        button_layout.setObjectName("button_layout")
         self.ok_button = QPushButton("Run Model")
-        self.cancel_button = QPushButton("Cancel")
+        self.ok_button.setFixedWidth(150)
         self.ok_button.clicked.connect(self.accept)
-        self.cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(self.generate_r_script_button)
         button_layout.addWidget(self.ok_button)
-        button_layout.addWidget(self.cancel_button)
         main_layout.addLayout(button_layout)
 
         self.setLayout(main_layout)

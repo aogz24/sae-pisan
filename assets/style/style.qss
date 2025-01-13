@@ -175,18 +175,37 @@ QDialog QTextEdit {
 
 /* Generate R Script Button */
 QPushButton#generate_r_script_button {
-    background-color: #2BA3E2; /* primary-blue */
-    color:rgb(0, 0, 0); /* white */
+    background-color: #95C843; /* primary-green */
+    color: #FFFFFF; /* white */
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
     font-size: 12px;
+    width: auto; /* set the width of the button to fit the text */
 }
 
 QPushButton#generate_r_script_button:hover {
-    background-color: #1E7BB8; /* darker blue */
+    background-color: #7AB432; /* darker green */
 }
 
 QPushButton#generate_r_script_button:pressed {
-    background-color: #155A8A; /* even darker blue */
+    background-color: #5E8E2B; /* even darker green */
+}
+
+/* Button layout with justify space between */
+QHBoxLayou#button_layout {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border: none;
+    background: none;
+}
+
+/* Align buttons to the left and right */
+QHBoxLayou#button_layout > QPushButton:first-child {
+    margin-right: auto;
+}
+
+QHBoxLayou#button_layout > QPushButton:last-child {
+    margin-left: auto;
 }
