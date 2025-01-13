@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView
 from PyQt6.QtCore import QStringListModel
+from service.modelling.SaeHB import *
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent=None):
@@ -22,13 +23,13 @@ class ModelingSaeDialog(QDialog):
         self.assign_independent_button = QPushButton("Assign as Independent Variables")
         self.assign_vardir_button = QPushButton("Assign as Vardir")
 
-        self.assign_dependent_button.clicked.connect(self.assign_dependent)
-        self.assign_independent_button.clicked.connect(self.assign_independent)
-        self.assign_vardir_button.clicked.connect(self.assign_vardir)
+        self.assign_dependent_button.clicked.connect(lambda : assign_dependent(self))
+        self.assign_independent_button.clicked.connect(lambda : assign_independent(self))
+        self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
 
         # Single button for unassigning variables
         self.unassign_button = QPushButton("Unassign Variable")
-        self.unassign_button.clicked.connect(self.unassign_variable)
+        self.unassign_button.clicked.connect(lambda : unassign_variable(self))
 
         # Lists for assigned variables
         self.dependent_label = QLabel("Dependent Variable:")
@@ -77,47 +78,6 @@ class ModelingSaeDialog(QDialog):
         self.dependent_var = []
         self.independent_vars = []
         self.vardir_var = []
-
-    def assign_dependent(self):
-        selected_indexes = self.variables_list.selectedIndexes()
-        self.dependent_var = [index.data() for index in selected_indexes]
-        self.dependent_model.setStringList(self.dependent_var)
-
-    def assign_independent(self):
-        selected_indexes = self.variables_list.selectedIndexes()
-        if selected_indexes:
-            self.independent_vars = [selected_indexes[-1].data()]
-            self.independent_model.setStringList(self.independent_vars)
-
-    def assign_vardir(self):
-        selected_indexes = self.variables_list.selectedIndexes()
-        if selected_indexes:
-            self.vardir_var = [selected_indexes[-1].data()]
-            self.vardir_model.setStringList(self.vardir_var)
-
-    def unassign_variable(self):
-        selected_indexes = self.dependent_list.selectedIndexes()
-        if selected_indexes:
-            selected_items = [index.data() for index in selected_indexes]
-            self.dependent_var = [var for var in self.dependent_var if var not in selected_items]
-            self.dependent_model.setStringList(self.dependent_var)
-            return
-
-        selected_indexes = self.independent_list.selectedIndexes()
-        if selected_indexes:
-            selected_items = [index.data() for index in selected_indexes]
-            self.independent_vars = [var for var in self.independent_vars if var not in selected_items]
-            self.independent_model.setStringList(self.independent_vars)
-            return
-
-        selected_indexes = self.vardir_list.selectedIndexes()
-        if selected_indexes:
-            selected_items = [index.data() for index in selected_indexes]
-            self.vardir_var = [var for var in self.vardir_var if var not in selected_items]
-            self.vardir_model.setStringList(self.vardir_var)
-
-    def get_selected_variables(self):
-        return self.dependent_var, self.independent_vars, self.vardir_var
     
     def set_model(self, model):
         self.model = model
