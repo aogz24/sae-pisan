@@ -4,6 +4,7 @@ import time
 import errno
 
 def check_environment(path):
+    print(path)
     if not os.path.exists(path):
         if os.name == 'nt':
             url = "https://cran.r-project.org/bin/windows/base/R-4.4.2-win.exe"
