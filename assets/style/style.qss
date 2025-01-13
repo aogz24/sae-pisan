@@ -87,3 +87,72 @@ QScrollBar::handle:horizontal, QScrollBar::handle:vertical {
 QScrollBar::add-line, QScrollBar::sub-line {
     background: #BFBEBE; /* secondary-gray */
 }
+
+/* Dialog box */
+QDialog {
+    background-color: #FFFFFF; /* white */
+    border: 1px solid #BFBEBE; /* secondary-gray */
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* Dialog title (if using QLabel) */
+QDialog QLabel {
+    font-size: 14px;
+    font-weight: bold;
+    color: #5A5759; /* primary-gray */
+    padding: 5px 0;
+}
+
+/* Buttons inside dialog */
+QDialog QPushButton {
+    background-color: #95C843; /* primary-green */
+    color: #FFFFFF; /* white */
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+QDialog QPushButton:hover {
+    background-color: #7AB432; /* darker green */
+}
+
+QDialog QPushButton:pressed {
+    background-color: #5E8E2B; /* even darker green */
+}
+
+/* List widget inside dialog */
+QDialog QListWidget {
+    background-color: #F8F8F8; /* very light gray */
+    border: 1px solid #EAEAEA; /* light-gray */
+    color: #5A5759; /* primary-gray */
+    padding: 5px;
+}
+
+QDialog QListWidget::item {
+    padding: 5px;
+}
+
+QDialog QListWidget::item:selected {
+    background-color: #A1D9F3; /* soft blue */
+    color: #FFFFFF; /* white */
+}
+
+/* Labels for dialog sections */
+QDialog QLabel.section {
+    font-size: 12px;
+    font-weight: normal;
+    color: #5A5759; /* primary-gray */
+    margin: 5px 0;
+}
+
+/* Text edit (script box) */
+QDialog QTextEdit {
+    background-color: #F8F8F8; /* very light gray */
+    border: 1px solid #EAEAEA; /* light-gray */
+    color: #5A5759; /* primary-gray */
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+}
