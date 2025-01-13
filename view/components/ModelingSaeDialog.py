@@ -38,12 +38,12 @@ class ModelingSaeDialog(QDialog):
         self.dependent_list.setModel(self.dependent_model)
         self.dependent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
-        self.independent_label = QLabel("Independent Variables:")
+        self.independent_label = QLabel("Independent Variable(s):")
         self.independent_list = QListView()
         self.independent_model = QStringListModel()
         self.independent_list.setModel(self.independent_model)
 
-        self.vardir_label = QLabel("Vardir Variable:")
+        self.vardir_label = QLabel("Varian Diect:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
@@ -98,3 +98,7 @@ class ModelingSaeDialog(QDialog):
         self.model = model
         self.columns = [f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
         self.variables_model.setStringList(self.columns)
+    
+    def accept(self):
+        get_script(self)
+        return super().accept()

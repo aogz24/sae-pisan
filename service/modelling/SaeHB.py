@@ -58,3 +58,8 @@ def generate_r_script(parent):
 def show_r_script(parent):
     r_script = generate_r_script(parent)
     parent.r_script_edit.setText(r_script)
+
+def get_script(parent):
+    print(parent.r_script_edit.toPlainText())
+    return parent.r_script_edit.toPlainText()    
+    
