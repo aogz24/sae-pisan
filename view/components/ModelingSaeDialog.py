@@ -56,6 +56,7 @@ class ModelingSaeDialog(QDialog):
         self.independent_list = QListView()
         self.independent_model = QStringListModel()
         self.independent_list.setModel(self.independent_model)
+        self.independent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         right_layout.addWidget(self.independent_label)
         right_layout.addWidget(self.independent_list)
 
@@ -76,8 +77,11 @@ class ModelingSaeDialog(QDialog):
 
         # Tombol untuk menghasilkan skrip R
         self.generate_r_script_button = QPushButton("Update R Script")
+        self.text_script = QLabel("Script R:")
+        self.generate_r_script_button.setObjectName("generate_r_script_button")
         self.generate_r_script_button.clicked.connect(lambda: show_r_script(self))
         main_layout.addWidget(self.generate_r_script_button)
+        main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
