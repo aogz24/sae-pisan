@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit
 from PyQt6.QtCore import QStringListModel
 from service.modelling.SaeHB import *
 
@@ -12,7 +12,7 @@ class ModelingSaeDialog(QDialog):
         layout = QVBoxLayout()
 
         # Variables List
-        self.variables_label = QLabel("Pilih Variabel:")
+        self.variables_label = QLabel("Select Variables:")
         self.variables_list = QListView()
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
@@ -48,6 +48,14 @@ class ModelingSaeDialog(QDialog):
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
 
+        # Text area for displaying and editing R script
+        self.r_script_edit = QTextEdit()
+        self.r_script_edit.setReadOnly(False)
+
+        # Button for generating R script
+        self.generate_r_script_button = QPushButton("Update R Script")
+        self.generate_r_script_button.clicked.connect(lambda : show_r_script(self))
+
         # Buttons for dialog actions
         self.ok_button = QPushButton("OK")
         self.cancel_button = QPushButton("Cancel")
@@ -71,6 +79,8 @@ class ModelingSaeDialog(QDialog):
         layout.addWidget(self.independent_list)
         layout.addWidget(self.vardir_label)
         layout.addWidget(self.vardir_list)
+        layout.addWidget(self.generate_r_script_button)
+        layout.addWidget(self.r_script_edit)
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
@@ -78,7 +88,7 @@ class ModelingSaeDialog(QDialog):
         self.dependent_var = []
         self.independent_vars = []
         self.vardir_var = []
-    
+
     def set_model(self, model):
         self.model = model
         self.columns = [f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
