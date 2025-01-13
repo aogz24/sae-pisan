@@ -37,18 +37,4 @@ def check_environment(path):
             subprocess.check_call(['./configure', '--prefix=' + path])
             subprocess.check_call(['make'])
             subprocess.check_call(['make', 'install'])
-    # os.environ['R_HOME'] = path
-
-    # Make R_HOME permanent by adding it to the user's environment variables
-    if os.name == 'nt':
-        subprocess.check_call(['setx', 'R_HOME', path])
-    elif os.name == 'posix':
-        bashrc_path = os.path.join(os.path.expanduser("~"), '.bashrc')
-        with open(bashrc_path, 'r') as bashrc:
-            lines = bashrc.readlines()
-        with open(bashrc_path, 'w') as bashrc:
-            for line in lines:
-                if line.strip().startswith('export R_HOME='):
-                    continue
-                bashrc.write(line)
-            bashrc.write(f'\nexport R_HOME={path}\n')
+    os.environ['R_HOME'] = path
