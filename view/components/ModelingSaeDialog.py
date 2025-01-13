@@ -47,6 +47,11 @@ class ModelingSaeDialog(QDialog):
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
+        
+        self.variables_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.dependent_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.independent_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Text area for displaying and editing R script
         self.r_script_edit = QTextEdit()
