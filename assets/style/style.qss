@@ -87,7 +87,6 @@ QScrollBar::handle:horizontal, QScrollBar::handle:vertical {
 QScrollBar::add-line, QScrollBar::sub-line {
     background: #BFBEBE; /* secondary-gray */
 }
-
 /* Dialog box */
 QDialog {
     background-color: #FFFFFF; /* white */
@@ -122,19 +121,19 @@ QDialog QPushButton:pressed {
     background-color: #5E8E2B; /* even darker green */
 }
 
-/* List widget inside dialog */
-QDialog QListWidget {
+/* List view inside dialog */
+QDialog QListView {
     background-color: #F8F8F8; /* very light gray */
     border: 1px solid #EAEAEA; /* light-gray */
     color: #5A5759; /* primary-gray */
     padding: 5px;
 }
 
-QDialog QListWidget::item {
+QDialog QListView::item {
     padding: 5px;
 }
 
-QDialog QListWidget::item:selected {
+QDialog QListView::item:selected {
     background-color: #A1D9F3; /* soft blue */
     color: #FFFFFF; /* white */
 }

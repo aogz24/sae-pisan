@@ -1,7 +1,5 @@
-from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QPushButton, QLabel, QAbstractItemView, QTextEdit
-)
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QListView, QTextEdit
+from PyQt6.QtCore import Qt, QStringListModel
 
 
 class SummaryDialog(QDialog):
@@ -25,19 +23,21 @@ class SummaryDialog(QDialog):
         # Layout kiri untuk Data Editor dan Data Output
         left_layout = QVBoxLayout()
 
-        # Data Editor
+        # Data Editor (menggunakan QListView untuk efisiensi)
         self.data_editor_label = QLabel("Data Editor", self)
-        self.data_editor_list = QListWidget(self)
-        self.data_editor_list.addItems(self.all_columns_model1)
-        self.data_editor_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)  # Shift + Arrow
+        self.data_editor_list = QListView(self)
+        self.data_editor_model = QStringListModel(self.all_columns_model1)
+        self.data_editor_list.setModel(self.data_editor_model)
+        self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)  # Shift + Arrow
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
 
-        # Data Output
+        # Data Output (menggunakan QListView untuk efisiensi)
         self.data_output_label = QLabel("Data Output", self)
-        self.data_output_list = QListWidget(self)
-        self.data_output_list.addItems(self.all_columns_model2)
-        self.data_output_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)  # Shift + Arrow
+        self.data_output_list = QListView(self)
+        self.data_output_model = QStringListModel(self.all_columns_model2)
+        self.data_output_list.setModel(self.data_output_model)
+        self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)  # Shift + Arrow
         left_layout.addWidget(self.data_output_label)
         left_layout.addWidget(self.data_output_list)
 
@@ -59,8 +59,10 @@ class SummaryDialog(QDialog):
         # Layout kanan untuk daftar variabel yang dipilih
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variabel", self)
-        self.selected_list = QListWidget(self)
-        self.selected_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)  # Shift + Arrow
+        self.selected_list = QListView(self)
+        self.selected_model = QStringListModel()
+        self.selected_list.setModel(self.selected_model)
+        self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)  # Shift + Arrow
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
@@ -82,23 +84,28 @@ class SummaryDialog(QDialog):
         main_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
 
     def add_variable(self):
-        selected_items = self.data_editor_list.selectedItems() + self.data_output_list.selectedItems()
-        for item in selected_items:
-            if not self.selected_list.findItems(item.text(), Qt.MatchFlag.MatchExactly):
-                self.selected_list.addItem(item.text())
-            if item in self.data_editor_list.selectedItems():
-                self.data_editor_list.takeItem(self.data_editor_list.row(item))
-            elif item in self.data_output_list.selectedItems():
-                self.data_output_list.takeItem(self.data_output_list.row(item))
+        selected_items = self.data_editor_list.selectedIndexes()
+        for index in selected_items:
+            item_text = self.data_editor_model.data(index)
+            if all(self.selected_model.data(self.selected_model.index(i)) != item_text for i in range(self.selected_model.rowCount())):
+                self.selected_model.insertRow(self.selected_model.rowCount())
+                self.selected_model.setData(self.selected_model.index(self.selected_model.rowCount() - 1), item_text)
+
+            self.data_editor_model.removeRows(index.row(), 1)
+
 
     def remove_variable(self):
-        selected_items = self.selected_list.selectedItems()
-        for item in selected_items:
-            if item.text() in self.all_columns_model1:
-                self.data_editor_list.addItem(item.text())
-            elif item.text() in self.all_columns_model2:
-                self.data_output_list.addItem(item.text())
-            self.selected_list.takeItem(self.selected_list.row(item))
+        selected_items = self.selected_list.selectedIndexes()
+        for index in selected_items:
+            item_text = self.selected_model.data(index)
+            if item_text in self.all_columns_model1:
+                self.data_editor_model.insertRow(self.data_editor_model.rowCount())
+                self.data_editor_model.setData(self.data_editor_model.index(self.data_editor_model.rowCount() - 1), item_text)
+            elif item_text in self.all_columns_model2:
+                self.data_output_model.insertRow(self.data_output_model.rowCount())
+                self.data_output_model.setData(self.data_output_model.index(self.data_output_model.rowCount() - 1), item_text)
+
+            self.selected_model.removeRows(index.row(), 1)
 
     def get_selected_columns(self):
-        return [self.selected_list.item(i).text() for i in range(self.selected_list.count())]
+        return [self.selected_model.data(self.selected_model.index(i)) for i in range(self.selected_model.rowCount())]
