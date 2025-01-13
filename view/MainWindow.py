@@ -12,6 +12,7 @@ from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from view.components.ModelingSaeDialog import ModelingSaeDialog
 from PyQt6.QtWidgets import QLabel
 
 class MainWindow(QMainWindow):
@@ -44,6 +45,9 @@ class MainWindow(QMainWindow):
         # Bagian kiri: QTabWidget untuk dua sheet
         self.tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
         self.tab_widget.setTabPosition(QTabWidget.TabPosition.South)
+        
+        self.show_modeling_sae_dialog = ModelingSaeDialog(self)
+        self.show_modeling_sae_dialog.set_model(self.model1)
 
         # Tab pertama (Sheet 1)
         self.tab1 = QWidget()
@@ -241,6 +245,12 @@ class MainWindow(QMainWindow):
         self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
+        
+        # Shortcut for showing Modeling SAE Dialog
+        self.show_modeling_sae_dialog_action = QAction(self)
+        self.show_modeling_sae_dialog_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
+        self.show_modeling_sae_dialog_action.triggered.connect(self.show_modeling_sae_dialog.show)
+        self.addAction(self.show_modeling_sae_dialog_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)
@@ -282,6 +292,7 @@ class MainWindow(QMainWindow):
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
+            self.show_modeling_sae_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
