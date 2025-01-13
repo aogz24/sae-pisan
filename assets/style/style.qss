@@ -138,6 +138,22 @@ QDialog QListView::item:selected {
     color: #FFFFFF; /* white */
 }
 
+QDialog QListView {
+    background-color: #F8F8F8; /* very light gray */
+    border: 1px solid #EAEAEA; /* light-gray */
+    color: #5A5759; /* primary-gray */
+    padding: 5px;
+}
+
+QDialog QListView::item {
+    padding: 5px;
+}
+
+QDialog QListView::item:selected {
+    background-color:rgb(243, 161, 240); /* soft blue */
+    color: #FFFFFF; /* white */
+}
+
 /* Labels for dialog sections */
 QDialog QLabel.section {
     font-size: 12px;
@@ -154,4 +170,22 @@ QDialog QTextEdit {
     padding: 5px;
     font-family: "Courier New", monospace;
     font-size: 12px;
+}
+
+/* Generate R Script Button */
+QPushButton#generate_r_script_button {
+    background-color: #2BA3E2; /* primary-blue */
+    color:rgb(0, 0, 0); /* white */
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+QPushButton#generate_r_script_button:hover {
+    background-color: #1E7BB8; /* darker blue */
+}
+
+QPushButton#generate_r_script_button:pressed {
+    background-color: #155A8A; /* even darker blue */
 }
