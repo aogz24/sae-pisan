@@ -3,6 +3,8 @@ import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 import time
 from PyQt6.QtCore import Qt, QCoreApplication
+from PyQt6.QtWidgets import QInputDialog
+
 
 
 class FileController:
@@ -19,31 +21,50 @@ class FileController:
         self.view.actionSave_Data.triggered.connect(self.save_data)  
 
     def load_csv(self):
-        """Muat file CSV ke model pertama."""
-        dialog = CSVOptionsDialog(self.view)
-        file_path, separator, header = dialog.get_csv_options()
+        """Muat file CSV atau Excel ke model pertama."""
+        file_path, selected_filter = QFileDialog.getOpenFileName(
+            self.view, "Open File", "",
+            "CSV Files (*.csv);;Excel Files (*.xlsx)"
+        )
 
         if not file_path:  # Jika file tidak dipilih
             return
 
-        progress_dialog = QProgressDialog("Loading CSV...", "Cancel", 0, 100, self.view)
+        progress_dialog = QProgressDialog("Loading file...", "Cancel", 0, 100, self.view)
         progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         progress_dialog.show()
 
         try:
-            # Baca data dari CSV dengan atau tanpa header
-            if header:
-                data = pl.read_csv(file_path, separator=separator, has_header=True)
-            else:
-                data = pl.read_csv(file_path, separator=separator, has_header=False)
-                data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
-            
+            if selected_filter == "CSV Files (*.csv)":
+                dialog = CSVOptionsDialog(self.view)
+                dialog.file_path = file_path
+                dialog.file_label.setText(f"Selected: {file_path}")
+                dialog.update_preview()
+                file_path, separator, header = dialog.get_csv_options()
+
+                if not file_path:  # Jika file tidak dipilih
+                    return
+
+                # Baca data dari CSV dengan atau tanpa header
+                if header:
+                    data = pl.read_csv(file_path, separator=separator, has_header=True)
+                else:
+                    data = pl.read_csv(file_path, separator=separator, has_header=False)
+                    data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            elif selected_filter == "Excel Files (*.xlsx)":
+                import pandas as pd
+                sheet_names = pd.ExcelFile(file_path).sheet_names
+                sheet_name, ok = QInputDialog.getItem(self.view, "Select Sheet", "Sheet:", sheet_names, 0, False)
+                if not ok:
+                    return
+                data = pl.read_excel(file_path, sheet_name=sheet_name)
+
             for i in range(1, 101):
                 QCoreApplication.processEvents()
                 progress_dialog.setValue(i)
                 if progress_dialog.wasCanceled():
                     break
-            
+
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
         except Exception as e:

@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
         # Membuat menu File -> Load dan Save
         self.file_menu = self.menu_bar.addMenu("File")
 
-        self.load_action = QAction("Load CSV", self)
+        self.load_action = QAction("Load File", self)
         self.save_action = QAction("Save Data", self)
         self.save_data_output_action = QAction("Save Data Output", self)
 
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
         # Submenu "Area Level"
         menu_area_level = QMenu("Area Level", self)
         action_eblup_area = QAction("EBLUP", self)
-        action_eblup_area.triggered.connect(lambda: print("Area Level -> EBLUP selected"))
+        action_eblup_area.triggered.connect(self.show_modeling_sae_dialog.show)
         action_hb_beta = QAction("HB Beta", self)
         action_hb_beta.triggered.connect(lambda: print("Area Level -> HB Beta selected"))
         menu_area_level.addAction(action_eblup_area)
@@ -202,13 +202,15 @@ class MainWindow(QMainWindow):
         self.actionLoad_CSV = QAction(self)  # Menggunakan self untuk referensi instance
         icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
         self.actionLoad_CSV.setIcon(icon_load)
-        self.actionLoad_CSV.setText("Load CSV")
+        self.actionLoad_CSV.setText("Load File")
+        self.actionLoad_CSV.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
         self.toolBar.addAction(self.actionLoad_CSV)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
         icon_save = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'save.svg'))
         self.actionSave_Data.setIcon(icon_save)
         self.actionSave_Data.setText("Save Data")
+        self.actionSave_Data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.toolBar.addAction(self.actionSave_Data)
 
         self.actionUndo = QAction(self)
@@ -246,11 +248,11 @@ class MainWindow(QMainWindow):
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
         
-        # Shortcut for showing Modeling SAE Dialog
-        self.show_modeling_sae_dialog_action = QAction(self)
-        self.show_modeling_sae_dialog_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
-        self.show_modeling_sae_dialog_action.triggered.connect(self.show_modeling_sae_dialog.show)
-        self.addAction(self.show_modeling_sae_dialog_action)
+        # # Shortcut for showing Modeling SAE Dialog
+        # self.show_modeling_sae_dialog_action = QAction(self)
+        # self.show_modeling_sae_dialog_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
+        # self.show_modeling_sae_dialog_action.triggered.connect(self.show_modeling_sae_dialog.show)
+        # self.addAction(self.show_modeling_sae_dialog_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)

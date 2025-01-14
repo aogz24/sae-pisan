@@ -1,3 +1,5 @@
 pyqt6
 polars
 matplotlib
+fastexcel
+openpyexcel
