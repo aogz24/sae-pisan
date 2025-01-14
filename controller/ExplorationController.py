@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QMessageBox, QDialog
-from view.components.SummaryDialog import SummaryDialog  # Dialog for selecting columns
+from view.components.SummaryDataDialog import SummaryDataDialog  # Dialog for selecting columns
 
 
 class ExplorationController:
@@ -14,5 +14,5 @@ class ExplorationController:
     def on_summary_clicked(self):
         """Handler for the action 'Summary Data'"""
         print("Summary Data clicked")
-        dialog = SummaryDialog(self.model1,self.model2)
+        dialog = SummaryDataDialog(self.model1,self.model2)
         dialog.exec() 
