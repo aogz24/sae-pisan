@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit, QComboBox
 from PyQt6.QtCore import QStringListModel
 from service.modelling.SaeHB import *
 
@@ -76,11 +76,10 @@ class ModelingSaeDialog(QDialog):
         main_layout.addLayout(split_layout)
 
         # Tombol untuk menghasilkan skrip R
-        self.generate_r_script_button = QPushButton("Update R Script")
-        self.generate_r_script_button.setFixedWidth(150)
+        self.option_button = QPushButton("Option")
+        self.option_button.setFixedWidth(150)
         self.text_script = QLabel("Script R:")
-        self.generate_r_script_button.setObjectName("generate_r_script_button")
-        self.generate_r_script_button.clicked.connect(lambda: show_r_script(self))
+        self.option_button.clicked.connect(lambda : show_options(self))
         main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
@@ -94,7 +93,7 @@ class ModelingSaeDialog(QDialog):
         self.ok_button = QPushButton("Run Model")
         self.ok_button.setFixedWidth(150)
         self.ok_button.clicked.connect(self.accept)
-        button_layout.addWidget(self.generate_r_script_button)
+        button_layout.addWidget(self.option_button)
         button_layout.addWidget(self.ok_button)
         main_layout.addLayout(button_layout)
 
@@ -103,6 +102,10 @@ class ModelingSaeDialog(QDialog):
         self.dependent_var = []
         self.independent_vars = []
         self.vardir_var = []
+        self.stepwise_method = "None"
+        self.method = "REML"
+        self.precision = "0.0001"
+        self.B = "0"
 
     def set_model(self, model):
         self.model = model
