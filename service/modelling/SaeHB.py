@@ -55,12 +55,13 @@ def get_selected_variables(parent):
     return parent.dependent_var, parent.independent_vars, parent.vardir_var
 
 def generate_r_script(parent):
-    dependent_var = f'"{parent.dependent_var[0].split(" [")[0]}"' if parent.dependent_var else '""'
-    independent_vars = " + ".join([f'"{var.split(" [")[0]}"' for var in parent.independent_vars])
-    vardir_var = f'"{parent.vardir_var[0].split(" [")[0]}"' if parent.vardir_var else '""'
+    dependent_var = f'{parent.dependent_var[0].split(" [")[0].replace(" ", "_")}' if parent.dependent_var else '""'
+    independent_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.independent_vars])
+    vardir_var = f'"{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}"' if parent.vardir_var else '""'
     formula = f'{dependent_var} ~ {independent_vars}'
 
-    r_script = f'formula <- {formula}\n'
+    r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+    r_script += f'formula <- {formula}\n'
     if parent.stepwise_method and parent.stepwise_method != "None":
         r_script += f'stepwise_model <- step(formula, direction="{parent.stepwise_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
