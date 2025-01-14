@@ -5,8 +5,6 @@ import time
 from PyQt6.QtCore import Qt, QCoreApplication
 from PyQt6.QtWidgets import QInputDialog
 
-
-
 class FileController:
     def __init__(self, model1, model2, view):
         self.model1 = model1
@@ -14,13 +12,13 @@ class FileController:
         self.view = view
 
         # Hubungkan menu bar dengan fungsi
-        self.view.load_action.triggered.connect(self.load_csv)
+        self.view.load_action.triggered.connect(self.load_file)
         self.view.save_action.triggered.connect(self.save_data)
         self.view.save_data_output_action.triggered.connect(self.save_data_output)
-        self.view.actionLoad_CSV.triggered.connect(self.load_csv)
+        self.view.actionLoad_file.triggered.connect(self.load_file)
         self.view.actionSave_Data.triggered.connect(self.save_data)  
 
-    def load_csv(self):
+    def load_file(self):
         """Muat file CSV atau Excel ke model pertama."""
         file_path, selected_filter = QFileDialog.getOpenFileName(
             self.view, "Open File", "",

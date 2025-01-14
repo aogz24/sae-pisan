@@ -199,12 +199,12 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolBar)  # Perbaikan dilakukan di sini
 
         # Actions for Toolbar
-        self.actionLoad_CSV = QAction(self)  # Menggunakan self untuk referensi instance
+        self.actionLoad_file = QAction(self)  # Menggunakan self untuk referensi instance
         icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
-        self.actionLoad_CSV.setIcon(icon_load)
-        self.actionLoad_CSV.setText("Load File")
-        self.actionLoad_CSV.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
-        self.toolBar.addAction(self.actionLoad_CSV)
+        self.actionLoad_file.setIcon(icon_load)
+        self.actionLoad_file.setText("Load File")
+        self.actionLoad_file.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
+        self.toolBar.addAction(self.actionLoad_file)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
         icon_save = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'save.svg'))
