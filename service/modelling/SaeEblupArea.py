@@ -15,7 +15,7 @@ def assign_independent(parent):
         new_vars = [index.data() for index in selected_indexes]
         parent.independent_vars = list(set(parent.independent_vars + new_vars))  # Add new variables if they are different
         parent.independent_model.setStringList(parent.independent_vars)
-        for index in selected_indexes:
+        for index in sorted(selected_indexes, reverse=True):
             parent.variables_list.model().removeRow(index.row())  # Remove from variables list
         show_r_script(parent)
 
@@ -50,6 +50,9 @@ def unassign_variable(parent):
         selected_items = [index.data() for index in selected_indexes]
         parent.independent_vars = [var for var in parent.independent_vars if var not in selected_items]
         parent.independent_model.setStringList(parent.independent_vars)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)  # Add back to variables list
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
         return
 
     selected_indexes = parent.vardir_list.selectedIndexes()
@@ -57,6 +60,9 @@ def unassign_variable(parent):
         selected_items = [index.data() for index in selected_indexes]
         parent.vardir_var = [var for var in parent.vardir_var if var not in selected_items]
         parent.vardir_model.setStringList(parent.vardir_var)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)  # Add back to variables list
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
         return
 
     selected_indexes = parent.major_area_list.selectedIndexes()
@@ -64,6 +70,9 @@ def unassign_variable(parent):
         selected_items = [index.data() for index in selected_indexes]
         parent.major_area_var = [var for var in parent.major_area_var if var not in selected_items]
         parent.major_area_model.setStringList(parent.major_area_var)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)  # Add back to variables list
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
     show_r_script(parent)
 
 def get_selected_variables(parent):
@@ -83,11 +92,9 @@ def generate_r_script(parent):
         r_script += f'stepwise_model <- step(formula, direction="{parent.stepwise_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
         r_script += f'final_formula <- update(final_formula, . ~ . + as.factor({major_area_var}))\n'
-        r_script += f'print(final_formula)\n'
         r_script += f'model<-mseFH(final_formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     else:
         r_script += f'formula <- update(formula, . ~ . + as.factor({major_area_var}))\n'
-        r_script += f'print(formula)\n'
         r_script += f'model<-mseFH(formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     return r_script
 
