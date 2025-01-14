@@ -3,5 +3,5 @@ class SaeController:
         self.SAEmodel = SAEmodel
         self.model2 = model2
     
-    def RunModel(self, r_script):
-        self.SAEmodel.RunModel(r_script)
+    def run_model(self, r_script):
+        self.SAEmodel.run_model(r_script)

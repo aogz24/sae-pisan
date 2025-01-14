@@ -1,10 +1,10 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 
-def RunModelEblupArea(parent):
+def run_model_eblup_area(parent):
     import rpy2.robjects as ro
     import rpy2_arrow.polars as rpy2polars
-    parent.activateR()
+    parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
     with rpy2polars.converter.context() as cv_ctx:

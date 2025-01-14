@@ -4,6 +4,6 @@ class SaeModelling:
         self.model2 = model2
         self.view = view
         
-    def activateR(self):
+    def activate_R(self):
         from rpy2.robjects import pandas2ri
         pandas2ri.activate()

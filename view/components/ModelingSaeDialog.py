@@ -132,6 +132,6 @@ class ModelingSaeDialog(QDialog):
         sae_model = SaeEblup(self.model, self.model2, view)
         model2 = self.parent.model2
         controller = SaeController(sae_model, model2)
-        controller.RunModel(r_script)
+        controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
         return super().accept()
