@@ -1,5 +1,8 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit, QComboBox
-from PyQt6.QtCore import QStringListModel
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
+    QAbstractItemView, QTextEdit, QProgressDialog
+)
+from PyQt6.QtCore import QStringListModel, QTimer, Qt
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
@@ -127,11 +130,23 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
+        # Disable the button and show loading animation
+        self.ok_button.setEnabled(False)
+        self.ok_button.setText("Loading...")
+
         view = self.parent
         r_script = get_script(self)
         sae_model = SaeEblup(self.model, self.model2, view)
         model2 = self.parent.model2
         controller = SaeController(sae_model, model2)
-        controller.run_model(r_script)
-        self.parent.update_table(2, sae_model.get_model2())
-        return super().accept()
+
+        # Run the model in a separate thread to avoid blocking the UI
+        def run_model():
+            controller.run_model(r_script)
+            self.parent.update_table(2, sae_model.get_model2())
+            self.ok_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            self.loading_bar.close()
+            self.accept()
+
+        QTimer.singleShot(0, run_model)
