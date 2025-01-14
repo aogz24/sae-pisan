@@ -140,11 +140,13 @@ class ModelingSaeDialog(QDialog):
         model2 = self.parent.model2
         controller = SaeController(sae_model, model2)
 
-        controller.run_model(r_script)
-        self.parent.update_table(2, sae_model.get_model2())
-        self.ok_button.setEnabled(True)
-        self.ok_button.setText("Run Model")
-        self.loading_bar.close()
-        self.accept()
+        # Run the model in a separate thread to avoid blocking the UI
+        def run_model():
+            controller.run_model(r_script)
+            self.parent.update_table(2, sae_model.get_model2())
+            self.ok_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            self.loading_bar.close()
+            self.accept()
 
         QTimer.singleShot(0, run_model)
