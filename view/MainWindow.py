@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1")
 
         # Data awal untuk Sheet 1 dan Sheet 2
+        self.cek = "cek"
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({

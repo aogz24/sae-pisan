@@ -1,4 +1,4 @@
-from SaeModelling import SaeModelling
+from model.SaeModelling import SaeModelling
 
 class SaeEblup(SaeModelling):
     def __init__(self, *args, **kwargs):

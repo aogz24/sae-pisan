@@ -1,10 +1,14 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit, QComboBox
 from PyQt6.QtCore import QStringListModel
 from service.modelling.SaeHB import *
+from controller.modelling.SaeController import SaeController
+from model.SaeEblup import SaeModelling
 
 class ModelingSaeDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
+        self.model2 = parent.model2
         self.setWindowTitle("SAE HB Modelling")
 
         self.columns = []
@@ -113,5 +117,11 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
-        get_script(self)
+        view = self.parent
+        r_script = get_script(self)
+        sae_model = SaeModelling(self.model, self.model2, view)
+        model2 = self.parent.model2
+        controller = SaeController(sae_model, model2)
+        controller.RunModel(r_script)
+        self.parent.update_table(2, sae_model.get_model2())
         return super().accept()
