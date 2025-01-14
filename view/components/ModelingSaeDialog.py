@@ -37,16 +37,18 @@ class ModelingSaeDialog(QDialog):
         self.assign_dependent_button = QPushButton("→")
         self.assign_independent_button = QPushButton("→")
         self.assign_vardir_button = QPushButton("→")
+        self.assign_major_area_button = QPushButton("→")
         self.assign_dependent_button.clicked.connect(lambda: assign_dependent(self))
         self.assign_independent_button.clicked.connect(lambda: assign_independent(self))
         self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
+        self.assign_major_area_button.clicked.connect(lambda: assign_major_area(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
         middle_layout.addWidget(self.assign_dependent_button)
         middle_layout.addWidget(self.assign_independent_button)
         middle_layout.addWidget(self.assign_vardir_button)
-        
+        middle_layout.addWidget(self.assign_major_area_button)
 
-        # Layout kanan untuk daftar dependen, independen, dan vardir
+        # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
         self.dependent_label = QLabel("Dependent Variable:")
         self.dependent_list = QListView()
@@ -70,6 +72,13 @@ class ModelingSaeDialog(QDialog):
         self.vardir_list.setModel(self.vardir_model)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
+
+        self.major_area_label = QLabel("Major Area:")
+        self.major_area_list = QListView()
+        self.major_area_model = QStringListModel()
+        self.major_area_list.setModel(self.major_area_model)
+        right_layout.addWidget(self.major_area_label)
+        right_layout.addWidget(self.major_area_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         split_layout.addLayout(left_layout)
@@ -106,6 +115,7 @@ class ModelingSaeDialog(QDialog):
         self.dependent_var = []
         self.independent_vars = []
         self.vardir_var = []
+        self.major_area_var = []
         self.stepwise_method = "None"
         self.method = "REML"
         self.precision = "0.0001"

@@ -27,6 +27,14 @@ def assign_vardir(parent):
         parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
         show_r_script(parent)
 
+def assign_major_area(parent):
+    selected_indexes = parent.variables_list.selectedIndexes()
+    if selected_indexes:
+        parent.major_area_var = [selected_indexes[-1].data()]
+        parent.major_area_model.setStringList(parent.major_area_var)
+        parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+        show_r_script(parent)
+
 def unassign_variable(parent):
     selected_indexes = parent.dependent_list.selectedIndexes()
     if selected_indexes:
@@ -49,15 +57,23 @@ def unassign_variable(parent):
         selected_items = [index.data() for index in selected_indexes]
         parent.vardir_var = [var for var in parent.vardir_var if var not in selected_items]
         parent.vardir_model.setStringList(parent.vardir_var)
+        return
+
+    selected_indexes = parent.major_area_list.selectedIndexes()
+    if selected_indexes:
+        selected_items = [index.data() for index in selected_indexes]
+        parent.major_area_var = [var for var in parent.major_area_var if var not in selected_items]
+        parent.major_area_model.setStringList(parent.major_area_var)
     show_r_script(parent)
 
 def get_selected_variables(parent):
-    return parent.dependent_var, parent.independent_vars, parent.vardir_var
+    return parent.dependent_var, parent.independent_vars, parent.vardir_var, parent.major_area_var
 
 def generate_r_script(parent):
     dependent_var = f'{parent.dependent_var[0].split(" [")[0].replace(" ", "_")}' if parent.dependent_var else '""'
     independent_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.independent_vars])
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
+    major_area_var = f'{parent.major_area_var[0].split(" [")[0].replace(" ", "_")}' if parent.major_area_var else '""'
     formula = f'{dependent_var} ~ {independent_vars}'
 
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
@@ -66,8 +82,12 @@ def generate_r_script(parent):
     if parent.stepwise_method and parent.stepwise_method != "None":
         r_script += f'stepwise_model <- step(formula, direction="{parent.stepwise_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
+        r_script += f'final_formula <- update(final_formula, . ~ . + as.factor({major_area_var}))\n'
+        r_script += f'print(final_formula)\n'
         r_script += f'model<-mseFH(final_formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     else:
+        r_script += f'formula <- update(formula, . ~ . + as.factor({major_area_var}))\n'
+        r_script += f'print(formula)\n'
         r_script += f'model<-mseFH(formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     return r_script
 
@@ -137,5 +157,3 @@ def set_stepwise_method(parent, dialog):
     parent.B = parent.B_input.text()
     dialog.accept()
     show_r_script(parent)
-
-  
