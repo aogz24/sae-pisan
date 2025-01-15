@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1")
+        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1.0")
 
         # Data awal untuk Sheet 1 dan Sheet 2
         self.cek = "cek"
@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self.spreadsheet.setModel(self.model1)
         self.spreadsheet.horizontalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(self.show_header_context_menu)
+        self.spreadsheet.horizontalHeader().sectionDoubleClicked.connect(self.rename_column)
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         tab1_layout = QVBoxLayout(self.tab1)
