@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         self.spreadsheet.customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         self.spreadsheet.setModel(self.model1)
         self.spreadsheet.horizontalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
+        self.spreadsheet.horizontalHeader().customContextMenuRequested.connect(self.show_header_context_menu)
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
         tab1_layout = QVBoxLayout(self.tab1)
@@ -357,3 +357,19 @@ class MainWindow(QMainWindow):
         self.output_layout.addWidget(label)
         self.output_tab_widget.setCurrentIndex(0)
 
+    def show_header_context_menu(self, pos):
+        """Show context menu for header."""
+        header = self.spreadsheet.horizontalHeader()
+        logical_index = header.logicalIndexAt(pos)
+        menu = QMenu(self)
+        rename_action = QAction("Rename Column", self)
+        rename_action.triggered.connect(lambda: self.rename_column(logical_index))
+        menu.addAction(rename_action)
+        menu.exec(header.mapToGlobal(pos))
+
+    def rename_column(self, column_index):
+        """Rename the column at the given index."""
+        new_name, ok = QInputDialog.getText(self, "Rename Column", "New column name:")
+        if ok and new_name:
+            self.model1.rename_column(column_index, new_name)
+            self.update_table(1, self.model1)

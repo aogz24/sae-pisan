@@ -209,3 +209,10 @@ class TableModel(QtCore.QAbstractTableModel):
             self._data = self._data.select(columns_to_keep)
             self.endResetModel()
             command = DeleteColumnsCommand(self, start_column, old_columns)
+    
+    def rename_column(self, column_index, new_name):
+        if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
+            old_name = self._data.columns[column_index]
+            self.beginResetModel()
+            self._data = self._data.rename({old_name: new_name})
+            self.endResetModel()
