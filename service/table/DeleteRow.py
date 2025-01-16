@@ -4,7 +4,7 @@ def delete_selected_rows(parent):
     """Delete selected rows in the spreadsheet."""
     selection = parent.spreadsheet.selectionModel().selectedIndexes()
     if selection:
-        self.loaded_rows < self._data.shape[0]
+        parent.loaded_rows < parent._data.shape[0]
         parent.update_table(1, parent.model1)
 
 def confirm_delete_selected_rows(parent):

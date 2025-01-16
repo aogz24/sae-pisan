@@ -1,4 +1,3 @@
-from PyQt6.QtWidgets import QTableWidgetItem
 from PyQt6.QtCore import Qt
 import polars as pl
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -7,7 +6,7 @@ from service.command.AddRowCommand import AddRowsCommand
 from service.command.AddColumnCommand import AddColumnCommand
 from service.command.DeleteRowsCommand import DeleteRowsCommand
 from service.command.DeleteColumnsCommand import DeleteColumnsCommand
-from PyQt6.QtGui import QKeySequence, QUndoStack
+from PyQt6.QtGui import QUndoStack
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, batch_size=100):

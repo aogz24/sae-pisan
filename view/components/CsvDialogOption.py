@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog
-from PyQt6.QtCore import Qt
 import polars as pl
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 

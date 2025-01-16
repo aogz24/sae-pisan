@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QProgressDialog
+    QAbstractItemView, QTextEdit
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
 from service.modelling.SaeEblupArea import *

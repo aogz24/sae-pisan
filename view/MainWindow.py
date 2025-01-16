@@ -1,12 +1,11 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenuBar, QMenu,
-    QAbstractItemView, QMessageBox, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog
+    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu,
+    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog
 )
-from PyQt6.QtCore import Qt, QSize, QModelIndex, QItemSelectionModel 
-from PyQt6.QtGui import QStandardItemModel, QStandardItem, QAction, QKeySequence, QIcon
+from PyQt6.QtCore import Qt, QSize 
+from PyQt6.QtGui import QAction, QKeySequence, QIcon
 import polars as pl
 from model.TableModel import TableModel
-import matplotlib.pyplot as plt
 import os
 from service.table.GoToRow import *
 from service.table.GoToColumn import *

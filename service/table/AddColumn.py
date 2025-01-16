@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QInputDialog
-from model.TableModel import TableModel
 import polars as pl
 
 def add_column_before(parent, num_columns):

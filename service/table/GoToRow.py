@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QSize, QModelIndex, QItemSelectionModel 
+from PyQt6.QtCore import QModelIndex, QItemSelectionModel 
 def go_to_start_row(parent):
         """Move the selection to the start row while keeping the column the same."""
         selection = parent.spreadsheet.selectionModel().selectedIndexes()

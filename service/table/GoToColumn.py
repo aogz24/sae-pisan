@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QSize, QModelIndex, QItemSelectionModel 
+from PyQt6.QtCore import QItemSelectionModel 
 
 def go_to_start_column(parent):
         """Move the selection to the start column while keeping the row the same."""
