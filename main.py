@@ -20,12 +20,7 @@ def load_stylesheet():
         return ""
 
 def main():
-    # Cek dan siapkan lingkungan R
-    path = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
-    check_environment(path)
-
-    from service.main.LoadingR import loadR  # Load modul R setelah check_environment
-
+    
     # Inisialisasi aplikasi PyQt
     app = QApplication(sys.argv)
 
@@ -33,6 +28,12 @@ def main():
     splash_pix = QPixmap(os.path.join(os.path.dirname(__file__), 'assets', 'splash.png'))
     splash = QSplashScreen(splash_pix)
     splash.show()
+    
+    # Cek dan siapkan lingkungan R
+    path = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
+    check_environment(path)
+
+    from service.main.LoadingR import loadR  # Load modul R setelah check_environment
 
     # Load R environment dengan splash screen
     loadR(splash)
