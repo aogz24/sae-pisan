@@ -11,7 +11,6 @@ import os
 from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from view.components.ModelingSaeDialog import ModelingSaeDialog
 from PyQt6.QtWidgets import QLabel
 
@@ -111,8 +110,12 @@ class MainWindow(QMainWindow):
         self.file_menu = self.menu_bar.addMenu("File")
 
         self.load_action = QAction("Load File", self)
+        self.load_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
+        self.load_action.setStatusTip("Ctrl+O")
+        
         self.save_action = QAction("Save Data", self)
         self.save_data_output_action = QAction("Save Data Output", self)
+        self.save_action.setStatusTip("Ctrl+S")
 
         self.file_menu.addAction(self.load_action)
         self.file_menu.addAction(self.save_action)
@@ -249,12 +252,6 @@ class MainWindow(QMainWindow):
         self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
-        
-        # # Shortcut for showing Modeling SAE Dialog
-        # self.show_modeling_sae_dialog_action = QAction(self)
-        # self.show_modeling_sae_dialog_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
-        # self.show_modeling_sae_dialog_action.triggered.connect(self.show_modeling_sae_dialog.show)
-        # self.addAction(self.show_modeling_sae_dialog_action)
 
         # Add spacer to push following items to the right
         spacer = QWidget(self)
