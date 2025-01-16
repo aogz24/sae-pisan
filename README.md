@@ -151,3 +151,7 @@ pip install pyinstaller
 ```
 pyinstaller --windowed main.py --exclude-module PySide6 --exclude-module torch --exclude-module cuda --add-data "assets;assets" -i ./assets/icon.ico
 ```
+
+```
+nuitka --standalone --include-data-dir=R=R --include-data-dir=assets=assets --enable-plugin=PyQt6 --module-parameter=torch-disable-jit=yes main.py
+```

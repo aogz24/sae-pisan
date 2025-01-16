@@ -9,3 +9,5 @@ data/*.csv
 .codegpt
 coba-sae*.py
 R
+main.build
+main.dist
