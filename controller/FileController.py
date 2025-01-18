@@ -159,7 +159,12 @@ class FileController:
 
         pdf_writer = QPdfWriter(file_path)
         painter = QPainter(pdf_writer)
-        y_offset = 0
+
+        # Convert cm to points (1 cm = 28.3465 points)
+        top_margin = 4 * 28.3465
+        side_margin = 3 * 28.3465
+
+        y_offset = top_margin
         page_height = pdf_writer.height()
         page_width = pdf_writer.width()
 
@@ -169,10 +174,10 @@ class FileController:
             line_height = font_metrics.lineSpacing()
             lines = text.splitlines()
             for line in lines:
-                if y_offset + line_height > page_height:
+                if y_offset + line_height > page_height - top_margin:
                     pdf_writer.newPage()
-                    y_offset = 0
-                painter.drawText(QRectF(0, y_offset, page_width, line_height),
+                    y_offset = top_margin
+                painter.drawText(QRectF(side_margin, y_offset, page_width - 2 * side_margin, line_height),
                                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, line)
                 y_offset += line_height
             return y_offset
@@ -187,17 +192,19 @@ class FileController:
                 y_offset = draw_text_multiline(text, y_offset)
             elif isinstance(widget, QImage):
                 image = widget.pixmap().toImage() if isinstance(widget, QLabel) else widget
-                image_height = image.height() * page_width / image.width()
-                if y_offset + image_height > page_height:
+                image_height = image.height() * (page_width - 2 * side_margin) / image.width()
+                if y_offset + image_height > page_height - top_margin:
                     pdf_writer.newPage()
-                    y_offset = 0
-                rect = QRectF(0, y_offset, page_width, image_height)
+                    y_offset = top_margin
+                rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
                 painter.drawImage(rect, image)
                 y_offset += image_height
 
             # Check if y_offset exceeds page height for next widget
-            if y_offset > page_height:
+            if y_offset > page_height - top_margin:
                 pdf_writer.newPage()
-                y_offset = 0
+                y_offset = top_margin
 
         painter.end()
+
+        QMessageBox.information(self.view, "Success", "PDF exported successfully!")
