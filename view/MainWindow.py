@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
 
         # Set fixed size for widgets added to output layout
         self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.output_layout.setSpacing(10)
+        self.output_layout.setSpacing(0)
         
 
         # Menambahkan tab ke QTabWidget
