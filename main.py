@@ -41,7 +41,9 @@ def main():
 
     # Inisialisasi view dan controller
     view = MainWindow()  # Tampilan utama aplikasi
-    view.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)  # Set window flag
+    view.setWindowFlags(view.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)  # Set window flag to be on top initially
+    view.show()
+    view.setWindowFlags(view.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint)  # Remove the always on top flag
     controller = FileController(view.model1, view.model2, view)
     ControllerExploration = ExplorationController(view.model1, view.model2, view)
 
