@@ -1,8 +1,10 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QLabel, QTextEdit
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 from PyQt6.QtCore import Qt, QCoreApplication
 from PyQt6.QtWidgets import QInputDialog
+from PyQt6.QtGui import QPainter, QPdfWriter, QImage
+from PyQt6.QtCore import QRectF
 
 class FileController:
     def __init__(self, model1, model2, view):
@@ -15,7 +17,8 @@ class FileController:
         self.view.save_action.triggered.connect(self.save_data)
         self.view.save_data_output_action.triggered.connect(self.save_data_output)
         self.view.actionLoad_file.triggered.connect(self.load_file)
-        self.view.actionSave_Data.triggered.connect(self.save_data)  
+        self.view.actionSave_Data.triggered.connect(self.save_data)
+        self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)  
 
     def load_file(self):
         """Muat file CSV atau Excel ke model pertama."""
@@ -144,3 +147,57 @@ class FileController:
         """Simpan data sebagai file teks."""
         data = model.get_data()
         data.write_csv(file_path, separator="\t")
+    
+    def export_output_to_pdf(self):
+        """Export the content of all widgets in the output layout to a PDF file."""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.view, "Save PDF", "", "PDF Files (*.pdf)"
+        )
+
+        if not file_path:
+            return
+
+        pdf_writer = QPdfWriter(file_path)
+        painter = QPainter(pdf_writer)
+        y_offset = 0
+        page_height = pdf_writer.height()
+        page_width = pdf_writer.width()
+
+        def draw_text_multiline(text, y_offset):
+            """Helper function to split text and draw it across multiple pages if needed."""
+            font_metrics = painter.fontMetrics()
+            line_height = font_metrics.lineSpacing()
+            lines = text.splitlines()
+            for line in lines:
+                if y_offset + line_height > page_height:
+                    pdf_writer.newPage()
+                    y_offset = 0
+                painter.drawText(QRectF(0, y_offset, page_width, line_height),
+                                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, line)
+                y_offset += line_height
+            return y_offset
+
+        for i in range(self.view.output_layout.count()):
+            widget = self.view.output_layout.itemAt(i).widget()
+            if isinstance(widget, QLabel):
+                text = widget.text()
+                y_offset = draw_text_multiline(text, y_offset)
+            elif isinstance(widget, QTextEdit):
+                text = widget.toPlainText()
+                y_offset = draw_text_multiline(text, y_offset)
+            elif isinstance(widget, QImage):
+                image = widget.pixmap().toImage() if isinstance(widget, QLabel) else widget
+                image_height = image.height() * page_width / image.width()
+                if y_offset + image_height > page_height:
+                    pdf_writer.newPage()
+                    y_offset = 0
+                rect = QRectF(0, y_offset, page_width, image_height)
+                painter.drawImage(rect, image)
+                y_offset += image_height
+
+            # Check if y_offset exceeds page height for next widget
+            if y_offset > page_height:
+                pdf_writer.newPage()
+                y_offset = 0
+
+        painter.end()
