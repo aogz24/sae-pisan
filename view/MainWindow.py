@@ -12,6 +12,8 @@ from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeDialog import ModelingSaeDialog
 from PyQt6.QtWidgets import QLabel
+from PyQt6.QtGui import QPainter, QPdfWriter, QImage
+from PyQt6.QtCore import QRectF
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -118,13 +120,20 @@ class MainWindow(QMainWindow):
         self.load_action.setStatusTip("Ctrl+O")
         
         self.save_action = QAction("Save Data", self)
-        self.save_data_output_action = QAction("Save Data Output", self)
-        self.save_data_output_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
+        self.save_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.save_action.setStatusTip("Ctrl+S")
+        
+        self.save_data_output_action = QAction("Save Data Output", self)
+        self.save_data_output_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Modifier.SHIFT | Qt.Key.Key_S))
+        self.save_action.setStatusTip("Ctrl+Shift+S")
+        
+        self.save_output_pdf = QAction("Save Output to PDF", self)
+        self.save_output_pdf.triggered.connect(lambda: self.export_output_to_pdf("output.pdf"))
 
         self.file_menu.addAction(self.load_action)
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
+        self.file_menu.addAction(self.save_output_pdf)
 
         # Menu "Exploration"
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
@@ -374,3 +383,32 @@ class MainWindow(QMainWindow):
         if ok and new_name:
             self.model1.rename_column(column_index, new_name)
             self.update_table(1, self.model1)
+    
+    def export_output_to_pdf(self, file_path):
+        """Export the content of all widgets in the output layout to a PDF file."""
+
+        pdf_writer = QPdfWriter(file_path)
+        pdf_writer.setPageSize(QPdfWriter.PageSizeId.A4)
+        pdf_writer.setResolution(300)
+
+        painter = QPainter(pdf_writer)
+        y_offset = 0
+
+        for i in range(self.output_layout.count()):
+            widget = self.output_layout.itemAt(i).widget()
+            if isinstance(widget, QLabel):
+                text = widget.text()
+                rect = QRectF(0, y_offset, pdf_writer.width(), 100)
+                painter.drawText(rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, text)
+                y_offset += 100
+            elif isinstance(widget, QTextEdit):
+                text = widget.toPlainText()
+                rect = QRectF(0, y_offset, pdf_writer.width(), 200)
+                painter.drawText(rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, text)
+                y_offset += 200
+            elif isinstance(widget, QImage):
+                rect = QRectF(0, y_offset, pdf_writer.width(), pdf_writer.height() / 2)
+                painter.drawImage(rect, widget)
+                y_offset += pdf_writer.height() / 2
+
+        painter.end()
