@@ -83,18 +83,24 @@ def generate_r_script(parent):
     independent_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.independent_vars])
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     major_area_var = f'{parent.major_area_var[0].split(" [")[0].replace(" ", "_")}' if parent.major_area_var else '""'
-    formula = f'{dependent_var} ~ {independent_vars}'
+    
+    if independent_vars and major_area_var:
+        formula = f'{dependent_var} ~ {independent_vars} + as.factor({major_area_var})'
+    elif independent_vars:
+        formula = f'{dependent_var} ~ {independent_vars}'
+    elif major_area_var:
+        formula = f'{dependent_var} ~ as.factor({major_area_var})'
+    else:
+        formula = f'{dependent_var} ~ 1'  # Default formula if no independent or major area variables
 
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
     r_script += f'vardir_var <- data["{vardir_var}"]\n'
-    if parent.stepwise_method and parent.stepwise_method != "None":
+    if parent.stepwise_method and parent.stepwise_method != "None" and independent_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.stepwise_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'final_formula <- update(final_formula, . ~ . + as.factor({major_area_var}))\n'
         r_script += f'model<-mseFH(final_formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     else:
-        r_script += f'formula <- update(formula, . ~ . + as.factor({major_area_var}))\n'
         r_script += f'model<-mseFH(formula, {vardir_var}, method = "{parent.method}", MAXITER = 100, PRECISION = {parent.precision}, B = {parent.B}, data)'
     return r_script
 

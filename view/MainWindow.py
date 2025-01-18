@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu,
-    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog
+    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit
 )
 from PyQt6.QtCore import Qt, QSize 
 from PyQt6.QtGui import QAction, QKeySequence, QIcon
@@ -89,6 +89,11 @@ class MainWindow(QMainWindow):
         self.scroll_area.setWidget(self.output_container)
         output_tab_layout = QVBoxLayout(self.output_tab)
         output_tab_layout.addWidget(self.scroll_area)
+
+        # Set fixed size for widgets added to output layout
+        self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.output_layout.setSpacing(10)
+        
 
         # Menambahkan tab ke QTabWidget
         self.output_tab_widget.addTab(self.output_tab, "Output")
