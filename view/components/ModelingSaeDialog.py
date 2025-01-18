@@ -137,15 +137,11 @@ class ModelingSaeDialog(QDialog):
         view = self.parent
         r_script = get_script(self)
         sae_model = SaeEblup(self.model, self.model2, view)
-        model2 = self.parent.model2
-        controller = SaeController(sae_model, model2)
-
-        # Run the model in a separate thread to avoid blocking the UI
-        def run_model():
-            controller.run_model(r_script)
-            self.parent.update_table(2, sae_model.get_model2())
-            self.ok_button.setEnabled(True)
-            self.ok_button.setText("Run Model")
-            self.accept()
-
-        QTimer.singleShot(0, run_model)
+        controller = SaeController(sae_model)
+        
+        controller.run_model(r_script)
+        self.parent.update_table(2, sae_model.get_model2())
+        self.ok_button.setEnabled(True)
+        self.option_button.setEnabled(True)
+        self.ok_button.setText("Run Model")
+        self.close()
