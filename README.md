@@ -153,5 +153,5 @@ pyinstaller --windowed main.py --exclude-module PySide6 --exclude-module torch -
 ```
 
 ```
-nuitka --standalone --include-data-dir=R=R --include-data-dir=assets=assets --enable-plugin=PyQt6 --module-parameter=torch-disable-jit=yes main.py
+nuitka --standalone --include-data-dir=R=R --include-data-dir=assets=assets --enable-plugin=pyqt6 --module-parameter=torch-disable-jit=yes main.py
 ```
