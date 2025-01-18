@@ -114,6 +114,7 @@ class MainWindow(QMainWindow):
         
         self.save_action = QAction("Save Data", self)
         self.save_data_output_action = QAction("Save Data Output", self)
+        self.save_data_output_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.save_action.setStatusTip("Ctrl+S")
 
         self.file_menu.addAction(self.load_action)
@@ -207,14 +208,12 @@ class MainWindow(QMainWindow):
         icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
         self.actionLoad_file.setIcon(icon_load)
         self.actionLoad_file.setText("Load File")
-        self.actionLoad_file.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
         self.toolBar.addAction(self.actionLoad_file)
 
         self.actionSave_Data = QAction(self)  # Menggunakan self untuk referensi instance
         icon_save = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'save.svg'))
         self.actionSave_Data.setIcon(icon_save)
         self.actionSave_Data.setText("Save Data")
-        self.actionSave_Data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.toolBar.addAction(self.actionSave_Data)
 
         self.actionUndo = QAction(self)

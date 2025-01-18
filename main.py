@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QSplashScreen
 from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtCore import Qt
 import sys
 import os
 from controller.FileController import FileController
@@ -26,7 +27,7 @@ def main():
 
     # Buat dan tampilkan splash screen
     splash_pix = QPixmap(os.path.join(os.path.dirname(__file__), 'assets', 'splash.png'))
-    splash = QSplashScreen(splash_pix)
+    splash = QSplashScreen(splash_pix, Qt.WindowType.WindowStaysOnTopHint)
     splash.show()
     
     # Cek dan siapkan lingkungan R
@@ -40,6 +41,7 @@ def main():
 
     # Inisialisasi view dan controller
     view = MainWindow()  # Tampilan utama aplikasi
+    view.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)  # Set window flag
     controller = FileController(view.model1, view.model2, view)
     ControllerExploration = ExplorationController(view.model1, view.model2, view)
 

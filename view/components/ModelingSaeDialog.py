@@ -130,9 +130,9 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
-        # Disable the button and show loading animation
+        self.ok_button.setText("Running model...")
         self.ok_button.setEnabled(False)
-        self.ok_button.setText("Loading...")
+        self.option_button.setEnabled(False)
 
         view = self.parent
         r_script = get_script(self)
@@ -146,7 +146,6 @@ class ModelingSaeDialog(QDialog):
             self.parent.update_table(2, sae_model.get_model2())
             self.ok_button.setEnabled(True)
             self.ok_button.setText("Run Model")
-            self.loading_bar.close()
             self.accept()
 
         QTimer.singleShot(0, run_model)
