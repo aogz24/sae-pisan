@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu,
+    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame,
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit
 )
 from PyQt6.QtCore import Qt, QSize 
@@ -11,6 +11,7 @@ from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeDialog import ModelingSaeDialog
+from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
 
 
@@ -140,6 +141,11 @@ class MainWindow(QMainWindow):
 
         self.action_summary_data = QAction("Summary Data", self)
         self.action_normality_test = QAction("Normality Test", self)
+    
+        self.show_normality_test_dialog = NormalityTestDialog(self)
+        self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
+
+
         self.action_scatterplot = QAction("Scatterplot", self)
         self.action_correlation_matrix = QAction("Correlation Matrix", self)
         self.action_box_plot = QAction("Box Plot", self)
@@ -281,6 +287,12 @@ class MainWindow(QMainWindow):
         # Menetapkan ukuran default
         self.resize(800, 600)
 
+    def open_normality_test_dialog(self):
+        # Perbarui data sebelum menampilkan dialog
+        self.show_normality_test_dialog.set_model(self.model1, self.model2)
+        self.show_normality_test_dialog.show()
+
+
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
         if sheet_number == 1:
@@ -384,3 +396,71 @@ class MainWindow(QMainWindow):
             self.model1.rename_column(column_index, new_name)
             self.update_table(1, self.model1)
     
+    # def add_output(self, script_text, result_text):
+    #     """Fungsi untuk menambahkan output baru ke layout dengan ukuran box sesuai teks"""
+    #     # Bagian Script R
+    #     label_script = QLabel("Script R:")
+    #     script_box = QTextEdit()
+    #     script_box.setPlainText(script_text)
+    #     script_box.setReadOnly(True)
+
+    #     # Mengatur tinggi box berdasarkan jumlah baris teks
+    #     line_height = script_box.fontMetrics().lineSpacing()
+    #     script_box_height = line_height * (script_text.count('\n') + 1) + 10
+    #     script_box.setFixedHeight(script_box_height)
+
+    #     # Bagian Output
+    #     label_output = QLabel("Output:")
+    #     result_box = QTextEdit()
+    #     result_box.setPlainText(result_text)
+    #     result_box.setReadOnly(True)
+
+    #     # Mengatur tinggi box berdasarkan jumlah baris teks
+    #     result_box_height = line_height * (result_text.count('\n') + 1) + 10
+    #     result_box.setFixedHeight(result_box_height)
+
+    #     # Mengatur margin layout dan menambahkan elemen
+    #     self.output_layout.setContentsMargins(5, 5, 5, 5)  # Margin luar layout
+    #     self.output_layout.setSpacing(10)  # Jarak antar widget
+    #     self.output_layout.addWidget(label_script)
+    #     self.output_layout.addWidget(script_box)
+    #     self.output_layout.addWidget(label_output)
+    #     self.output_layout.addWidget(result_box)
+    #     self.output_layout.addStretch()
+
+
+    def add_output(self, script_text, result_text):
+        """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
+
+        # Membuat frame sebagai card
+        card_frame = QFrame()
+
+        # Layout untuk card
+        card_layout = QVBoxLayout(card_frame)
+        card_layout.setSpacing(1)
+
+        # Bagian Script R
+        label_script = QLabel("Script R:")
+        script_box = QTextEdit()
+        script_box.setPlainText(script_text)
+        script_box.setReadOnly(True)
+        script_box.setStyleSheet("background-color: #fff; border: 1px solid #ddd; border-radius: 4px;")
+        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 1) + 10)
+
+        # Bagian Output
+        label_output = QLabel("Output:")
+        result_box = QTextEdit()
+        result_box.setPlainText(result_text)
+        result_box.setReadOnly(True)
+        result_box.setStyleSheet("background-color: #fff; border: 1px solid #ddd; border-radius: 4px;")
+        result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 1) + 10)
+
+        # Tambahkan elemen ke layout card
+        card_layout.addWidget(label_script)
+        card_layout.addWidget(script_box)
+        card_layout.addWidget(label_output)
+        card_layout.addWidget(result_box)
+
+        # Tambahkan card ke layout utama
+        self.output_layout.addWidget(card_frame)
+        self.output_layout.addStretch()
