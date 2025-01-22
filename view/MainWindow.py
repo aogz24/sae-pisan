@@ -10,20 +10,17 @@ import os
 from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
-from view.components.ModelingSaeDialog import ModelingSaeDialog
+from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
+from view.components.ModellingSaeHBAreaDialog import ModelingSaeHBDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1.0")
-
-        # Data awal untuk Sheet 1 dan Sheet 2
-        self.cek = "cek"
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -50,6 +47,9 @@ class MainWindow(QMainWindow):
         
         self.show_modeling_sae_dialog = ModelingSaeDialog(self)
         self.show_modeling_sae_dialog.set_model(self.model1)
+        
+        self.show_modeling_saehb_dialog = ModelingSaeHBDialog(self)
+        self.show_modeling_saehb_dialog.set_model(self.model1)
 
         # Tab pertama (Sheet 1)
         self.tab1 = QWidget()
@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
-        self.show_summary_data_dialog = SummaryDataDialog(self)
+        self.show_summary_data_dialog = SummaryDataDialog(self, self.model2)
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
         
 
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         action_eblup_area = QAction("EBLUP", self)
         action_eblup_area.triggered.connect(self.show_modeling_sae_dialog.show)
         action_hb_beta = QAction("HB Beta", self)
-        action_hb_beta.triggered.connect(lambda: print("Area Level -> HB Beta selected"))
+        action_hb_beta.triggered.connect(self.show_modeling_saehb_dialog.show)
         menu_area_level.addAction(action_eblup_area)
         menu_area_level.addAction(action_hb_beta)
 
@@ -326,6 +326,7 @@ class MainWindow(QMainWindow):
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.show_modeling_sae_dialog.set_model(model)
+            self.show_modeling_saehb_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model

@@ -11,9 +11,9 @@ class SummaryDataDialog(QDialog):
         self.setMinimumSize(500, 500)  # Tinggi diperbesar untuk ruang script box
 
         # Gabungkan kolom dari model1 dan model2
-        self.model1_columns = model1.get_data().columns
+        # self.model1_columns = model1.get_data().columns
         self.model2_columns = model2.get_data().columns
-        self.all_columns_model1 = list(self.model1_columns)  # Data Editor
+        # self.all_columns_model1 = list(self.model1_columns)  # Data Editor
         self.all_columns_model2 = list(self.model2_columns)  # Data Output
 
         # Layout utama
@@ -28,7 +28,7 @@ class SummaryDataDialog(QDialog):
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_list = QListWidget(self)
-        self.data_editor_list.addItems(self.all_columns_model1)
+        self.data_editor_list.addItems(self.all_columns_model2)
         self.data_editor_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
