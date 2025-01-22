@@ -1,34 +1,17 @@
+from service.exploration.NormalityTest import run_normality_test
+
 class NormalityTest:
-    def __init__(self, data, grafik, jenis_test):
-        self.data = data
-        self.grafik = grafik
-        self.jenis_test = jenis_test
+    def __init__(self, model1, model2, view):
+        self.model1 = model1
+        self.model2 = model2
+        self.view = view
+        self.result =""
 
-    def run_test(self):
-        # Perform normality test based on jenis_test
-        if self.jenis_test == "Shapiro-Wilk":
-            # Perform Shapiro-Wilk test
-            pass
-        elif self.jenis_test == "Jarque-Bera":
-            # Perform Jarque-Bera test
-            pass
-        elif self.jenis_test == "Uji Lilliefors":
-            # Perform Uji Lilliefors test
-            pass
-        else:
-            # Handle invalid jenis_test value
+    def run_model(self, r_script):
+        self.r_script = r_script
+        run_normality_test(self)
 
-    def generate_graph(self):
-        # Generate graph based on grafik
-        if self.grafik == "qq plot":
-            # Generate qq plot
-            pass
-        elif self.grafik == "histogram":
-            # Generate histogram
-            pass
-        elif self.grafik == "both":
-            # Generate both qq plot and histogram
-            pass
-        else:
-            # Handle invalid grafik value
-            pass
+    def activate_R(self):
+        from rpy2.robjects import pandas2ri
+        pandas2ri.activate()
+    
