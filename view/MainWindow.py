@@ -11,6 +11,7 @@ from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeDialog import ModelingSaeDialog
+from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
 
@@ -140,8 +141,11 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
+        self.show_summary_data_dialog = SummaryDataDialog(self)
+        self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
+        
+
         self.action_normality_test = QAction("Normality Test", self)
-    
         self.show_normality_test_dialog = NormalityTestDialog(self)
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
@@ -287,6 +291,10 @@ class MainWindow(QMainWindow):
         # Menetapkan ukuran default
         self.resize(800, 600)
 
+    def open_summary_data_dialog(self):
+        self.show_summary_data_dialog.set_model(self.model1, self.model2)
+        self.show_summary_data_dialog.show()
+        
     def open_normality_test_dialog(self):
         # Perbarui data sebelum menampilkan dialog
         self.show_normality_test_dialog.set_model(self.model1, self.model2)
@@ -396,38 +404,6 @@ class MainWindow(QMainWindow):
             self.model1.rename_column(column_index, new_name)
             self.update_table(1, self.model1)
     
-    # def add_output(self, script_text, result_text):
-    #     """Fungsi untuk menambahkan output baru ke layout dengan ukuran box sesuai teks"""
-    #     # Bagian Script R
-    #     label_script = QLabel("Script R:")
-    #     script_box = QTextEdit()
-    #     script_box.setPlainText(script_text)
-    #     script_box.setReadOnly(True)
-
-    #     # Mengatur tinggi box berdasarkan jumlah baris teks
-    #     line_height = script_box.fontMetrics().lineSpacing()
-    #     script_box_height = line_height * (script_text.count('\n') + 1) + 10
-    #     script_box.setFixedHeight(script_box_height)
-
-    #     # Bagian Output
-    #     label_output = QLabel("Output:")
-    #     result_box = QTextEdit()
-    #     result_box.setPlainText(result_text)
-    #     result_box.setReadOnly(True)
-
-    #     # Mengatur tinggi box berdasarkan jumlah baris teks
-    #     result_box_height = line_height * (result_text.count('\n') + 1) + 10
-    #     result_box.setFixedHeight(result_box_height)
-
-    #     # Mengatur margin layout dan menambahkan elemen
-    #     self.output_layout.setContentsMargins(5, 5, 5, 5)  # Margin luar layout
-    #     self.output_layout.setSpacing(10)  # Jarak antar widget
-    #     self.output_layout.addWidget(label_script)
-    #     self.output_layout.addWidget(script_box)
-    #     self.output_layout.addWidget(label_output)
-    #     self.output_layout.addWidget(result_box)
-    #     self.output_layout.addStretch()
-
 
     def add_output(self, script_text, result_text):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
