@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QPushButton, QLabel, QComboBox, QCheckBox, QTextEdit, QGroupBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QComboBox, QCheckBox, QTextEdit, QGroupBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QStringListModel
 from model.NormalityTest import NormalityTest
 from controller.Eksploration.NormalityTestController import NormalityTestController
+
 
 class NormalityTestDialog(QDialog):
     def __init__(self, parent):
@@ -11,9 +12,12 @@ class NormalityTestDialog(QDialog):
         self.parent = parent
         self.model1 = None
         self.model2 = None
+        self.all_columns_model1 = []
+        self.all_columns_model2 = []
 
         self.setWindowTitle("Normality Test")
 
+        # Menyimpan status variabel yang dipilih
         self.selected_status = {}
 
         # Layout utama
@@ -22,27 +26,33 @@ class NormalityTestDialog(QDialog):
         # Layout konten utama
         content_layout = QHBoxLayout()
 
-        # Layout kiri untuk Data Editor dan Data Output
+        # Layout kiri: Data Editor dan Data Output
         left_layout = QVBoxLayout()
         self.data_editor_label = QLabel("Data Editor", self)
-        self.data_editor_list = QListWidget(self)
-        self.data_editor_list.itemClicked.connect(self.toggle_selection)
+        self.data_editor_model = QStringListModel()
+        self.data_editor_list = QListView(self)
+        self.data_editor_list.setModel(self.data_editor_model)
+        self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
 
         self.data_output_label = QLabel("Data Output", self)
-        self.data_output_list = QListWidget(self)
-        self.data_output_list.itemClicked.connect(self.toggle_selection)
+        self.data_output_model = QStringListModel()
+        self.data_output_list = QListView(self)
+        self.data_output_list.setModel(self.data_output_model)
+        self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
         left_layout.addWidget(self.data_output_label)
         left_layout.addWidget(self.data_output_list)
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah untuk tombol
+        # Layout tengah: Tombol
         button_layout = QVBoxLayout()
-        self.add_button = QPushButton("\u2192", self)
+        self.add_button = QPushButton("\u2192", self)  # Tombol untuk menambahkan variabel
         self.add_button.clicked.connect(self.add_variable)
-        self.remove_button = QPushButton("\u2190", self)
+        self.remove_button = QPushButton("\u2190", self)  # Tombol untuk menghapus variabel
         self.remove_button.clicked.connect(self.remove_variable)
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
@@ -51,14 +61,17 @@ class NormalityTestDialog(QDialog):
 
         content_layout.addLayout(button_layout)
 
-        # Layout kanan untuk variabel yang dipilih
+        # Layout kanan: Variabel yang dipilih, metode, dan grafik
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variabel", self)
-        self.selected_list = QListWidget(self)
+        self.selected_model = QStringListModel()
+        self.selected_list = QListView(self)
+        self.selected_list.setModel(self.selected_model)
+        self.selected_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
-        # Grup Metode Uji Normalitas
+        # Grup metode
         method_group = QGroupBox("Metode")
         method_layout = QVBoxLayout()
         self.method_combo = QComboBox(self)
@@ -68,7 +81,7 @@ class NormalityTestDialog(QDialog):
         method_group.setLayout(method_layout)
         right_layout.addWidget(method_group)
 
-        # Grup Grafik
+        # Grup grafik
         graph_group = QGroupBox("Graph")
         graph_layout = QVBoxLayout()
         self.histogram_checkbox = QCheckBox("Histogram", self)
@@ -84,33 +97,31 @@ class NormalityTestDialog(QDialog):
 
         main_layout.addLayout(content_layout)
 
-        # Box untuk script
+        # Script box
         self.script_label = QLabel("Script:", self)
         self.script_box = QTextEdit(self)
         self.script_box.setReadOnly(True)
         main_layout.addWidget(self.script_label)
         main_layout.addWidget(self.script_box)
 
-        # Layout untuk tombol Run
+        # Tombol Run
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-
         main_layout.addLayout(button_row_layout)
+        
+        self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
     def set_model(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
-
-        # Ambil kolom dari model1 dan model2
-        self.all_columns_model1 = self.get_column_with_dtype(self.model1)
-        self.all_columns_model2 = self.get_column_with_dtype(self.model2)
-
-        self.data_editor_list.clear()
-        self.data_output_list.clear()
-        self.data_editor_list.addItems(self.all_columns_model1)
-        self.data_output_list.addItems(self.all_columns_model2)
+        self.data_editor_model.setStringList(self.get_column_with_dtype(model1))
+        self.data_output_model.setStringList(self.get_column_with_dtype(model2))
+        self.all_columns_model1 = self.get_column_with_dtype(model1)
+        self.all_columns_model2 = self.get_column_with_dtype(model2)
 
     def get_column_with_dtype(self, model):
         return [
@@ -118,47 +129,60 @@ class NormalityTestDialog(QDialog):
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
 
-    def toggle_selection(self, item):
-        text = item.text()
-        self.selected_status[text] = not self.selected_status.get(text, False)
-        item.setSelected(self.selected_status[text])
-
     def add_variable(self):
-        selected_items = self.data_editor_list.selectedItems() + self.data_output_list.selectedItems()
+        # Ambil semua indeks yang dipilih dari data editor dan data output
+        selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
+        selected_items = [index.data() for index in selected_indexes]
+        selected_list = self.selected_model.stringList()
+
         for item in selected_items:
-            if self.selected_status.get(item.text(), False):
-                self.selected_list.addItem(item.text())
-                list_widget = self.data_editor_list if item in self.data_editor_list.selectedItems() else self.data_output_list
-                list_widget.takeItem(list_widget.row(item))
-                self.selected_status[item.text()] = False
+            if item in self.data_editor_model.stringList():
+                editor_list = self.data_editor_model.stringList()
+                editor_list.remove(item)
+                self.data_editor_model.setStringList(editor_list)
+            elif item in self.data_output_model.stringList():
+                output_list = self.data_output_model.stringList()
+                output_list.remove(item)
+                self.data_output_model.setStringList(output_list)
+
+            if item not in selected_list:
+                selected_list.append(item)
+
+        self.selected_model.setStringList(selected_list)
         self.generate_r_script()
 
     def remove_variable(self):
-        selected_items = self.selected_list.selectedItems()
-        for item in selected_items:
-            column_name = item.text().split(' ')[0]
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                self.data_editor_list.addItem(item.text())
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                self.data_output_list.addItem(item.text())
-            self.selected_list.takeItem(self.selected_list.row(item))
-        self.generate_r_script()
+        # Ambil semua indeks yang dipilih dari daftar variabel yang dipilih
+        selected_indexes = self.selected_list.selectedIndexes()
+        selected_items = [index.data() for index in selected_indexes]
+        selected_list = self.selected_model.stringList()
 
+        for item in selected_items:
+            column_name = item.split(' ')[0]
+            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
+                editor_list = self.data_editor_model.stringList()
+                editor_list.append(item)
+                self.data_editor_model.setStringList(editor_list)
+            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
+                output_list = self.data_output_model.stringList()
+                output_list.append(item)
+                self.data_output_model.setStringList(output_list)
+
+            if item in selected_list:
+                selected_list.remove(item)
+
+        self.selected_model.setStringList(selected_list)
+        self.generate_r_script()
+    
     def get_selected_columns(self):
         return [
-            item.text().split(" [")[0].replace(" ", "_")
-            for i in range(self.selected_list.count())
-            for item in [self.selected_list.item(i)]
+            item.split(" [")[0].replace(" ", "_")
+            for item in self.selected_model.stringList()
         ]
 
     def generate_r_script(self):
-        # Ambil kolom yang dipilih untuk diuji
         selected_vars = self.get_selected_columns()
-        
-        # Ambil metode uji normalitas
         method = self.method_combo.currentText().lower().replace("-", "_")
-        
-        # Ambil opsi tambahan (histogram & Q-Q plot)
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
 
@@ -166,20 +190,15 @@ class NormalityTestDialog(QDialog):
             self.script_box.setPlainText("stop('Tidak ada variabel yang dipilih untuk diuji.')")
             return
 
-        # Awal script R
         r_script = 'normality_results <- list()\n'
         for var in selected_vars:
-            # Tambahkan metode uji berdasarkan pilihan
             if method == "shapiro_wilk":
                 r_script += f'normality_results[["{var}"]] <- shapiro.test(data${var})\n'
             elif method == "jarque_bera":
                 r_script += f'normality_results[["{var}"]] <- tseries::jarque.bera.test(data${var})\n'
             elif method == "lilliefors":
                 r_script += f'normality_results[["{var}"]] <- nortest::lillie.test(data${var})\n'
-            else:
-                r_script += f'stop("Metode {method} tidak dikenali.")\n'
-            
-            # Tambahkan visualisasi jika diperlukan
+
             if show_histogram:
                 r_script += f'png("{var}_histogram.png")\n'
                 r_script += f'hist(data${var}, main="Histogram of {var}", xlab="{var}")\n'
@@ -191,9 +210,7 @@ class NormalityTestDialog(QDialog):
                 r_script += 'qqline(data${var}, col="red")\n'
                 r_script += 'dev.off()\n'
 
-        # Outputkan script ke text box
         self.script_box.setPlainText(r_script)
-
 
     def accept(self):
         r_script = self.script_box.toPlainText()
@@ -209,4 +226,3 @@ class NormalityTestDialog(QDialog):
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")
         self.close()
-

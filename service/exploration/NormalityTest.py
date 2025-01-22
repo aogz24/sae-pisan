@@ -21,7 +21,7 @@ def run_normality_test(parent):
         ro.r('suppressMessages(library(nortest))')
         ro.r('suppressMessages(library(tseries))')
 
-    #     # Mengatur data di R
+        # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
 
         # Menjalankan script R dari parent
