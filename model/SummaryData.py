@@ -1,33 +1,16 @@
-import rpy2.robjects as r
-from rpy2.robjects import pandas2ri
-
+from service.exploration.SummaryData import run_summary_data
 
 class SummaryData:
-    def __init__(self, dataframe):
-        self.dataframe = dataframe
-        pandas2ri.activate()  # Aktifkan konversi otomatis antara pandas dan R
+    def __init__(self, model1, model2, view):
+        self.model1 = model1
+        self.model2 = model2
+        self.view = view
+        self.result =""
 
-    def get_column_names(self):
-        return self.dataframe.columns.tolist()
+    def run_model(self, r_script):
+        self.r_script = r_script
+        run_summary_data(self)
 
-    def get_summary(self, column_names):
-
-        # Konversi DataFrame Pandas ke DataFrame R
-        r_dataframe = pandas2ri.py2rpy(self.dataframe)
-
-        # Inisialisasi hasil summary
-        summary = {}
-
-        # Load DataFrame ke environment R
-        r.globalenv["df"] = r_dataframe
-
-        for column in column_names:
-            if column in self.dataframe.columns:
-                # Evaluasi fungsi summary di R
-                r_summary = r.r(f"summary(df${column})")
-                r_summary_dict = dict(zip(r_summary.names, list(r_summary)))
-                summary[column] = r_summary_dict
-            else:
-                summary[column] = {"Error": "Column not found in DataFrame"}
-
-        return summary
+    def activate_R(self):
+        from rpy2.robjects import pandas2ri
+        pandas2ri.activate()

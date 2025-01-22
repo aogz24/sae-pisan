@@ -1,14 +1,20 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+import rpy2.robjects as ro
+import rpy2_arrow.polars as rpy2polars
 
-def run_normality_test(parent):
-    import rpy2.robjects as ro
-    import rpy2_arrow.polars as rpy2polars
-    parent.activate_R()
+def run_summary_data(parent):
+    """
+    Menjalankan ringkasan data menggunakan Python (Polars) dan R.
+    """
+    parent.activate_R()  # Aktifkan R jika diperlukan
+
+    # Ambil data dari model
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
+
+    # Gabungkan data menggunakan Polars
     df = pl.concat([df1, df2], how="horizontal")
-    print(df)
     df = df.drop_nulls()  # Menghapus data null
 
     # Konversi Polars DataFrame ke R DataFrame
@@ -17,24 +23,18 @@ def run_normality_test(parent):
         ro.globalenv['r_df'] = r_df
 
     try:
-        # Memuat library R yang diperlukan
-        ro.r('suppressMessages(library(nortest))')
-        ro.r('suppressMessages(library(tseries))')
-
         # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
 
         # Menjalankan script R dari parent
         ro.r(parent.r_script)
 
-        # Mengambil hasil uji normalitas
-        ro.r('results <- do.call(rbind, normality_results)')
-        result_str = ro.r('capture.output(print(normality_results))')
-        result = "\n".join(result_str)
+        # Mengambil hasil summary
+        summary_str = ro.r('capture.output(print(summary_results))')
+        summary_output = "\n".join(summary_str)
 
-        # Konversi hasil R ke Python
-        results = ro.conversion.rpy2py(ro.globalenv['results'])
-        parent.result = str(result)
+        # Simpan hasil summary ke dalam parent.result
+        parent.result = str(summary_output)
 
     except Exception as e:
         # Menampilkan dialog error jika terjadi masalah
