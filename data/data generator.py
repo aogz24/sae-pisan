@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Set the number of rows
-rows = 5
+rows = 200
 
 # Create a dataframe with the specified columns
 data = {

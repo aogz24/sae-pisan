@@ -136,7 +136,9 @@ class TableModel(QtCore.QAbstractTableModel):
     def canFetchMore(self, index):
         return self.loaded_rows < self._data.shape[0]
 
-    def fetchMore(self, index):
+    def fetchMore(self):
+        if self.loaded_rows >= self._data.shape[0]:
+            return
         remaining_rows = self._data.shape[0] - self.loaded_rows
         rows_to_fetch = min(self.batch_size, remaining_rows)
         self.beginInsertRows(QtCore.QModelIndex(), self.loaded_rows, self.loaded_rows + rows_to_fetch - 1)
@@ -208,6 +210,7 @@ class TableModel(QtCore.QAbstractTableModel):
             self._data = self._data.select(columns_to_keep)
             self.endResetModel()
             command = DeleteColumnsCommand(self, start_column, old_columns)
+            self.undo_stack.push(command)
     
     def rename_column(self, column_index, new_name):
         if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
