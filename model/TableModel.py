@@ -203,14 +203,34 @@ class TableModel(QtCore.QAbstractTableModel):
             self.undo_stack.push(command)
 
     def deleteColumns(self, start_column, count):
+        """
+        Deletes columns starting from `start_column` and spanning `count` columns.
+
+        Args:
+            start_column (int): The starting column index to delete.
+            count (int): The number of columns to delete.
+        """
         if start_column >= 0 and count > 0:
-            old_columns = {self._data.columns[i]: self._data[:, i].to_list() for i in range(start_column, start_column + count)}
+            # Store original column order
+            original_order = self._data.columns
+
+            # Store the deleted columns and their data
+            old_columns = {
+                self._data.columns[i]: self._data[:, i].to_list()
+                for i in range(start_column, start_column + count)
+            }
             self.beginResetModel()
-            columns_to_keep = [col for i, col in enumerate(self._data.columns) if i < start_column or i >= start_column + count]
+            columns_to_keep = [
+                col for i, col in enumerate(self._data.columns)
+                if i < start_column or i >= start_column + count
+            ]
             self._data = self._data.select(columns_to_keep)
             self.endResetModel()
-            command = DeleteColumnsCommand(self, start_column, old_columns)
+
+            # Create a DeleteColumnsCommand and push it to the undo stack
+            command = DeleteColumnsCommand(self, start_column, old_columns, original_order)
             self.undo_stack.push(command)
+
     
     def rename_column(self, column_index, new_name):
         if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
