@@ -21,10 +21,10 @@ class TableModel(QtCore.QAbstractTableModel):
             value = self._data[index.row(), index.column()]
             return str(value)
 
-    def rowCount(self, index):
+    def rowCount(self, _):
         return self.loaded_rows
 
-    def columnCount(self, index):
+    def columnCount(self, _):
         return self._data.shape[1]
 
     def headerData(self, section, orientation, role):
@@ -36,7 +36,7 @@ class TableModel(QtCore.QAbstractTableModel):
             if orientation == Qt.Orientation.Vertical:
                 return str(section + 1)
 
-    def flags(self, index):
+    def flags(self, _):
         return (
             Qt.ItemFlag.ItemIsSelectable
             | Qt.ItemFlag.ItemIsEnabled
@@ -133,10 +133,10 @@ class TableModel(QtCore.QAbstractTableModel):
     def redo(self):
         self.undo_stack.redo()
 
-    def canFetchMore(self, index):
+    def canFetchMore(self, _):
         return self.loaded_rows < self._data.shape[0]
 
-    def fetchMore(self):
+    def fetchMore(self, _):
         if self.loaded_rows >= self._data.shape[0]:
             return
         remaining_rows = self._data.shape[0] - self.loaded_rows
