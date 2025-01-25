@@ -136,6 +136,8 @@ def generate_r_script(parent):
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
     r_script += f'vardir_var <- data["{vardir_var}"]\n'
+    if parent.selection_method=="Stepwise":
+        parent.selection_method = "both"
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
@@ -161,7 +163,7 @@ def show_options(parent):
     layout.addWidget(method_label)
 
     parent.method_combo = QComboBox()
-    parent.method_combo.addItems(["None", "Both", "Forward", "Backward"])
+    parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
     layout.addWidget(parent.method_combo)
 
     method_label = QLabel("Method:")
@@ -171,22 +173,6 @@ def show_options(parent):
     parent.method_selection.addItems(["ML", "REML", "FH"])
     parent.method_selection.setCurrentText("REML")
     layout.addWidget(parent.method_selection)
-
-    precision_label = QLabel("Precision:")
-    layout.addWidget(precision_label)
-
-    parent.precision_input = QLineEdit()
-    parent.precision_input.setValidator(QDoubleValidator(0.0, 1.0, 10))  # Allow only numbers from 0 to 1 with up to 10 decimal places
-    parent.precision_input.setText("0.0001")
-    layout.addWidget(parent.precision_input)
-
-    B_label = QLabel("B:")
-    layout.addWidget(B_label)
-
-    parent.B_input = QLineEdit()
-    parent.B_input.setValidator(QIntValidator(0, 10000))  # Allow only integer numbers
-    parent.B_input.setText("0")
-    layout.addWidget(parent.B_input)
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -206,7 +192,5 @@ def show_options(parent):
 def set_selection_method(parent, dialog):
     parent.selection_method = parent.method_combo.currentText()
     parent.method = parent.method_selection.currentText()
-    parent.precision = parent.precision_input.text()
-    parent.B = parent.B_input.text()
     dialog.accept()
     show_r_script(parent)

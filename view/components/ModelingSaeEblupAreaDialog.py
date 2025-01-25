@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
+from PyQt6.QtWidgets import QMessageBox
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent):
@@ -137,6 +138,12 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
+        if not self.vardir_var:
+            QMessageBox.warning(self, "Warning", "Varian Direct cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
         self.ok_button.setText("Running model...")
         self.ok_button.setEnabled(False)
         self.option_button.setEnabled(False)
