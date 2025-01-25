@@ -4,7 +4,6 @@ from PyQt6.QtCore import Qt
 import sys
 import os
 from controller.FileController import FileController
-# from controller.ExplorationController import ExplorationController
 from view.MainWindow import MainWindow
 from service.main.CheckEnviroment import check_environment
 

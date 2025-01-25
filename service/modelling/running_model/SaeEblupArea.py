@@ -24,10 +24,9 @@ def run_model_eblup_area(parent):
         vardir_var = vardir_var.to_numpy()[:, 0]
         rse = mse**0.5/estimated_value*100
         df = pl.DataFrame({
-            'Estimated Value': estimated_value,
-            'Mean Square Error(%)': mse,
-            'Relative Standar Error': rse,
-            'Varians Direct': vardir_var})
+            'Eblup': estimated_value,
+            'MSE': mse,
+            'RSE (%)': rse})
         parent.model2.set_data(df)
         parent.result = str(result)
         
