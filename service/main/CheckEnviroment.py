@@ -3,13 +3,15 @@ import subprocess
 import time
 import errno
 
-def check_environment(path):
+def check_environment(path, original_path):
     r_path = os.path.join(path, "bin")
     try:
         os.chdir(r_path)
         output = subprocess.check_output(['r', '--version'], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("R is not installed or not found in PATH.")
+    finally:
+        os.chdir(original_path)
     
     if b"R version" in output:
         version_line = output.decode().split('\n')[0]
