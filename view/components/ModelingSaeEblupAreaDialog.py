@@ -14,7 +14,7 @@ class ModelingSaeDialog(QDialog):
         super().__init__(parent)
         self.parent = parent
         self.model2 = parent.model2
-        self.setWindowTitle("SAE Eblup Area Modelling")
+        self.setWindowTitle("SAE Eblup")
         self.setFixedHeight(700)
 
         self.columns = []
