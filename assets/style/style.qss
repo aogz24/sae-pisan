@@ -113,6 +113,10 @@ QDialog QPushButton {
     font-size: 12px;
 }
 
+QDialog QPushButton#arrow_button{
+    font-size: 21px;
+}
+
 QDialog QPushButton:hover {
     background-color: #7AB432; /* darker green */
 }

@@ -1,8 +1,9 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit
+    QAbstractItemView, QTextEdit, QSizePolicy
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
+from PyQt6.QtGui import QFont
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
@@ -13,6 +14,7 @@ class ModelingSaeDialog(QDialog):
         self.parent = parent
         self.model2 = parent.model2
         self.setWindowTitle("SAE Eblup Area Modelling")
+        self.setFixedHeight(700)
 
         self.columns = []
 
@@ -33,55 +35,61 @@ class ModelingSaeDialog(QDialog):
         
         middle_layout1 = QVBoxLayout()
         self.unassign_button = QPushButton("←")
+        self.unassign_button.setObjectName("arrow_button")
         middle_layout1.addWidget(self.unassign_button)
 
         # Layout tengah untuk tombol panah
         middle_layout = QVBoxLayout()
-        self.assign_dependent_button = QPushButton("→")
-        self.assign_independent_button = QPushButton("→")
+        self.assign_of_interest_button = QPushButton("→")
+        self.assign_of_interest_button.setObjectName("arrow_button")
+        self.assign_aux_button = QPushButton("→")
+        self.assign_aux_button.setObjectName("arrow_button")
+        self.assign_as_factor_button = QPushButton("→")
+        self.assign_as_factor_button.setObjectName("arrow_button")
         self.assign_vardir_button = QPushButton("→")
-        self.assign_major_area_button = QPushButton("→")
-        self.assign_dependent_button.clicked.connect(lambda: assign_dependent(self))
-        self.assign_independent_button.clicked.connect(lambda: assign_independent(self))
+        self.assign_vardir_button.setObjectName("arrow_button")
+
+        self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
+        self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
         self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
-        self.assign_major_area_button.clicked.connect(lambda: assign_major_area(self))
+        self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
-        middle_layout.addWidget(self.assign_dependent_button)
-        middle_layout.addWidget(self.assign_independent_button)
+        middle_layout.addWidget(self.assign_of_interest_button)
+        middle_layout.addWidget(self.assign_aux_button)
+        middle_layout.addWidget(self.assign_as_factor_button)
         middle_layout.addWidget(self.assign_vardir_button)
-        middle_layout.addWidget(self.assign_major_area_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
-        self.dependent_label = QLabel("Dependent Variable:")
-        self.dependent_list = QListView()
-        self.dependent_model = QStringListModel()
-        self.dependent_list.setModel(self.dependent_model)
-        self.dependent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        right_layout.addWidget(self.dependent_label)
-        right_layout.addWidget(self.dependent_list)
+        self.of_interest_label = QLabel("Variable of interest:")
+        self.of_interest_list = QListView()
+        self.of_interest_model = QStringListModel()
+        self.of_interest_list.setModel(self.of_interest_model)
+        self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        right_layout.addWidget(self.of_interest_label)
+        right_layout.addWidget(self.of_interest_list)
 
-        self.independent_label = QLabel("Independent Variable(s):")
-        self.independent_list = QListView()
-        self.independent_model = QStringListModel()
-        self.independent_list.setModel(self.independent_model)
-        self.independent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        right_layout.addWidget(self.independent_label)
-        right_layout.addWidget(self.independent_list)
+        self.inof_interest_label = QLabel("Auxilary Variable(s):")
+        self.inof_interest_list = QListView()
+        self.inof_interest_model = QStringListModel()
+        self.inof_interest_list.setModel(self.inof_interest_model)
+        self.inof_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        right_layout.addWidget(self.inof_interest_label)
+        right_layout.addWidget(self.inof_interest_list)
 
+        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_list = QListView()
+        self.as_factor_model = QStringListModel()
+        self.as_factor_list.setModel(self.as_factor_model)
+        right_layout.addWidget(self.as_factor_label)
+        right_layout.addWidget(self.as_factor_list)
+        
         self.vardir_label = QLabel("Varian Direct:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
-
-        self.major_area_label = QLabel("Major Area:")
-        self.major_area_list = QListView()
-        self.major_area_model = QStringListModel()
-        self.major_area_list.setModel(self.major_area_model)
-        right_layout.addWidget(self.major_area_label)
-        right_layout.addWidget(self.major_area_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         split_layout.addLayout(left_layout)
@@ -94,12 +102,13 @@ class ModelingSaeDialog(QDialog):
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
-        self.text_script = QLabel("Script R:")
+        self.text_script = QLabel("R Script:")
         self.option_button.clicked.connect(lambda : show_options(self))
         main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
+        self.r_script_edit.setFixedHeight(200)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 
@@ -115,14 +124,12 @@ class ModelingSaeDialog(QDialog):
 
         self.setLayout(main_layout)
 
-        self.dependent_var = []
-        self.independent_vars = []
+        self.of_interest_var = []
+        self.auxilary_vars = []
         self.vardir_var = []
-        self.major_area_var = []
-        self.stepwise_method = "None"
+        self.as_factor_var = []
+        self.selection_method = "None"
         self.method = "REML"
-        self.precision = "0.0001"
-        self.B = "0"
 
     def set_model(self, model):
         self.model = model
