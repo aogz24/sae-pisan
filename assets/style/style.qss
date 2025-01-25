@@ -111,10 +111,14 @@ QDialog QPushButton {
     padding: 8px 15px;
     border-radius: 4px;
     font-size: 12px;
+    font-weight: bold;
 }
 
-QDialog QPushButton#arrow_button{
+QDialog QPushButton#arrow_button {
     font-size: 21px;
+    font-weight: bold;
+    padding-bottom: 2;
+    padding-top:2;
 }
 
 QDialog QPushButton:hover {
