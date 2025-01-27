@@ -138,8 +138,20 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
-        if not self.vardir_var:
-            QMessageBox.warning(self, "Warning", "Varian Direct cannot be empty.")
+        if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
+            QMessageBox.warning(self, "Warning", "Varians Direct and variable of interest cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+        if not self.of_interest_var or self.of_interest_var == [""]:
+            QMessageBox.warning(self, "Warning", "Variable of interest cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+        if not self.vardir_var or self.vardir_var == [""]:
+            QMessageBox.warning(self, "Warning", "Varians Direct cannot be empty.")
             self.ok_button.setEnabled(True)
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")

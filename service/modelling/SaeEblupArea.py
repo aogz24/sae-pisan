@@ -83,6 +83,7 @@ def unassign_variable(parent):
         parent.of_interest_model.setStringList(parent.of_interest_var)
         parent.variables_list.model().insertRow(0)  # Add back to variables list
         parent.variables_list.model().setData(parent.variables_list.model().index(0), selected_items[0])
+        show_r_script(parent)
         return
 
     selected_indexes = parent.auxilary_list.selectedIndexes()
@@ -93,6 +94,7 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)  # Add back to variables list
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
+        show_r_script(parent)
         return
 
     selected_indexes = parent.vardir_list.selectedIndexes()
@@ -103,6 +105,7 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)  # Add back to variables list
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
+        show_r_script(parent)
         return
 
     selected_indexes = parent.as_factor_list.selectedIndexes()
@@ -113,7 +116,7 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)  # Add back to variables list
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
-    show_r_script(parent)
+        show_r_script(parent)
 
 def get_selected_variables(parent):
     return parent.of_interest_var, parent.auxilary_vars, parent.vardir_var, parent.as_factor_var
@@ -124,11 +127,11 @@ def generate_r_script(parent):
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     
-    if auxilary_vars and as_factor_var:
+    if auxilary_vars!='""' and as_factor_var!='""':
         formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
-    elif auxilary_vars:
+    elif auxilary_vars!='""':
         formula = f'{of_interest_var} ~ {auxilary_vars}'
-    elif as_factor_var:
+    elif as_factor_var!='""':
         formula = f'{of_interest_var} ~ {as_factor_var}'
     else:
         formula = f'{of_interest_var} ~ 1'  # Default formula if no auxilary or major area variables
