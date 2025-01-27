@@ -123,18 +123,18 @@ def get_selected_variables(parent):
 
 def generate_r_script(parent):
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
-    auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars])
+    auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     
-    if auxilary_vars!='""' and as_factor_var!='""':
-        formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
-    elif auxilary_vars!='""':
+    if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
+        formula = f'{of_interest_var} ~ 1'
+    elif as_factor_var=='""':
         formula = f'{of_interest_var} ~ {auxilary_vars}'
-    elif as_factor_var!='""':
+    elif auxilary_vars=='""':
         formula = f'{of_interest_var} ~ {as_factor_var}'
     else:
-        formula = f'{of_interest_var} ~ 1'  # Default formula if no auxilary or major area variables
+        formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
 
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
