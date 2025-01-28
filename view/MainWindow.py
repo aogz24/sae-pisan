@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit
 )
 from PyQt6.QtCore import Qt, QSize 
-from PyQt6.QtGui import QAction, QKeySequence, QIcon
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -15,6 +15,8 @@ from view.components.ModellingSaeHBAreaDialog import ModelingSaeHBDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
+from io import BytesIO
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -406,38 +408,88 @@ class MainWindow(QMainWindow):
             self.update_table(1, self.model1)
     
 
-    def add_output(self, script_text, result_text):
+    def add_output(self, script_text, result_text, plot_paths=None):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
 
         # Membuat frame sebagai card
         card_frame = QFrame()
+        card_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 10px;
+            }
+        """)
 
-        # Layout untuk card
+        # Layout vertikal untuk card
         card_layout = QVBoxLayout(card_frame)
-        card_layout.setSpacing(1)
+        card_layout.setSpacing(8)
 
         # Bagian Script R
-        label_script = QLabel("Script R:")
+        label_script = QLabel("<b>Script R:</b>")
+        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
         script_box = QTextEdit()
         script_box.setPlainText(script_text)
         script_box.setReadOnly(True)
-        script_box.setStyleSheet("background-color: #fff; border: 1px solid #ddd; border-radius: 4px;")
-        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 1) + 10)
+        script_box.setStyleSheet("""
+            QTextEdit {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 5px;
+                font-family: Consolas, Courier New, monospace;
+            }
+        """)
+        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
 
         # Bagian Output
-        label_output = QLabel("Output:")
+        label_output = QLabel("<b>Output:</b>")
+        label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
         result_box = QTextEdit()
         result_box.setPlainText(result_text)
         result_box.setReadOnly(True)
-        result_box.setStyleSheet("background-color: #fff; border: 1px solid #ddd; border-radius: 4px;")
-        result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 1) + 10)
+        result_box.setStyleSheet("""
+            QTextEdit {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 5px;
+                font-family: Consolas, Courier New, monospace;
+            }
+        """)
+        result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3))
 
-        # Tambahkan elemen ke layout card
+        # Tambahkan elemen teks ke layout card
         card_layout.addWidget(label_script)
         card_layout.addWidget(script_box)
         card_layout.addWidget(label_output)
         card_layout.addWidget(result_box)
 
+        # Bagian Plot
+        if plot_paths:
+            label_plot = QLabel("<b>Plot:</b>")
+            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+            card_layout.addWidget(label_plot)
+
+            # Tambahkan semua plot ke dalam layout
+            for plot_path in plot_paths:
+                if os.path.exists(plot_path):
+                    pixmap = QPixmap(plot_path)
+                    label = QLabel()
+                    label.setPixmap(pixmap)
+                    label.setFixedSize(400, 300)  # Ukuran tetap untuk gambar
+                    label.setScaledContents(True)
+                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
+                    card_layout.addWidget(label)
+
         # Tambahkan card ke layout utama
         self.output_layout.addWidget(card_frame)
         self.output_layout.addStretch()
+
+        # Hapus file sementara setelah ditampilkan
+        if plot_paths:
+            for plot_path in plot_paths:
+                if os.path.exists(plot_path):
+                    os.remove(plot_path)
+
