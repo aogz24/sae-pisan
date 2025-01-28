@@ -1,5 +1,8 @@
+import os
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+import rpy2.robjects as ro
+import rpy2.robjects.lib.grdevices as grdevices
 
 def run_normality_test(parent):
     import rpy2.robjects as ro
@@ -8,7 +11,6 @@ def run_normality_test(parent):
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
-    print(df)
     df = df.drop_nulls()  # Menghapus data null
 
     # Konversi Polars DataFrame ke R DataFrame
@@ -24,17 +26,28 @@ def run_normality_test(parent):
         # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
 
-        # Menjalankan script R dari parent
-        ro.r(parent.r_script)
+        # Jalankan script yang dibuat di dialog
+        script = parent.r_script
+        ro.r(script)
 
-        # Mengambil hasil uji normalitas
-        ro.r('results <- do.call(rbind, normality_results)')
-        result_str = ro.r('capture.output(print(normality_results))')
-        result = "\n".join(result_str)
+        # Simpan hasil uji normalitas
+        result = ro.r("capture.output(print(normality_results))")
+        result_text = "\n".join(result)
 
-        # Konversi hasil R ke Python
-        results = ro.conversion.rpy2py(ro.globalenv['results'])
-        parent.result = str(result)
+        # Generate plot (jika ada histogram atau qqplot di script)
+        plot_paths = []
+        for plot_name in ["histogram", "qqplot"]:
+            if ro.r(f"exists('{plot_name}')")[0]:
+                plot_path = f"temp_{plot_name}.png"
+                grdevices.png(file=plot_path, width=800, height=600)
+                ro.r(f"print({plot_name})")
+                grdevices.dev_off()
+                plot_paths.append(plot_path)
+
+        # Simpan hasil ke model
+        parent.result = result_text
+        parent.plot = plot_paths
+
 
     except Exception as e:
         # Menampilkan dialog error jika terjadi masalah
