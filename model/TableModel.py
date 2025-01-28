@@ -31,10 +31,21 @@ class TableModel(QtCore.QAbstractTableModel):
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
                 if section < len(self._data.columns):
-                    return str(self._data.columns[section])
+                    column_name = self._data.columns[section]
+                    return f"{column_name}"
                 return ""
             if orientation == Qt.Orientation.Vertical:
                 return str(section + 1)
+        elif role == Qt.ItemDataRole.DecorationRole or role == Qt.ItemDataRole.DisplayRole:
+            if orientation == Qt.Orientation.Horizontal:
+                if section < len(self._data.columns):
+                    column_name = self._data.columns[section]
+                    dtype = self._data[column_name].dtype
+                    if dtype == pl.Utf8:
+                        return QtGui.QIcon("assets/nominal.svg")
+                    else:
+                        return QtGui.QIcon("assets/numeric.svg")
+        return None
 
     def flags(self, _):
         return (
