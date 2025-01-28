@@ -8,6 +8,7 @@ from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
 from PyQt6.QtWidgets import QMessageBox
+import polars as pl
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent):
@@ -134,7 +135,7 @@ class ModelingSaeDialog(QDialog):
 
     def set_model(self, model):
         self.model = model
-        self.columns = [f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
+        self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
