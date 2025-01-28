@@ -249,3 +249,63 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = self._data.rename({old_name: new_name})
             self.endResetModel()
+    
+    def get_column_type(self, column_index):
+        if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
+            column_name = self._data.columns[column_index]
+            return self._data[column_name].dtype
+        return None
+
+    def set_column_type(self, column_index, new_type):
+        if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
+            column_name = self._data.columns[column_index]
+            if new_type == "String":
+                new_dtype = pl.Utf8
+            elif new_type == "Integer":
+                if self._data[column_name].dtype == pl.Utf8:
+                    try:
+                        warning_dialog = QtWidgets.QMessageBox()
+                        warning_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        warning_dialog.setText(f"The current data type of column {column_name} is String. Converting to Integer will result in loss of non-numeric data.")
+                        warning_dialog.setInformativeText("Do you want to proceed with the conversion?")
+                        warning_dialog.setWindowTitle("Data Type Conversion Warning")
+                        warning_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                        warning_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                        ret = warning_dialog.exec()
+
+                        if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                            self._data = self._data.with_columns([pl.col(column_name).str.to_integer(base=10, strict=False).cast(pl.Int64)])
+                        else:
+                            return
+                    except Exception:
+                        raise ValueError(f"Cannot convert column {column_name} to Integer")
+                new_dtype = pl.Int64
+            elif new_type == "Float":
+                if self._data[column_name].dtype == pl.Utf8:
+                    try:
+                        warning_dialog = QtWidgets.QMessageBox()
+                        warning_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        warning_dialog.setText(f"The current data type of column {column_name} is String. Converting to Integer will result in loss of non-numeric data.")
+                        warning_dialog.setInformativeText("Do you want to proceed with the conversion?")
+                        warning_dialog.setWindowTitle("Data Type Conversion Warning")
+                        warning_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                        warning_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                        ret = warning_dialog.exec()
+
+                        if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                            self._data = self._data.with_columns([
+                                pl.when(pl.col(column_name).str.contains(",") & (pl.col(column_name).str.count_matches(",") == 1))
+                                .then(pl.col(column_name).str.replace(",", ".").cast(pl.Float64, strict=False))
+                                .otherwise(pl.col(column_name).str.to_integer(base=10, strict=False).cast(pl.Float64, strict=False))
+                            ])
+                        else:
+                            return
+                    except Exception:
+                            raise ValueError(f"Cannot convert column {column_name} to Float")
+                new_dtype = pl.Float64
+            else:
+                raise ValueError("Unsupported data type")
+
+            self.beginResetModel()
+            self._data = self._data.with_columns([pl.col(column_name).cast(new_dtype)])
+            self.endResetModel()
