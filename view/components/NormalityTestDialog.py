@@ -7,7 +7,6 @@ from controller.Eksploration.NormalityTestController import NormalityTestControl
 from io import BytesIO
 
 
-
 class NormalityTestDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -30,6 +29,8 @@ class NormalityTestDialog(QDialog):
 
         # Layout kiri: Data Editor dan Data Output
         left_layout = QVBoxLayout()
+
+        # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
         self.data_editor_list = QListView(self)
@@ -39,6 +40,7 @@ class NormalityTestDialog(QDialog):
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
 
+    # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
         self.data_output_list = QListView(self)
@@ -183,120 +185,88 @@ class NormalityTestDialog(QDialog):
         ]
 
     # def generate_r_script(self):
+    #     # Mendapatkan nama variabel yang dipilih
     #     selected_vars = self.get_selected_columns()
+    #     if len(selected_vars) != 1:
+    #         self.script_box.setPlainText("stop('Pilih satu variabel untuk diuji.')")
+    #         return
+
+    #     var = selected_vars[0]  # Ambil satu variabel
     #     method = self.method_combo.currentText().lower().replace("-", "_")
     #     show_histogram = self.histogram_checkbox.isChecked()
     #     show_qqplot = self.qqplot_checkbox.isChecked()
 
-    #     if not selected_vars:
-    #         self.script_box.setPlainText("stop('Tidak ada variabel yang dipilih untuk diuji.')")
-    #         return
+    #     r_script = ''
+    #     # Menentukan metode pengujian
+    #     if method == "shapiro_wilk":
+    #         r_script += f'normality_results <- shapiro.test(data${var})\n'
+    #     elif method == "jarque_bera":
+    #         r_script += f'normality_results <- tseries::jarque.bera.test(data${var})\n'
+    #     elif method == "lilliefors":
+    #         r_script += f'normality_results <- nortest::lillie.test(data${var})\n'
 
-    #     r_script = 'results <- list()\n'  # Struktur baru untuk menyimpan semua hasil
-    #     for var in selected_vars:
-    #         r_script += f'results[["{var}"]] <- list()\n'  # Buat sub-list untuk setiap variabel
+    #     # Menambahkan skrip untuk histogram jika dipilih
+    #     if show_histogram:
+    #         r_script += f'histogram <- ggplot(data, aes(x = {var})) + ' \
+    #                     f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
+    #                     f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
 
-    #         # Tambahkan hasil uji normalitas
-    #         if method == "shapiro_wilk":
-    #             r_script += f'results[["{var}"]][["normality"]] <- shapiro.test(data${var})\n'
-    #         elif method == "jarque_bera":
-    #             r_script += f'results[["{var}"]][["normality"]] <- tseries::jarque.bera.test(data${var})\n'
-    #         elif method == "lilliefors":
-    #             r_script += f'results[["{var}"]][["normality"]] <- nortest::lillie.test(data${var})\n'
+    #     # Menambahkan skrip untuk Q-Q plot jika dipilih
+    #     if show_qqplot:
+    #         r_script += f'qqplot <- ggplot(data, aes(sample = {var})) + ' \
+    #                     f'stat_qq() + stat_qq_line(color = "red") + ' \
+    #                     f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
 
-    #         # Tambahkan plot histogram jika dipilih
-    #         if show_histogram:
-    #             r_script += f'results[["{var}"]][["histogram"]] <- ggplot(data, aes(x = {var})) + ' \
-    #                         f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-    #                         f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
-
-    #         # Tambahkan plot Q-Q plot jika dipilih
-    #         if show_qqplot:
-    #             r_script += f'results[["{var}"]][["qqplot"]] <- ggplot(data, aes(sample = {var})) + ' \
-    #                         f'stat_qq() + stat_qq_line(color = "red") + ' \
-    #                         f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
-
-    #     self.script_box.setPlainText(r_script)
-
-    # def generate_r_script(self):
-    #     selected_vars = self.get_selected_columns()
-    #     method = self.method_combo.currentText().lower().replace("-", "_")
-    #     show_histogram = self.histogram_checkbox.isChecked()
-    #     show_qqplot = self.qqplot_checkbox.isChecked()
-
-    #     if not selected_vars:
-    #         self.script_box.setPlainText("stop('Tidak ada variabel yang dipilih untuk diuji.')")
-    #         return
-
-    #     r_script = 'normality_results <- list()\n'
-    #     for var in selected_vars:
-    #         if method == "shapiro_wilk":
-    #             r_script += f'normality_results[["{var}"]] <- shapiro.test(data${var})\n'
-    #         elif method == "jarque_bera":
-    #             r_script += f'normality_results[["{var}"]] <- tseries::jarque.bera.test(data${var})\n'
-    #         elif method == "lilliefors":
-    #             r_script += f'normality_results[["{var}"]] <- nortest::lillie.test(data${var})\n'
-
-    #         if show_histogram:
-    #             r_script += f'histogram <- ggplot(data, aes(x = {var})) + ' \
-    #                         f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-    #                         f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
-
-    #         if show_qqplot:
-    #             r_script += f'qqplot <- ggplot(data, aes(sample = {var})) + ' \
-    #                         f'stat_qq() + stat_qq_line(color = "red") + ' \
-    #                         f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
-
+    #     # Menampilkan skrip yang dihasilkan di kotak teks
     #     self.script_box.setPlainText(r_script)
     def generate_r_script(self):
         # Mendapatkan nama variabel yang dipilih
         selected_vars = self.get_selected_columns()
-        if len(selected_vars) != 1:
-            self.script_box.setPlainText("stop('Pilih satu variabel untuk diuji.')")
+        if len(selected_vars) == 0:
+            self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
             return
 
-        var = selected_vars[0]  # Ambil satu variabel
         method = self.method_combo.currentText().lower().replace("-", "_")
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
 
         r_script = ''
-        # Menentukan metode pengujian
-        if method == "shapiro_wilk":
-            r_script += f'normality_results <- shapiro.test(data${var})\n'
-        elif method == "jarque_bera":
-            r_script += f'normality_results <- tseries::jarque.bera.test(data${var})\n'
-        elif method == "lilliefors":
-            r_script += f'normality_results <- nortest::lillie.test(data${var})\n'
 
-        # Menambahkan skrip untuk histogram jika dipilih
-        if show_histogram:
-            r_script += f'histogram <- ggplot(data, aes(x = {var})) + ' \
-                        f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-                        f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
+        for var in selected_vars:
+            # Menentukan metode pengujian
+            if method == "shapiro_wilk":
+                r_script += f'normality_results_{var} <- shapiro.test(data${var})\n'
+            elif method == "jarque_bera":
+                r_script += f'normality_results_{var} <- tseries::jarque.bera.test(data${var})\n'
+            elif method == "lilliefors":
+                r_script += f'normality_results_{var} <- nortest::lillie.test(data${var})\n'
 
-        # Menambahkan skrip untuk Q-Q plot jika dipilih
-        if show_qqplot:
-            r_script += f'qqplot <- ggplot(data, aes(sample = {var})) + ' \
-                        f'stat_qq() + stat_qq_line(color = "red") + ' \
-                        f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
+            # Menambahkan skrip untuk histogram jika dipilih
+            if show_histogram:
+                r_script += f'histogram_{var} <- ggplot(data, aes(x = {var})) + ' \
+                            f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
+                            f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
+
+            # Menambahkan skrip untuk Q-Q plot jika dipilih
+            if show_qqplot:
+                r_script += f'qqplot_{var} <- ggplot(data, aes(sample = {var})) + ' \
+                            f'stat_qq() + stat_qq_line(color = "red") + ' \
+                            f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
 
         # Menampilkan skrip yang dihasilkan di kotak teks
         self.script_box.setPlainText(r_script)
+
+
 
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
             return
-
-        normality_test = NormalityTest(self.model1, self.model2, self.parent)
+        
+        normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
+        # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
         controller = NormalityTestController(normality_test)
         controller.run_model(r_script)
-
-        #widget image  
-        # image = ddhdhdx
-        # add wiget to output layout
-
 
         self.parent.add_output(r_script, normality_test.result, normality_test.plot)
 

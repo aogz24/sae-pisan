@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
-        self.show_summary_data_dialog = SummaryDataDialog(self, self.model2)
+        self.show_summary_data_dialog = SummaryDataDialog(self)
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
         
 

@@ -1,10 +1,11 @@
 from service.exploration.NormalityTest import run_normality_test
 
 class NormalityTest:
-    def __init__(self, model1, model2, view):
+    def __init__(self, model1, model2, selected_columns, view):
         self.model1 = model1
         self.model2 = model2
         self.view = view
+        self.selected_columns = selected_columns
         self.result =""
         self.plot = None
 
