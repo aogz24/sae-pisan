@@ -8,6 +8,7 @@ from service.command.DeleteRowsCommand import DeleteRowsCommand
 from service.command.DeleteColumnsCommand import DeleteColumnsCommand
 from PyQt6.QtGui import QUndoStack
 from service.command.ChangeColumnTypeCommand import ChangeColumnTypeCommand
+from service.command.RenameColumnCommand import RenameColumnCommand
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, batch_size=100):
@@ -250,6 +251,8 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = self._data.rename({old_name: new_name})
             self.endResetModel()
+            command = RenameColumnCommand(self, column_index, old_name, new_name)
+            self.undo_stack.push(command)
     
     def get_column_type(self, column_index):
         if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
