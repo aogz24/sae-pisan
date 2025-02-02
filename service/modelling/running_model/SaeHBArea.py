@@ -15,7 +15,6 @@ def run_model_hb_area(parent):
         ro.r('data <- as.data.frame(r_df)')
         ro.r(parent.r_script)
         ro.r('estimated_value <- model$Est')
-        ro.r('print(class(estimated_value))')
         ro.r('sd <- model$sd')
         ro.r('refVar <- model$refVar')
         ro.r('coefficient <- model$coefficient')
@@ -26,10 +25,19 @@ def run_model_hb_area(parent):
         result_str += "Coefficient:\n" + "\n".join(ro.r('capture.output(print(coefficient))')) + "\n"
         parent.result = result_str
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
-        mse = ro.conversion.rpy2py(ro.globalenv['sd'])
+        hb_mean = estimated_value["MEAN"]
+        hb_25 = estimated_value["25%"]
+        hb_50 = estimated_value["50%"]
+        hb_75 = estimated_value["75%"]
+        hb_97_5 = estimated_value["97.5%"]
+        hb_sd = estimated_value["SD"]
         df = pl.DataFrame({
-            'HB': estimated_value,
-            'SD': mse,})
+            'HB_Mean': hb_mean,
+            'HB_25%': hb_25,
+            'HB_50%': hb_50,
+            'HB_75%': hb_75,
+            'HB_97.5%': hb_97_5,
+            'SD': hb_sd,})
         parent.model2.set_data(df)
         
     except Exception as e:

@@ -168,7 +168,7 @@ def show_options(parent):
     parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
     layout.addWidget(parent.method_combo)
 
-    iter_update_label = QLabel("Iteration Update:")
+    iter_update_label = QLabel("Number of Iteration Update:")
     layout.addWidget(iter_update_label)
     
     parent.iter_update = QLineEdit()
@@ -176,7 +176,7 @@ def show_options(parent):
     parent.iter_update.setText("3")  # Set default value to 3
     layout.addWidget(parent.iter_update)
     
-    iter_mcmc_label = QLabel("Iteration MCMC:")
+    iter_mcmc_label = QLabel("Number of Total Iterations per Chain:")
     layout.addWidget(iter_mcmc_label)
     
     parent.iter_mcmc = QLineEdit()
@@ -184,7 +184,7 @@ def show_options(parent):
     parent.iter_mcmc.setText("2000")  # Set default value to 2000
     layout.addWidget(parent.iter_mcmc)
     
-    burn_in_label = QLabel("Burn In:")
+    burn_in_label = QLabel("Number of iterations to discard at the beginning:")
     layout.addWidget(burn_in_label)
     
     parent.burn_in = QLineEdit()

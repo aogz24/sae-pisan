@@ -15,7 +15,7 @@ class ModelingSaeHBDialog(QDialog):
         super().__init__(parent)
         self.parent = parent
         self.model2 = parent.model2
-        self.setWindowTitle("SAE HB")
+        self.setWindowTitle("SAE HB Beta")
         self.setFixedHeight(700)
 
         self.columns = []
@@ -86,7 +86,7 @@ class ModelingSaeHBDialog(QDialog):
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
-        self.vardir_label = QLabel("Varian Direct:")
+        self.vardir_label = QLabel("Varians Direct:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
