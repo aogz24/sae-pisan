@@ -215,9 +215,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-eblupBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
+        r_script += f'model<-pbmseBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
     else:
-        r_script += f'model<-eblupBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
+        r_script += f'model<-pbmseBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
     return r_script
 
 def show_r_script(parent):

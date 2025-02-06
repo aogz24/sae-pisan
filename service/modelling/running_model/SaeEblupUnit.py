@@ -14,17 +14,19 @@ def run_model_eblup_unit(parent):
         ro.r('suppressMessages(library(sae))')
         ro.r('data <- as.data.frame(r_df)')
         ro.r(parent.r_script)
-        ro.r("model")
-        ro.r('domain <- model$eblup$domain\n estimated_value <- model$eblup$eblup\n n_size <- model$eblup$sampsize')
+        ro.r("print(model)")
+        ro.r('domain <- model$est$eblup$domain\n estimated_value <- model$est$eblup$eblup\n n_size <- model$est$eblup$sampsize \n mse <- model$mse$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
         domain = ro.r('domain')
         estimated_value = ro.r('estimated_value')
         n_size = ro.r('n_size')
+        mse = ro.r('mse')
         df = pl.DataFrame({
             'Domain': domain,
             'Eblup': estimated_value,
-            'Sample size': n_size})
+            'Sample size': n_size,
+            'MSE': mse})
         parent.model2.set_data(df)
         parent.result = str(result)
         
