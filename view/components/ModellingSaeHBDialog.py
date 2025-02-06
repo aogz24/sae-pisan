@@ -19,6 +19,7 @@ class ModelingSaeHBDialog(QDialog):
         self.setFixedHeight(700)
 
         self.columns = []
+        self.model_method = "Beta"
 
         main_layout = QVBoxLayout()
 
