@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy
+    QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
 from PyQt6.QtGui import QFont
@@ -21,6 +21,12 @@ class ModelingSaeUnitDialog(QDialog):
         self.columns = []
 
         main_layout = QVBoxLayout()
+
+        # Create a scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
 
         # Layout utama untuk membagi area menjadi dua bagian (kiri dan kanan)
         split_layout = QHBoxLayout()
@@ -132,7 +138,9 @@ class ModelingSaeUnitDialog(QDialog):
         split_layout.addLayout(middle_layout)
         split_layout.addLayout(right_layout)
 
-        main_layout.addLayout(split_layout)
+        scroll_layout.addLayout(split_layout)
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
 
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
@@ -143,7 +151,7 @@ class ModelingSaeUnitDialog(QDialog):
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
-        self.r_script_edit.setFixedHeight(75)
+        self.r_script_edit.setFixedHeight(150)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 
