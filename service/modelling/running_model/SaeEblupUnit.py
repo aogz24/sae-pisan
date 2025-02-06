@@ -15,19 +15,16 @@ def run_model_eblup_unit(parent):
         ro.r('data <- as.data.frame(r_df)')
         ro.r(parent.r_script)
         ro.r("model")
-        ro.r('estimated_value <- model$est$eblup\n mse <- model$mse')
+        ro.r('domain <- model$eblup$domain\n estimated_value <- model$eblup$eblup\n n_size <- model$eblup$sampsize')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
-        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
-        mse = ro.conversion.rpy2py(ro.globalenv['mse'])
-        vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
-        estimated_value = estimated_value.flatten()
-        vardir_var = vardir_var.to_numpy()[:, 0]
-        rse = mse**0.5/estimated_value*100
+        domain = ro.r('domain')
+        estimated_value = ro.r('estimated_value')
+        n_size = ro.r('n_size')
         df = pl.DataFrame({
+            'Domain': domain,
             'Eblup': estimated_value,
-            'MSE': mse,
-            'RSE (%)': rse})
+            'Sample size': n_size})
         parent.model2.set_data(df)
         parent.result = str(result)
         
