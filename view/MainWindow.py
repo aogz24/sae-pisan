@@ -12,6 +12,7 @@ from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
 from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
+from view.components.ModelingSaeEblupUnitDialog import ModelingSaeUnitDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
@@ -50,6 +51,9 @@ class MainWindow(QMainWindow):
         
         self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
         self.show_modeling_saeHB_dialog.set_model(self.model1)
+        
+        self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
+        self.show_modeling_sae_unit_dialog.set_model(self.model1)
         
 
         # Tab pertama (Sheet 1)
@@ -183,7 +187,7 @@ class MainWindow(QMainWindow):
         # Submenu "Unit Level"
         menu_unit_level = QMenu("Unit Level", self)
         action_eblup_unit = QAction("EBLUP", self)
-        action_eblup_unit.triggered.connect(lambda: print("Unit Level -> EBLUP selected"))
+        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog.show)
         action_hb_normal = QAction("HB Normal", self)
         action_hb_normal.triggered.connect(lambda: print("Unit Level -> HB Normal selected"))
         menu_unit_level.addAction(action_eblup_unit)
@@ -328,6 +332,7 @@ class MainWindow(QMainWindow):
             self.model1 = model
             self.show_modeling_sae_dialog.set_model(model)
             self.show_modeling_saeHB_dialog.set_model(model)
+            self.show_modeling_sae_unit_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
