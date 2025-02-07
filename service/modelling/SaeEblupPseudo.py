@@ -186,14 +186,6 @@ def show_options(parent):
     parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
     layout.addWidget(parent.method_combo)
 
-    method_label = QLabel("Method:")
-    layout.addWidget(method_label)
-
-    parent.method_selection = QComboBox()
-    parent.method_selection.addItems(["ML", "REML", "FH"])
-    parent.method_selection.setCurrentText("REML")
-    layout.addWidget(parent.method_selection)
-
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
     cancel_button = QPushButton("Cancel")
@@ -211,6 +203,5 @@ def show_options(parent):
 
 def set_selection_method(parent, dialog):
     parent.selection_method = parent.method_combo.currentText()
-    parent.method = parent.method_selection.currentText()
     dialog.accept()
     show_r_script(parent)
