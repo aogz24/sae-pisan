@@ -21,6 +21,7 @@ from view.components.ScatterPlotDialog import ScatterPlotDialog
 from view.components.BoxPlotDialog import BoxPlotDialog
 from view.components.LinePlotDialog import LinePlotDialog
 from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
+from service.table.DeleteColumn import confirm_delete_selected_columns
 from PyQt6.QtWidgets import QLabel
 from io import BytesIO
 
@@ -447,6 +448,14 @@ class MainWindow(QMainWindow):
         edit_type_action = QAction("Edit Data Type", self)
         edit_type_action.triggered.connect(lambda: self.edit_data_type(logical_index))
         menu.addAction(edit_type_action)
+        
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        has_selection = bool(selection)
+        
+        delete_column_action = QAction("Delete Column", self)
+        delete_column_action.triggered.connect(lambda : confirm_delete_selected_columns(self))
+        delete_column_action.setEnabled(has_selection)
+        menu.addAction(delete_column_action)
         
         menu.exec(header.mapToGlobal(pos))
 
