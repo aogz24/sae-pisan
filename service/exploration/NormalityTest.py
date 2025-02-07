@@ -1,14 +1,17 @@
+import os
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+import rpy2.robjects as ro
+import rpy2.robjects.lib.grdevices as grdevices
 
 def run_normality_test(parent):
     import rpy2.robjects as ro
     import rpy2_arrow.polars as rpy2polars
+    
     parent.activate_R()
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
-    print(df)
     df = df.drop_nulls()  # Menghapus data null
 
     # Konversi Polars DataFrame ke R DataFrame
@@ -20,21 +23,46 @@ def run_normality_test(parent):
         # Memuat library R yang diperlukan
         ro.r('suppressMessages(library(nortest))')
         ro.r('suppressMessages(library(tseries))')
+        ro.r('suppressMessages(library(ggplot2))')
 
         # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
 
-        # Menjalankan script R dari parent
-        ro.r(parent.r_script)
+        # Jalankan script yang dibuat di dialog
+        script = parent.r_script
+        ro.r(script)
 
-        # Mengambil hasil uji normalitas
-        ro.r('results <- do.call(rbind, normality_results)')
-        result_str = ro.r('capture.output(print(normality_results))')
-        result = "\n".join(result_str)
+        # Menyimpan hasil uji normalitas
+        selected_vars = parent.selected_columns
+        result_str = ""
+        plot_paths = []  # Sekarang langsung pakai list global
 
-        # Konversi hasil R ke Python
-        results = ro.conversion.rpy2py(ro.globalenv['results'])
-        parent.result = str(result)
+        print(selected_vars)
+
+        for var in selected_vars:
+            result_key = f"normality_results_{var}"
+            if ro.r(f"exists('{result_key}')")[0]:
+                result = ro.r(f"capture.output(print({result_key}))")
+                result_str += f"{var}:\n" + "\n".join(result) + "\n"
+            else:
+                result_str += f"Tidak ada hasil uji untuk {var}\n"
+
+            # Menyimpan plot jika ada
+            for plot_type in ["histogram", "qqplot"]:
+                plot_name = f"{plot_type}_{var}"  # Pastikan setiap variabel punya plot unik
+                if ro.r(f"exists('{plot_name}')")[0]:
+                    plot_path = f"temp_{plot_name}.png"
+                    grdevices.png(file=plot_path, width=800, height=600)
+                    ro.r(f"print({plot_name})")
+                    grdevices.dev_off()
+                    plot_paths.append(plot_path)  # Tambahkan langsung ke list global
+
+        print(result_str)
+        print(plot_paths)
+
+        # Simpan hasil ke parent
+        parent.result = result_str
+        parent.plot = plot_paths  # Sekarang semua plot langsung disimpan di 1 list
 
     except Exception as e:
         # Menampilkan dialog error jika terjadi masalah
@@ -43,3 +71,4 @@ def run_normality_test(parent):
         error_dialog.setText("Error")
         error_dialog.setInformativeText(str(e))
         error_dialog.exec()
+

@@ -1,35 +1,32 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QComboBox, QCheckBox, QTextEdit, QGroupBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QStringListModel
-from model.NormalityTest import NormalityTest
-from controller.Eksploration.EksplorationController import NormalityTestController
+from model.CorrelationMatrix import CorrelationMatrix
+from controller.Eksploration.EksplorationController import CorrelationMatrixController
 
-
-class NormalityTestDialog(QDialog):
+class CorrelationMatrixDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.model1 = None
         self.model2 = None
+        
         self.all_columns_model1 = []
         self.all_columns_model2 = []
 
-        self.setWindowTitle("Normality Test")
+        self.setWindowTitle("Box Plot")
 
         # Menyimpan status variabel yang dipilih
         self.selected_status = {}
 
         # Layout utama
         main_layout = QVBoxLayout(self)
-
-        # Layout konten utama
         content_layout = QHBoxLayout()
 
-        # Layout kiri: Data Editor dan Data Output
+        # Layout kiri untuk Data Editor dan Data Output
         left_layout = QVBoxLayout()
 
-        # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
         self.data_editor_list = QListView(self)
@@ -39,7 +36,6 @@ class NormalityTestDialog(QDialog):
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
 
-        # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
         self.data_output_list = QListView(self)
@@ -51,20 +47,19 @@ class NormalityTestDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah: Tombol
+        # Layout tengah untuk tombol
         button_layout = QVBoxLayout()
-        self.add_button = QPushButton("\u2192", self)  # Tombol untuk menambahkan variabel
+        self.add_button = QPushButton("→", self)
         self.add_button.clicked.connect(self.add_variable)
-        self.remove_button = QPushButton("\u2190", self)  # Tombol untuk menghapus variabel
+        self.remove_button = QPushButton("←", self)
         self.remove_button.clicked.connect(self.remove_variable)
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.remove_button)
         button_layout.addStretch()
-
         content_layout.addLayout(button_layout)
 
-        # Layout kanan: Variabel yang dipilih, metode, dan grafik
+        # Layout kanan
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variabel", self)
         self.selected_model = QStringListModel()
@@ -74,33 +69,19 @@ class NormalityTestDialog(QDialog):
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
-        # Grup metode
-        method_group = QGroupBox("Metode")
-        method_layout = QVBoxLayout()
-        self.method_combo = QComboBox(self)
-        self.method_combo.addItems(["Shapiro-Wilk", "Jarque-Bera", "Lilliefors"])
-        self.method_combo.currentIndexChanged.connect(self.generate_r_script)
-        method_layout.addWidget(self.method_combo)
-        method_group.setLayout(method_layout)
-        right_layout.addWidget(method_group)
-
         # Grup grafik
-        graph_group = QGroupBox("Graph")
+        graph_group = QGroupBox("Visualization")
         graph_layout = QVBoxLayout()
-        self.histogram_checkbox = QCheckBox("Histogram", self)
-        self.histogram_checkbox.stateChanged.connect(self.generate_r_script)
-        self.qqplot_checkbox = QCheckBox("Q-Q Plot", self)
-        self.qqplot_checkbox.stateChanged.connect(self.generate_r_script)
-        graph_layout.addWidget(self.histogram_checkbox)
-        graph_layout.addWidget(self.qqplot_checkbox)
+        self.correlation_plot_checkbox = QCheckBox("Show Correlation Plot", self)
+        self.correlation_plot_checkbox.stateChanged.connect(self.generate_r_script)
+        graph_layout.addWidget(self.correlation_plot_checkbox)
         graph_group.setLayout(graph_layout)
         right_layout.addWidget(graph_group)
 
         content_layout.addLayout(right_layout)
-
         main_layout.addLayout(content_layout)
 
-        # Script box
+        # Box untuk menampilkan script
         self.script_label = QLabel("Script:", self)
         self.script_box = QTextEdit(self)
         main_layout.addWidget(self.script_label)
@@ -112,10 +93,11 @@ class NormalityTestDialog(QDialog):
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
         main_layout.addLayout(button_row_layout)
-        
+
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -125,16 +107,13 @@ class NormalityTestDialog(QDialog):
         self.all_columns_model1 = self.get_column_with_dtype(model1)
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
-
     def get_column_with_dtype(self, model):
-        """Mengembalikan daftar nama kolom dengan tipe datanya"""
         return [
             f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
-    
+
     def add_variable(self):
-        # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
@@ -156,7 +135,6 @@ class NormalityTestDialog(QDialog):
         self.generate_r_script()
 
     def remove_variable(self):
-        # Ambil semua indeks yang dipilih dari daftar variabel yang dipilih
         selected_indexes = self.selected_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
@@ -177,97 +155,38 @@ class NormalityTestDialog(QDialog):
 
         self.selected_model.setStringList(selected_list)
         self.generate_r_script()
-    
+
     def get_selected_columns(self):
         return [
             item.split(" [")[0].replace(" ", "_")
             for item in self.selected_model.stringList()
         ]
 
-    # def generate_r_script(self):
-    #     # Mendapatkan nama variabel yang dipilih
-    #     selected_vars = self.get_selected_columns()
-    #     if len(selected_vars) == 0:
-    #         self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
-    #         return
-
-    #     method = self.method_combo.currentText().lower().replace("-", "_")
-    #     show_histogram = self.histogram_checkbox.isChecked()
-    #     show_qqplot = self.qqplot_checkbox.isChecked()
-
-    #     r_script = ''
-
-    #     for var in selected_vars:
-    #         # Menentukan metode pengujian
-    #         if method == "shapiro_wilk":
-    #             r_script += f'normality_results_{var} <- shapiro.test(data${var})\n'
-    #         elif method == "jarque_bera":
-    #             r_script += f'normality_results_{var} <- tseries::jarque.bera.test(data${var})\n'
-    #         elif method == "lilliefors":
-    #             r_script += f'normality_results_{var} <- nortest::lillie.test(data${var})\n'
-
-    #         # Menambahkan skrip untuk histogram jika dipilih
-    #         if show_histogram:
-    #             r_script += f'histogram_{var} <- ggplot(data, aes(x = {var})) + ' \
-    #                         f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-    #                         f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
-
-    #         # Menambahkan skrip untuk Q-Q plot jika dipilih
-    #         if show_qqplot:
-    #             r_script += f'qqplot_{var} <- ggplot(data, aes(sample = {var})) + ' \
-    #                         f'stat_qq() + stat_qq_line(color = "red") + ' \
-    #                         f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
-
-    #     # Menampilkan skrip yang dihasilkan di kotak teks
-    #     self.script_box.setPlainText(r_script)
-
     def generate_r_script(self):
-        # Mendapatkan nama variabel yang dipilih
-        selected_vars = self.get_selected_columns()
-
-        if len(selected_vars) == 0:
-            self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
+        """Function to generate R script for Correlation Matrix using ggcorrplot"""
+        selected_columns = self.get_selected_columns()
+        if not selected_columns:
+            self.script_box.setPlainText("No columns selected.")
             return
 
-        method = self.method_combo.currentText().lower().replace("-", "_")
-        show_histogram = self.histogram_checkbox.isChecked()
-        show_qqplot = self.qqplot_checkbox.isChecked()
+        # Format the selected columns into a string that can be used in the R script
+        formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
+        r_script = ""
 
-        r_script = ''
+        # Step 1: Generate the correlation matrix
+        r_script += f"""
+# Create correlation matrix for the selected columns
+correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")
+        """
 
-        for var in selected_vars:
-            # Menentukan metode pengujian
-            if method == "shapiro_wilk":
-                r_script += f"normality_results_{var} <- shapiro.test(data${var})\n"
+        # Step 2: Check if the correlation plot is requested
+        if self.correlation_plot_checkbox.isChecked():
+            r_script += """
+# Create a correlation plot with ggcorrplot
+correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "upper", lab = TRUE)
+            """
 
-            elif method == "jarque_bera":
-                r_script += f"normality_results_{var} <- tseries::jarque.bera.test(data${var})\n"
-
-            elif method == "lilliefors":
-                r_script += f"normality_results_{var} <- nortest::lillie.test(data${var})\n"
-
-            # Menambahkan skrip untuk histogram jika dipilih
-            if show_histogram:
-                r_script += (
-                    f"histogram_{var} <- ggplot(data, aes(x = {var})) +\n"
-                    f"    geom_histogram(binwidth = 30, color = 'black', fill = 'blue') +\n"
-                    f"    ggtitle('Histogram of {var}') +\n"
-                    f"    xlab('{var}') +\n"
-                    f"    ylab('Frequency')\n"
-                )
-
-            # Menambahkan skrip untuk Q-Q plot jika dipilih
-            if show_qqplot:
-                r_script += (
-                    f"qqplot_{var} <- ggplot(data, aes(sample = {var})) +\n"
-                    f"    stat_qq() +\n"
-                    f"    stat_qq_line(color = 'red') +\n"
-                    f"    ggtitle('Q-Q Plot of {var}') +\n"
-                    f"    xlab('Theoretical Quantiles') +\n"
-                    f"    ylab('Sample Quantiles')\n"
-                )
-
-        # Menampilkan skrip yang dihasilkan di kotak teks
+        # Step 3: Display the final R script
         self.script_box.setPlainText(r_script)
 
 
@@ -276,20 +195,17 @@ class NormalityTestDialog(QDialog):
         if not r_script:
             return
         
-        normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
-        # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
-        controller = NormalityTestController(normality_test)
+        correlation_matrix = CorrelationMatrix(self.model1, self.model2, self.parent)
+        controller = CorrelationMatrixController(correlation_matrix)
         controller.run_model(r_script)
 
-        self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+        self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
 
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")
         self.close()
 
     def closeEvent(self, event):
-        """Menghapus variabel yang dipilih ketika dialog ditutup."""
-        self.selected_model.setStringList([])  # Mengosongkan daftar variabel yang dipilih
-        self.script_box.setPlainText("")  # Mengosongkan kotak teks skrip
+        self.selected_model.setStringList([])
+        self.script_box.setPlainText("")
         event.accept()
-
