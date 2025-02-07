@@ -86,6 +86,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.of_interest_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.of_interest_label)
         right_layout.addWidget(self.of_interest_list)
 
@@ -94,6 +95,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.auxilary_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
@@ -101,6 +103,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
+        self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
@@ -108,6 +111,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.domain_list = QListView()
         self.domain_model = QStringListModel()
         self.domain_list.setModel(self.domain_model)
+        self.domain_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.domain_label)
         right_layout.addWidget(self.domain_list)
         
@@ -115,6 +119,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.index_list = QListView()
         self.index_model = QStringListModel()
         self.index_list.setModel(self.index_model)
+        self.index_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.index_label)
         right_layout.addWidget(self.index_list)
         
@@ -123,6 +128,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.aux_mean_model = QStringListModel()
         self.auxilary_vars_mean_list.setMinimumHeight(80)
         self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
+        self.auxilary_vars_mean_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_vars_mean)
         right_layout.addWidget(self.auxilary_vars_mean_list)
         
@@ -130,6 +136,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.population_sample_size_list = QListView()
         self.population_sample_size_model = QStringListModel()
         self.population_sample_size_list.setModel(self.population_sample_size_model)
+        self.population_sample_size_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.population_sample_size)
         right_layout.addWidget(self.population_sample_size_list)
         

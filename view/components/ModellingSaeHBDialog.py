@@ -69,6 +69,7 @@ class ModelingSaeHBDialog(QDialog):
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.of_interest_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.of_interest_label)
         right_layout.addWidget(self.of_interest_list)
 
@@ -77,6 +78,7 @@ class ModelingSaeHBDialog(QDialog):
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.auxilary_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
@@ -84,6 +86,7 @@ class ModelingSaeHBDialog(QDialog):
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
+        self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
@@ -91,6 +94,7 @@ class ModelingSaeHBDialog(QDialog):
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
+        self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
 
