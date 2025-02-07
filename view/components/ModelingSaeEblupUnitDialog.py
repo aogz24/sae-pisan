@@ -97,7 +97,7 @@ class ModelingSaeUnitDialog(QDialog):
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
-        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)

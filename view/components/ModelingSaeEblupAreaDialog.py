@@ -79,14 +79,14 @@ class ModelingSaeDialog(QDialog):
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
-        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
-        self.vardir_label = QLabel("Varian Direct:")
+        self.vardir_label = QLabel("Direct Variance:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
