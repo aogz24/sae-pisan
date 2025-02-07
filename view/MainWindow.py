@@ -14,6 +14,7 @@ from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
 from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
 from view.components.ModelingSaeEblupUnitDialog import ModelingSaeUnitDialog
 from view.components.ModellingSaeHbNormal import ModelingSaeHBNormalDialog
+from view.components.ModelingSaeEblupPseudoDialog import ModelingSaePseudoDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from PyQt6.QtWidgets import QLabel
@@ -58,6 +59,9 @@ class MainWindow(QMainWindow):
         
         self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
         self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
+        
+        self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
+        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
         
 
         # Tab pertama (Sheet 1)
@@ -200,7 +204,7 @@ class MainWindow(QMainWindow):
         # Submenu "Pseudo"
         menu_pseudo = QMenu("Pseudo", self)
         action_eblup_pseudo = QAction("EBLUP", self)
-        action_eblup_pseudo.triggered.connect(lambda: print("Pseudo -> EBLUP selected"))
+        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog.show)
         menu_pseudo.addAction(action_eblup_pseudo)
 
         # Submenu "Projection"
@@ -338,6 +342,7 @@ class MainWindow(QMainWindow):
             self.show_modeling_saeHB_dialog.set_model(model)
             self.show_modeling_sae_unit_dialog.set_model(model)
             self.show_modeling_saeHB_normal_dialog.set_model(model)
+            self.show_modellig_sae_pseudo_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
