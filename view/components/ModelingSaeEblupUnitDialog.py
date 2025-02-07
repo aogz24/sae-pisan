@@ -121,6 +121,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.auxilary_vars_mean = QLabel("Auxilary Variable(s) Mean:")
         self.auxilary_vars_mean_list = QListView()
         self.aux_mean_model = QStringListModel()
+        self.auxilary_vars_mean_list.setMinimumHeight(80)
         self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
         right_layout.addWidget(self.auxilary_vars_mean)
         right_layout.addWidget(self.auxilary_vars_mean_list)

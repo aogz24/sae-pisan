@@ -4,7 +4,6 @@ from PyQt6.QtCore import Qt
 import sys
 import os
 from controller.FileController import FileController
-from view.MainWindow import MainWindow
 from service.main.CheckEnviroment import check_environment
 
 def load_stylesheet():
@@ -38,6 +37,8 @@ def main():
 
     # Load R environment dengan splash screen
     loadR(splash)
+    
+    from view.MainWindow import MainWindow
 
     # Inisialisasi view dan controller
     view = MainWindow()  # Tampilan utama aplikasi
