@@ -108,6 +108,7 @@ class MainWindow(QMainWindow):
         self.scroll_area.setWidgetResizable(True)
         self.output_container = QWidget()
         self.output_layout = QVBoxLayout(self.output_container)
+        self.scroll_area.verticalScrollBar().rangeChanged.connect(lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))
         self.output_container.setLayout(self.output_layout)
         self.scroll_area.setWidget(self.output_container)
         output_tab_layout = QVBoxLayout(self.output_tab)
