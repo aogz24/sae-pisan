@@ -4,18 +4,18 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
 from PyQt6.QtGui import QFont
-from service.modelling.SaeEblupArea import *
-from controller.modelling.SaeController import SaeController
-from model.SaeEblup import SaeEblup
+from service.modelling.SaeEblupPseudo import *
+from controller.modelling.SaePseudoController import SaePseudoController
+from model.SaeEblupPseudo import SaeEblupPseudo
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 
-class ModelingSaeDialog(QDialog):
+class ModelingSaePseudoDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.model2 = parent.model2
-        self.setWindowTitle("SAE Eblup")
+        self.setWindowTitle("SAE Pseudo Eblup")
         self.setFixedHeight(700)
 
         self.columns = []
@@ -50,16 +50,20 @@ class ModelingSaeDialog(QDialog):
         self.assign_as_factor_button.setObjectName("arrow_button")
         self.assign_vardir_button = QPushButton("→")
         self.assign_vardir_button.setObjectName("arrow_button")
+        self.assign_domain_button = QPushButton("→")
+        self.assign_domain_button.setObjectName("arrow_button")
 
         self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
         self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
         self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
         self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
+        self.assign_domain_button.clicked.connect(lambda: assign_domain(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
         middle_layout.addWidget(self.assign_of_interest_button)
         middle_layout.addWidget(self.assign_aux_button)
         middle_layout.addWidget(self.assign_as_factor_button)
         middle_layout.addWidget(self.assign_vardir_button)
+        middle_layout.addWidget(self.assign_domain_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
@@ -92,6 +96,13 @@ class ModelingSaeDialog(QDialog):
         self.vardir_list.setModel(self.vardir_model)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
+        
+        self.domain_label = QLabel("Domain:")
+        self.domain_list = QListView()
+        self.domain_model = QStringListModel()
+        self.domain_list.setModel(self.domain_model)
+        right_layout.addWidget(self.domain_label)
+        right_layout.addWidget(self.domain_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         split_layout.addLayout(left_layout)
@@ -130,8 +141,9 @@ class ModelingSaeDialog(QDialog):
         self.auxilary_vars = []
         self.vardir_var = []
         self.as_factor_var = []
+        self.domain_var = []
         self.selection_method = "None"
-        self.method = "REML"
+        self.method = "reblupbc"
 
     def set_model(self, model):
         self.model = model
@@ -163,8 +175,8 @@ class ModelingSaeDialog(QDialog):
 
         view = self.parent
         r_script = get_script(self)
-        sae_model = SaeEblup(self.model, self.model2, view)
-        controller = SaeController(sae_model)
+        sae_model = SaeEblupPseudo(self.model, self.model2, view)
+        controller = SaePseudoController(sae_model)
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())

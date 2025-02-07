@@ -74,6 +74,14 @@ def assign_as_factor(parent):
         for index in sorted(selected_indexes, reverse=True):
             parent.variables_list.model().removeRow(index.row())  # Remove from variables list
         show_r_script(parent)
+        
+def assign_domain(parent):
+    selected_indexes = parent.variables_list.selectedIndexes()
+    if selected_indexes:
+        parent.domain_var = [selected_indexes[0].data()]
+        parent.domain_model.setStringList(parent.domain_var)
+        parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        show_r_script(parent)
 
 def unassign_variable(parent):
     selected_indexes = parent.of_interest_list.selectedIndexes()
@@ -117,6 +125,14 @@ def unassign_variable(parent):
             parent.variables_list.model().insertRow(0)  # Add back to variables list
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
         show_r_script(parent)
+        
+    selected_indexes = parent.domain_list.selectedIndexes()
+    if selected_indexes:
+        selected_items = [index.data() for index in selected_indexes]
+        parent.domain_var = [var for var in parent.domain_var if var not in selected_items]
+        parent.domain_model.setStringList(parent.domain_var)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)
 
 def get_selected_variables(parent):
     return parent.of_interest_var, parent.auxilary_vars, parent.vardir_var, parent.as_factor_var
@@ -126,6 +142,7 @@ def generate_r_script(parent):
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
+    domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
     
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
@@ -144,9 +161,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-mseFH(final_formula, {vardir_var}, method = "{parent.method}", data=data)'
+        r_script += f'model<-fh(final_formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
     else:
-        r_script += f'model<-mseFH(formula, {vardir_var}, method = "{parent.method}", data=data)'
+        r_script += f'model<-fh(formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
     return r_script
 
 def show_r_script(parent):

@@ -11,7 +11,10 @@ from service.table.GoToRow import *
 from service.table.GoToColumn import *
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
-from view.components.ModellingSaeHBAreaDialog import ModelingSaeHBDialog
+from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
+from view.components.ModelingSaeEblupUnitDialog import ModelingSaeUnitDialog
+from view.components.ModellingSaeHbNormal import ModelingSaeHBNormalDialog
+from view.components.ModelingSaeEblupPseudoDialog import ModelingSaePseudoDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
 from view.components.ScatterPlotDialog import ScatterPlotDialog
@@ -26,7 +29,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1.0")
+        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v0.1.1")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -54,8 +57,18 @@ class MainWindow(QMainWindow):
         self.show_modeling_sae_dialog = ModelingSaeDialog(self)
         self.show_modeling_sae_dialog.set_model(self.model1)
         
-        self.show_modeling_saehb_dialog = ModelingSaeHBDialog(self)
-        self.show_modeling_saehb_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
+        self.show_modeling_saeHB_dialog.set_model(self.model1)
+        
+        self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
+        self.show_modeling_sae_unit_dialog.set_model(self.model1)
+        
+        self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
+        self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
+        
+        self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
+        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
+        
 
         # Tab pertama (Sheet 1)
         self.tab1 = QWidget()
@@ -191,23 +204,23 @@ class MainWindow(QMainWindow):
         action_eblup_area = QAction("EBLUP", self)
         action_eblup_area.triggered.connect(self.show_modeling_sae_dialog.show)
         action_hb_beta = QAction("HB Beta", self)
-        action_hb_beta.triggered.connect(self.show_modeling_saehb_dialog.show)
+        action_hb_beta.triggered.connect(self.show_modeling_saeHB_dialog.show)
         menu_area_level.addAction(action_eblup_area)
         menu_area_level.addAction(action_hb_beta)
 
         # Submenu "Unit Level"
         menu_unit_level = QMenu("Unit Level", self)
         action_eblup_unit = QAction("EBLUP", self)
-        action_eblup_unit.triggered.connect(lambda: print("Unit Level -> EBLUP selected"))
+        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog.show)
         action_hb_normal = QAction("HB Normal", self)
-        action_hb_normal.triggered.connect(lambda: print("Unit Level -> HB Normal selected"))
+        action_hb_normal.triggered.connect(self.show_modeling_saeHB_normal_dialog.show)
         menu_unit_level.addAction(action_eblup_unit)
         menu_unit_level.addAction(action_hb_normal)
 
         # Submenu "Pseudo"
         menu_pseudo = QMenu("Pseudo", self)
         action_eblup_pseudo = QAction("EBLUP", self)
-        action_eblup_pseudo.triggered.connect(lambda: print("Pseudo -> EBLUP selected"))
+        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog.show)
         menu_pseudo.addAction(action_eblup_pseudo)
 
         # Submenu "Projection"
@@ -357,7 +370,10 @@ class MainWindow(QMainWindow):
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.show_modeling_sae_dialog.set_model(model)
-            self.show_modeling_saehb_dialog.set_model(model)
+            self.show_modeling_saeHB_dialog.set_model(model)
+            self.show_modeling_sae_unit_dialog.set_model(model)
+            self.show_modeling_saeHB_normal_dialog.set_model(model)
+            self.show_modellig_sae_pseudo_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
@@ -427,13 +443,35 @@ class MainWindow(QMainWindow):
         rename_action = QAction("Rename Column", self)
         rename_action.triggered.connect(lambda: self.rename_column(logical_index))
         menu.addAction(rename_action)
+        
+        edit_type_action = QAction("Edit Data Type", self)
+        edit_type_action.triggered.connect(lambda: self.edit_data_type(logical_index))
+        menu.addAction(edit_type_action)
+        
         menu.exec(header.mapToGlobal(pos))
 
     def rename_column(self, column_index):
         """Rename the column at the given index."""
-        new_name, ok = QInputDialog.getText(self, "Rename Column", "New column name:")
+        current_name = self.model1.headerData(column_index, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
+        new_name, ok = QInputDialog.getText(self, "Rename Column", "New column name:", text=current_name)
         if ok and new_name:
             self.model1.rename_column(column_index, new_name)
+            self.update_table(1, self.model1)
+
+    def edit_data_type(self, column_index):
+        """Edit the data type of the column at the given index."""
+        current_type = self.model1.get_column_type(column_index)
+        if current_type==pl.Utf8:
+            current_type = "String"
+        elif current_type==pl.Int64:
+            current_type = "Integer"
+        elif current_type==pl.Float64:
+            current_type = "Float"
+        type_list = ["String", "Integer", "Float"]
+        current_index = type_list.index(current_type)
+        new_type, ok = QInputDialog.getItem(self, "Edit Data Type", "Select new data type:", type_list, current=current_index)
+        if ok and new_type:
+            self.model1.set_column_type(column_index, new_type)
             self.update_table(1, self.model1)
     
 

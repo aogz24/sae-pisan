@@ -125,7 +125,7 @@ def generate_r_script(parent):
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
-    as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
+    as_factor_var = " + ".join([f'as.factor(data${var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
@@ -138,15 +138,14 @@ def generate_r_script(parent):
 
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
-    r_script += f'vardir_var <- data["{vardir_var}"]\n'
     if parent.selection_method=="Stepwise":
         parent.selection_method = "both"
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-mseFH(final_formula, {vardir_var}, method = "{parent.method}", data=data)'
+        r_script += f'model<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=data)'
     else:
-        r_script += f'model<-mseFH(formula, {vardir_var}, method = "{parent.method}", data=data)'
+        r_script += f'model<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=data)'
     return r_script
 
 def show_r_script(parent):
@@ -169,13 +168,30 @@ def show_options(parent):
     parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
     layout.addWidget(parent.method_combo)
 
-    method_label = QLabel("Method:")
-    layout.addWidget(method_label)
-
-    parent.method_selection = QComboBox()
-    parent.method_selection.addItems(["ML", "REML", "FH"])
-    parent.method_selection.setCurrentText("REML")
-    layout.addWidget(parent.method_selection)
+    iter_update_label = QLabel("Number of Iteration Update:")
+    layout.addWidget(iter_update_label)
+    
+    parent.iter_update = QLineEdit()
+    parent.iter_update.setValidator(QIntValidator())
+    parent.iter_update.setText("3")  # Set default value to 3
+    layout.addWidget(parent.iter_update)
+    
+    iter_mcmc_label = QLabel("Number of Total Iterations per Chain:")
+    layout.addWidget(iter_mcmc_label)
+    
+    parent.iter_mcmc = QLineEdit()
+    parent.iter_mcmc.setValidator(QIntValidator())
+    parent.iter_mcmc.setText("2000")  # Set default value to 2000
+    layout.addWidget(parent.iter_mcmc)
+    
+    burn_in_label = QLabel("Number of iterations to discard at the beginning:")
+    layout.addWidget(burn_in_label)
+    
+    parent.burn_in = QLineEdit()
+    parent.burn_in.setValidator(QIntValidator())
+    parent.burn_in.setText("1000")  # Set default value to 1000
+    layout.addWidget(parent.burn_in)
+    
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -194,6 +210,8 @@ def show_options(parent):
 
 def set_selection_method(parent, dialog):
     parent.selection_method = parent.method_combo.currentText()
-    parent.method = parent.method_selection.currentText()
+    parent.iter_update = parent.iter_update.text()
+    parent.iter_mcmc = parent.iter_mcmc.text()
+    parent.burn_in = parent.burn_in.text()
     dialog.accept()
     show_r_script(parent)

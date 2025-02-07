@@ -7,6 +7,8 @@ from service.command.AddColumnCommand import AddColumnCommand
 from service.command.DeleteRowsCommand import DeleteRowsCommand
 from service.command.DeleteColumnsCommand import DeleteColumnsCommand
 from PyQt6.QtGui import QUndoStack
+from service.command.ChangeColumnTypeCommand import ChangeColumnTypeCommand
+from service.command.RenameColumnCommand import RenameColumnCommand
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data, batch_size=100):
@@ -21,22 +23,33 @@ class TableModel(QtCore.QAbstractTableModel):
             value = self._data[index.row(), index.column()]
             return str(value)
 
-    def rowCount(self, index):
+    def rowCount(self, _):
         return self.loaded_rows
 
-    def columnCount(self, index):
+    def columnCount(self, _):
         return self._data.shape[1]
 
     def headerData(self, section, orientation, role):
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
                 if section < len(self._data.columns):
-                    return str(self._data.columns[section])
+                    column_name = self._data.columns[section]
+                    return f"{column_name}"
                 return ""
             if orientation == Qt.Orientation.Vertical:
                 return str(section + 1)
+        elif role == Qt.ItemDataRole.DecorationRole or role == Qt.ItemDataRole.DisplayRole:
+            if orientation == Qt.Orientation.Horizontal:
+                if section < len(self._data.columns):
+                    column_name = self._data.columns[section]
+                    dtype = self._data[column_name].dtype
+                    if dtype == pl.Utf8:
+                        return QtGui.QIcon("assets/nominal.svg")
+                    else:
+                        return QtGui.QIcon("assets/numeric.svg")
+        return None
 
-    def flags(self, index):
+    def flags(self, _):
         return (
             Qt.ItemFlag.ItemIsSelectable
             | Qt.ItemFlag.ItemIsEnabled
@@ -133,10 +146,12 @@ class TableModel(QtCore.QAbstractTableModel):
     def redo(self):
         self.undo_stack.redo()
 
-    def canFetchMore(self, index):
+    def canFetchMore(self, _):
         return self.loaded_rows < self._data.shape[0]
 
-    def fetchMore(self, index):
+    def fetchMore(self, _):
+        if self.loaded_rows >= self._data.shape[0]:
+            return
         remaining_rows = self._data.shape[0] - self.loaded_rows
         rows_to_fetch = min(self.batch_size, remaining_rows)
         self.beginInsertRows(QtCore.QModelIndex(), self.loaded_rows, self.loaded_rows + rows_to_fetch - 1)
@@ -201,13 +216,34 @@ class TableModel(QtCore.QAbstractTableModel):
             self.undo_stack.push(command)
 
     def deleteColumns(self, start_column, count):
+        """
+        Deletes columns starting from `start_column` and spanning `count` columns.
+
+        Args:
+            start_column (int): The starting column index to delete.
+            count (int): The number of columns to delete.
+        """
         if start_column >= 0 and count > 0:
-            old_columns = {self._data.columns[i]: self._data[:, i].to_list() for i in range(start_column, start_column + count)}
+            # Store original column order
+            original_order = self._data.columns
+
+            # Store the deleted columns and their data
+            old_columns = {
+                self._data.columns[i]: self._data[:, i].to_list()
+                for i in range(start_column, start_column + count)
+            }
             self.beginResetModel()
-            columns_to_keep = [col for i, col in enumerate(self._data.columns) if i < start_column or i >= start_column + count]
+            columns_to_keep = [
+                col for i, col in enumerate(self._data.columns)
+                if i < start_column or i >= start_column + count
+            ]
             self._data = self._data.select(columns_to_keep)
             self.endResetModel()
-            command = DeleteColumnsCommand(self, start_column, old_columns)
+
+            # Create a DeleteColumnsCommand and push it to the undo stack
+            command = DeleteColumnsCommand(self, start_column, old_columns, original_order)
+            self.undo_stack.push(command)
+
     
     def rename_column(self, column_index, new_name):
         if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
@@ -215,3 +251,76 @@ class TableModel(QtCore.QAbstractTableModel):
             self.beginResetModel()
             self._data = self._data.rename({old_name: new_name})
             self.endResetModel()
+            command = RenameColumnCommand(self, column_index, old_name, new_name)
+            self.undo_stack.push(command)
+    
+    def get_column_type(self, column_index):
+        if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
+            column_name = self._data.columns[column_index]
+            return self._data[column_name].dtype
+        return None
+
+    def set_column_type(self, column_index, new_type):
+        if isinstance(column_index, int) and 0 <= column_index < len(self._data.columns):
+            column_name = self._data.columns[column_index]
+            old_dtype = self._data[column_name].dtype
+            old_data = self._data[column_name].to_list()
+
+            if new_type == "String":
+                new_dtype = pl.Utf8
+            elif new_type == "Integer":
+                if self._data[column_name].dtype == pl.Utf8:
+                    try:
+                        warning_dialog = QtWidgets.QMessageBox()
+                        warning_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        warning_dialog.setText(f"The current data type of column {column_name} is String. Converting to Integer will result in loss of non-numeric data.")
+                        warning_dialog.setInformativeText("Do you want to proceed with the conversion?")
+                        warning_dialog.setWindowTitle("Data Type Conversion Warning")
+                        warning_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                        warning_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                        ret = warning_dialog.exec()
+
+                        if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                            self._data = self._data.with_columns([
+                                pl.when(pl.col(column_name).str.contains(r'\d'))
+                                .then(pl.col(column_name).str.extract(r'(\d+)').cast(pl.Int64))
+                                .otherwise(pl.lit(None).cast(pl.Int64))
+                            ])
+                        else:
+                            return
+                    except Exception:
+                        raise ValueError(f"Cannot convert column {column_name} to Integer")
+                new_dtype = pl.Int64
+            elif new_type == "Float":
+                if self._data[column_name].dtype == pl.Utf8:
+                    try:
+                        warning_dialog = QtWidgets.QMessageBox()
+                        warning_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        warning_dialog.setText(f"The current data type of column {column_name} is String. Converting to Float will result in loss of non-numeric data.")
+                        warning_dialog.setInformativeText("Do you want to proceed with the conversion?")
+                        warning_dialog.setWindowTitle("Data Type Conversion Warning")
+                        warning_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                        warning_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                        ret = warning_dialog.exec()
+
+                        if ret == QtWidgets.QMessageBox.StandardButton.Yes:
+                            self._data = self._data.with_columns([
+                                pl.when(pl.col(column_name).str.contains(r'^\d+(\.\d+)?$') | pl.col(column_name).str.contains(r'^\d+(,\d+)?$'))
+                                .then(pl.col(column_name).str.replace(",", ".").cast(pl.Float64, strict=False))
+                                .otherwise(pl.lit(None).cast(pl.Float64))
+                            ])
+                        else:
+                            return
+                    except Exception:
+                        raise ValueError(f"Cannot convert column {column_name} to Float")
+                new_dtype = pl.Float64
+            else:
+                raise ValueError("Unsupported data type")
+
+            self.beginResetModel()
+            self._data = self._data.with_columns([pl.col(column_name).cast(new_dtype)])
+            self.endResetModel()
+
+            command = ChangeColumnTypeCommand(self, column_index, old_dtype, new_dtype, old_data, self._data[column_name].to_list())
+            self.undo_stack.push(command)
+            

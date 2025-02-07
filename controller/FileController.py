@@ -64,6 +64,7 @@ class FileController:
                 progress_dialog.setValue(i)
                 if progress_dialog.wasCanceled():
                     break
+                break
 
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)

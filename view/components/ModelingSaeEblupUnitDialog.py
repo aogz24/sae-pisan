@@ -1,16 +1,16 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy
+    QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
 from PyQt6.QtGui import QFont
-from service.modelling.SaeEblupArea import *
-from controller.modelling.SaeController import SaeController
-from model.SaeEblup import SaeEblup
+from service.modelling.SaeEblupUnit import *
+from controller.modelling.SaeEblupUnitController import SaeEblupUnitController
+from model.SaeEblupUnit import SaeEblupUnit
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 
-class ModelingSaeDialog(QDialog):
+class ModelingSaeUnitDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -21,6 +21,12 @@ class ModelingSaeDialog(QDialog):
         self.columns = []
 
         main_layout = QVBoxLayout()
+
+        # Create a scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
 
         # Layout utama untuk membagi area menjadi dua bagian (kiri dan kanan)
         split_layout = QHBoxLayout()
@@ -48,18 +54,30 @@ class ModelingSaeDialog(QDialog):
         self.assign_aux_button.setObjectName("arrow_button")
         self.assign_as_factor_button = QPushButton("→")
         self.assign_as_factor_button.setObjectName("arrow_button")
-        self.assign_vardir_button = QPushButton("→")
-        self.assign_vardir_button.setObjectName("arrow_button")
+        self.assign_domains_button = QPushButton("→")
+        self.assign_domains_button.setObjectName("arrow_button")
+        self.assign_index_button = QPushButton("→")
+        self.assign_index_button.setObjectName("arrow_button")
+        self.assign_aux_mean_button = QPushButton("→")
+        self.assign_aux_mean_button.setObjectName("arrow_button")
+        self.assign_population_sample_size_button = QPushButton("→")
+        self.assign_population_sample_size_button.setObjectName("arrow_button")
 
         self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
         self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
-        self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
+        self.assign_index_button.clicked.connect(lambda: assign_index(self))
         self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
+        self.assign_domains_button.clicked.connect(lambda: assign_domains(self))
+        self.assign_aux_mean_button.clicked.connect(lambda: assign_aux_mean(self))
+        self.assign_population_sample_size_button.clicked.connect(lambda: assign_population_sample_size(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
         middle_layout.addWidget(self.assign_of_interest_button)
         middle_layout.addWidget(self.assign_aux_button)
         middle_layout.addWidget(self.assign_as_factor_button)
-        middle_layout.addWidget(self.assign_vardir_button)
+        middle_layout.addWidget(self.assign_domains_button)
+        middle_layout.addWidget(self.assign_index_button)
+        middle_layout.addWidget(self.assign_aux_mean_button)
+        middle_layout.addWidget(self.assign_population_sample_size_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
@@ -86,20 +104,43 @@ class ModelingSaeDialog(QDialog):
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
-        self.vardir_label = QLabel("Varian Direct:")
-        self.vardir_list = QListView()
-        self.vardir_model = QStringListModel()
-        self.vardir_list.setModel(self.vardir_model)
-        right_layout.addWidget(self.vardir_label)
-        right_layout.addWidget(self.vardir_list)
-
+        self.domain_label = QLabel("Domain:")
+        self.domain_list = QListView()
+        self.domain_model = QStringListModel()
+        self.domain_list.setModel(self.domain_model)
+        right_layout.addWidget(self.domain_label)
+        right_layout.addWidget(self.domain_list)
+        
+        self.index_label = QLabel("Index number of Area:")
+        self.index_list = QListView()
+        self.index_model = QStringListModel()
+        self.index_list.setModel(self.index_model)
+        right_layout.addWidget(self.index_label)
+        right_layout.addWidget(self.index_list)
+        
+        self.auxilary_vars_mean = QLabel("Auxilary Variable(s) Mean:")
+        self.auxilary_vars_mean_list = QListView()
+        self.aux_mean_model = QStringListModel()
+        self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
+        right_layout.addWidget(self.auxilary_vars_mean)
+        right_layout.addWidget(self.auxilary_vars_mean_list)
+        
+        self.population_sample_size = QLabel("Population Sample Size:")
+        self.population_sample_size_list = QListView()
+        self.population_sample_size_model = QStringListModel()
+        self.population_sample_size_list.setModel(self.population_sample_size_model)
+        right_layout.addWidget(self.population_sample_size)
+        right_layout.addWidget(self.population_sample_size_list)
+        
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         split_layout.addLayout(left_layout)
         split_layout.addLayout(middle_layout1)
         split_layout.addLayout(middle_layout)
         split_layout.addLayout(right_layout)
 
-        main_layout.addLayout(split_layout)
+        scroll_layout.addLayout(split_layout)
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
 
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
@@ -110,7 +151,7 @@ class ModelingSaeDialog(QDialog):
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
-        self.r_script_edit.setFixedHeight(200)
+        self.r_script_edit.setFixedHeight(150)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 
@@ -128,8 +169,11 @@ class ModelingSaeDialog(QDialog):
 
         self.of_interest_var = []
         self.auxilary_vars = []
-        self.vardir_var = []
+        self.index_var = []
         self.as_factor_var = []
+        self.domain_var = []
+        self.aux_mean_vars = []
+        self.population_sample_size_var = []
         self.selection_method = "None"
         self.method = "REML"
 
@@ -139,20 +183,8 @@ class ModelingSaeDialog(QDialog):
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
-        if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
-            QMessageBox.warning(self, "Warning", "Varians Direct and variable of interest cannot be empty.")
-            self.ok_button.setEnabled(True)
-            self.option_button.setEnabled(True)
-            self.ok_button.setText("Run Model")
-            return
         if not self.of_interest_var or self.of_interest_var == [""]:
             QMessageBox.warning(self, "Warning", "Variable of interest cannot be empty.")
-            self.ok_button.setEnabled(True)
-            self.option_button.setEnabled(True)
-            self.ok_button.setText("Run Model")
-            return
-        if not self.vardir_var or self.vardir_var == [""]:
-            QMessageBox.warning(self, "Warning", "Varians Direct cannot be empty.")
             self.ok_button.setEnabled(True)
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
@@ -163,8 +195,8 @@ class ModelingSaeDialog(QDialog):
 
         view = self.parent
         r_script = get_script(self)
-        sae_model = SaeEblup(self.model, self.model2, view)
-        controller = SaeController(sae_model)
+        sae_model = SaeEblupUnit(self.model, self.model2, view)
+        controller = SaeEblupUnitController(sae_model)
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())

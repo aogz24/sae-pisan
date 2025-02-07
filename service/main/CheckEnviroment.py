@@ -3,8 +3,21 @@ import subprocess
 import time
 import errno
 
-def check_environment(path):
-    if not os.path.exists(path):
+def check_environment(path, original_path):
+    r_path = os.path.join(path, "bin")
+    try:
+        os.chdir(r_path)
+        output = subprocess.check_output(['r', '--version'], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError("R is not installed or not found in PATH.")
+    finally:
+        os.chdir(original_path)
+    
+    if b"R version" in output:
+        version_line = output.decode().split('\n')[0]
+        version = version_line.split()[2]
+    
+    if (b"R version" not in output) or (version != "4.4.2"):
         if os.name == 'nt':
             url = "https://cran.r-project.org/bin/windows/base/R-4.4.2-win.exe"
             installer_path = os.path.join(os.path.expanduser("~"), "R-latest.exe")

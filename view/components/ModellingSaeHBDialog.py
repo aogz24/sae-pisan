@@ -1,20 +1,25 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit
+    QAbstractItemView, QTextEdit, QSizePolicy
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt
-from service.modelling.SAEHBArea import *
+from PyQt6.QtGui import QFont
+from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, show_options, get_script
 from controller.modelling.SaeHBcontroller import SaeHBController
 from model.SaeHB import SaeHB
+from PyQt6.QtWidgets import QMessageBox
+import polars as pl
 
 class ModelingSaeHBDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.model2 = parent.model2
-        self.setWindowTitle("SAE HB Area Modelling")
+        self.setWindowTitle("SAE HB Beta")
+        self.setFixedHeight(700)
 
         self.columns = []
+        self.model_method = "Beta"
 
         main_layout = QVBoxLayout()
 
@@ -33,55 +38,61 @@ class ModelingSaeHBDialog(QDialog):
         
         middle_layout1 = QVBoxLayout()
         self.unassign_button = QPushButton("←")
+        self.unassign_button.setObjectName("arrow_button")
         middle_layout1.addWidget(self.unassign_button)
 
         # Layout tengah untuk tombol panah
         middle_layout = QVBoxLayout()
-        self.assign_dependent_button = QPushButton("→")
-        self.assign_independent_button = QPushButton("→")
+        self.assign_of_interest_button = QPushButton("→")
+        self.assign_of_interest_button.setObjectName("arrow_button")
+        self.assign_aux_button = QPushButton("→")
+        self.assign_aux_button.setObjectName("arrow_button")
+        self.assign_as_factor_button = QPushButton("→")
+        self.assign_as_factor_button.setObjectName("arrow_button")
         self.assign_vardir_button = QPushButton("→")
-        self.assign_major_area_button = QPushButton("→")
-        self.assign_dependent_button.clicked.connect(lambda: assign_dependent(self))
-        self.assign_independent_button.clicked.connect(lambda: assign_independent(self))
+        self.assign_vardir_button.setObjectName("arrow_button")
+
+        self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
+        self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
         self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
-        self.assign_major_area_button.clicked.connect(lambda: assign_major_area(self))
+        self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
-        middle_layout.addWidget(self.assign_dependent_button)
-        middle_layout.addWidget(self.assign_independent_button)
+        middle_layout.addWidget(self.assign_of_interest_button)
+        middle_layout.addWidget(self.assign_aux_button)
+        middle_layout.addWidget(self.assign_as_factor_button)
         middle_layout.addWidget(self.assign_vardir_button)
-        middle_layout.addWidget(self.assign_major_area_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
-        self.dependent_label = QLabel("Dependent Variable:")
-        self.dependent_list = QListView()
-        self.dependent_model = QStringListModel()
-        self.dependent_list.setModel(self.dependent_model)
-        self.dependent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        right_layout.addWidget(self.dependent_label)
-        right_layout.addWidget(self.dependent_list)
+        self.of_interest_label = QLabel("Variable of interest:")
+        self.of_interest_list = QListView()
+        self.of_interest_model = QStringListModel()
+        self.of_interest_list.setModel(self.of_interest_model)
+        self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        right_layout.addWidget(self.of_interest_label)
+        right_layout.addWidget(self.of_interest_list)
 
-        self.independent_label = QLabel("Independent Variable(s):")
-        self.independent_list = QListView()
-        self.independent_model = QStringListModel()
-        self.independent_list.setModel(self.independent_model)
-        self.independent_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        right_layout.addWidget(self.independent_label)
-        right_layout.addWidget(self.independent_list)
+        self.auxilary_label = QLabel("Auxilary Variable(s):")
+        self.auxilary_list = QListView()
+        self.auxilary_model = QStringListModel()
+        self.auxilary_list.setModel(self.auxilary_model)
+        self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        right_layout.addWidget(self.auxilary_label)
+        right_layout.addWidget(self.auxilary_list)
 
-        self.vardir_label = QLabel("Varian Direct:")
+        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_list = QListView()
+        self.as_factor_model = QStringListModel()
+        self.as_factor_list.setModel(self.as_factor_model)
+        right_layout.addWidget(self.as_factor_label)
+        right_layout.addWidget(self.as_factor_list)
+        
+        self.vardir_label = QLabel("Varians Direct:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
-
-        self.major_area_label = QLabel("Major Area:")
-        self.major_area_list = QListView()
-        self.major_area_model = QStringListModel()
-        self.major_area_list.setModel(self.major_area_model)
-        right_layout.addWidget(self.major_area_label)
-        right_layout.addWidget(self.major_area_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         split_layout.addLayout(left_layout)
@@ -94,12 +105,13 @@ class ModelingSaeHBDialog(QDialog):
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
-        self.text_script = QLabel("Script R:")
+        self.text_script = QLabel("R Script:")
         self.option_button.clicked.connect(lambda : show_options(self))
         main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
+        self.r_script_edit.setFixedHeight(200)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 
@@ -115,23 +127,39 @@ class ModelingSaeHBDialog(QDialog):
 
         self.setLayout(main_layout)
 
-        self.dependent_var = []
-        self.independent_vars = []
+        self.of_interest_var = []
+        self.auxilary_vars = []
         self.vardir_var = []
-        self.major_area_var = []
-        self.stepwise_method = "None"
-        self.iter_update_input = "3"
-        self.iter_mcmc_input = "10000"
-        self.thin_input = "2"
-        self.burn_in_input = "2000"
-        self.tau_u_input = "1"
+        self.as_factor_var = []
+        self.selection_method = "None"
+        self.iter_update="3"
+        self.iter_mcmc="2000"
+        self.burn_in="1000"
 
     def set_model(self, model):
         self.model = model
-        self.columns = [f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
+        self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
         self.variables_model.setStringList(self.columns)
     
     def accept(self):
+        if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
+            QMessageBox.warning(self, "Warning", "Varians Direct and variable of interest cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+        if not self.of_interest_var or self.of_interest_var == [""]:
+            QMessageBox.warning(self, "Warning", "Variable of interest cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+        if not self.vardir_var or self.vardir_var == [""]:
+            QMessageBox.warning(self, "Warning", "Varians Direct cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
         self.ok_button.setText("Running model...")
         self.ok_button.setEnabled(False)
         self.option_button.setEnabled(False)

@@ -4,7 +4,6 @@ from PyQt6.QtCore import Qt
 import sys
 import os
 from controller.FileController import FileController
-# from controller.ExplorationController import ExplorationController
 from view.MainWindow import MainWindow
 from service.main.CheckEnviroment import check_environment
 
@@ -32,7 +31,8 @@ def main():
     
     # Cek dan siapkan lingkungan R
     path = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
-    check_environment(path)
+    original_path = os.path.dirname(__file__)
+    check_environment(path, original_path)
 
     from service.main.LoadingR import loadR  # Load modul R setelah check_environment
 
