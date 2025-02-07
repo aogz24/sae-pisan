@@ -22,9 +22,8 @@ from view.components.BoxPlotDialog import BoxPlotDialog
 from view.components.LinePlotDialog import LinePlotDialog
 from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
 from service.table.DeleteColumn import confirm_delete_selected_columns
+from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
 from PyQt6.QtWidgets import QLabel
-from io import BytesIO
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -459,6 +458,16 @@ class MainWindow(QMainWindow):
         delete_column_action.triggered.connect(lambda : confirm_delete_selected_columns(self))
         delete_column_action.setEnabled(has_selection)
         menu.addAction(delete_column_action)
+        
+        add_column_before_action = QAction("Add Column Before", self)
+        add_column_before_action.triggered.connect(lambda: show_add_column_before_dialog(self))
+        add_column_before_action.setEnabled(has_selection)
+        menu.addAction(add_column_before_action)
+        
+        add_column_after_action = QAction("Add Column After", self)
+        add_column_after_action.triggered.connect(lambda: show_add_column_after_dialog(self))
+        add_column_after_action.setEnabled(has_selection)
+        menu.addAction(add_column_after_action)
         
         menu.exec(header.mapToGlobal(pos))
 
