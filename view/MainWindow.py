@@ -484,6 +484,10 @@ class MainWindow(QMainWindow):
             self.update_table(1, self.model1)
     
 
+    def scroll_to_bottom(self):
+        """Scroll to the bottom of the scroll area."""
+        self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
+    
     def add_output(self, script_text, result_text=None, plot_paths=None):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
         # Membuat frame sebagai card

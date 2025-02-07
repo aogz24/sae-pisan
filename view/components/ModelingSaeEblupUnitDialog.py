@@ -177,6 +177,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.population_sample_size_var = []
         self.selection_method = "None"
         self.method = "REML"
+        self.bootstrap = "50"
 
     def set_model(self, model):
         self.model = model
@@ -215,6 +216,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.parent.output_layout.addWidget(label)
         self.parent.output_layout.addWidget(label_output)
         self.parent.output_layout.addWidget(result_output)
+        # self.parent.scroll_area.verticalScrollBar().setValue(self.parent.scroll_area.verticalScrollBar().maximum())
         self.ok_button.setEnabled(True)
         self.option_button.setEnabled(True)
         self.ok_button.setText("Run Model")

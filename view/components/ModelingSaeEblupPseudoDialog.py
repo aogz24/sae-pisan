@@ -123,7 +123,8 @@ class ModelingSaePseudoDialog(QDialog):
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
         self.text_script = QLabel("R Script:")
-        self.option_button.clicked.connect(lambda : show_options(self))
+        # self.option_button.clicked.connect(lambda : show_options(self))
+        self.option_button.setDisabled(True)
         main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R

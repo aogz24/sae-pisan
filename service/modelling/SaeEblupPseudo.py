@@ -179,12 +179,12 @@ def show_options(parent):
 
     layout = QVBoxLayout()
 
-    method_label = QLabel("Stepwise Selection Method:")
-    layout.addWidget(method_label)
+    # method_label = QLabel("Stepwise Selection Method:")
+    # layout.addWidget(method_label)
 
-    parent.method_combo = QComboBox()
-    parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    layout.addWidget(parent.method_combo)
+    # parent.method_combo = QComboBox()
+    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
+    # layout.addWidget(parent.method_combo)
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -202,6 +202,6 @@ def show_options(parent):
     options_dialog.exec()
 
 def set_selection_method(parent, dialog):
-    parent.selection_method = parent.method_combo.currentText()
+    # parent.selection_method = parent.method_combo.currentText()
     dialog.accept()
     show_r_script(parent)

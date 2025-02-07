@@ -215,9 +215,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-pbmseBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
+        r_script += f'model<-pbmseBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data)'
     else:
-        r_script += f'model<-pbmseBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, method = "{parent.method}", data=data)'
+        r_script += f'model<-pbmseBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data)'
     return r_script
 
 def show_r_script(parent):
@@ -233,12 +233,12 @@ def show_options(parent):
 
     layout = QVBoxLayout()
 
-    method_label = QLabel("Stepwise Selection Method:")
-    layout.addWidget(method_label)
+    # method_label = QLabel("Stepwise Selection Method:")
+    # layout.addWidget(method_label)
 
-    parent.method_combo = QComboBox()
-    parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    layout.addWidget(parent.method_combo)
+    # parent.method_combo = QComboBox()
+    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
+    # layout.addWidget(parent.method_combo)
 
     method_label = QLabel("Method:")
     layout.addWidget(method_label)
@@ -247,6 +247,15 @@ def show_options(parent):
     parent.method_selection.addItems(["ML", "REML", "FH"])
     parent.method_selection.setCurrentText("REML")
     layout.addWidget(parent.method_selection)
+    
+    bootstrap_label = QLabel("Bootstrap:")
+    layout.addWidget(bootstrap_label)
+    
+    parent.bootstrap_edit = QLineEdit()
+    parent.bootstrap_edit.setValidator(QIntValidator())
+    parent.bootstrap_edit.setText("50")
+    layout.addWidget(parent.bootstrap_edit)
+    
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -264,7 +273,8 @@ def show_options(parent):
     options_dialog.exec()
 
 def set_selection_method(parent, dialog):
-    parent.selection_method = parent.method_combo.currentText()
+    # parent.selection_method = parent.method_combo.currentText()
     parent.method = parent.method_selection.currentText()
+    parent.bootstrap = parent.bootstrap_edit.text()
     dialog.accept()
     show_r_script(parent)
