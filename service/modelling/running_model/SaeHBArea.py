@@ -13,6 +13,7 @@ def run_model_hb_area(parent):
     try:
         ro.r('suppressMessages(library(saeHB))')
         ro.r('data <- as.data.frame(r_df)')
+        ro.r('attach(data)')
         ro.r(parent.r_script)
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
