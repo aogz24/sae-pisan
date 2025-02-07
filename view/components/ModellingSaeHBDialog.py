@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, show_options, get_script
 from controller.modelling.SaeHBcontroller import SaeHBController
 from model.SaeHB import SaeHB
@@ -107,7 +107,21 @@ class ModelingSaeHBDialog(QDialog):
         self.option_button.setFixedWidth(150)
         self.text_script = QLabel("R Script:")
         self.option_button.clicked.connect(lambda : show_options(self))
-        main_layout.addWidget(self.text_script)
+        
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        # Create a horizontal layout to place the text_script and icon_label in one row
+        script_layout = QHBoxLayout()
+        script_layout.addWidget(self.text_script)
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
+        script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        script_layout.setAlignment(self.icon_label, Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addLayout(script_layout)
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
@@ -160,6 +174,8 @@ class ModelingSaeHBDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
+        self.r_script_edit.setReadOnly(True)
+        self.icon_label.setVisible(True)
         self.ok_button.setText("Running model...")
         self.ok_button.setEnabled(False)
         self.option_button.setEnabled(False)
@@ -187,5 +203,7 @@ class ModelingSaeHBDialog(QDialog):
         self.parent.output_layout.addWidget(result_output)
         self.ok_button.setEnabled(True)
         self.option_button.setEnabled(True)
+        self.icon_label.setVisible(False)
+        self.r_script_edit.setReadOnly(False)
         self.ok_button.setText("Run Model")
         self.close()

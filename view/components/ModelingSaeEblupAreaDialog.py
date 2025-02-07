@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
@@ -105,14 +105,28 @@ class ModelingSaeDialog(QDialog):
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
         self.text_script = QLabel("R Script:")
-        self.option_button.clicked.connect(lambda : show_options(self))
-        main_layout.addWidget(self.text_script)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        # Create a horizontal layout to place the text_script and icon_label in one row
+        script_layout = QHBoxLayout()
+        script_layout.addWidget(self.text_script)
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
+        script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        script_layout.setAlignment(self.icon_label, Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addLayout(script_layout)
+        self.option_button.clicked.connect(lambda: show_options(self))
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
         self.r_script_edit.setFixedHeight(200)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
+        
 
         # Tombol untuk tindakan dialog
         button_layout = QHBoxLayout()
@@ -157,6 +171,8 @@ class ModelingSaeDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
+        self.icon_label.setVisible(True)
+        self.r_script_edit.setReadOnly(True)
         self.ok_button.setText("Running model...")
         self.ok_button.setEnabled(False)
         self.option_button.setEnabled(False)
@@ -184,5 +200,7 @@ class ModelingSaeDialog(QDialog):
         self.parent.output_layout.addWidget(result_output)
         self.ok_button.setEnabled(True)
         self.option_button.setEnabled(True)
+        self.icon_label.setVisible(False)
+        self.r_script_edit.setReadOnly(False)
         self.ok_button.setText("Run Model")
         self.close()
