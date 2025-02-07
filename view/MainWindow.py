@@ -14,6 +14,10 @@ from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
 from view.components.ModellingSaeHBAreaDialog import ModelingSaeHBDialog
 from view.components.SummaryDataDialog import SummaryDataDialog
 from view.components.NormalityTestDialog import NormalityTestDialog
+from view.components.ScatterPlotDialog import ScatterPlotDialog
+from view.components.BoxPlotDialog import BoxPlotDialog
+from view.components.LinePlotDialog import LinePlotDialog
+from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
 from PyQt6.QtWidgets import QLabel
 from io import BytesIO
 
@@ -145,23 +149,33 @@ class MainWindow(QMainWindow):
         self.action_summary_data = QAction("Summary Data", self)
         self.show_summary_data_dialog = SummaryDataDialog(self)
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
-        
 
         self.action_normality_test = QAction("Normality Test", self)
         self.show_normality_test_dialog = NormalityTestDialog(self)
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
+        self.action_scatter_plot = QAction("Scatterplot", self)
+        self.show_scatter_plot_dialog = ScatterPlotDialog(self)
+        self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
 
-        self.action_scatterplot = QAction("Scatterplot", self)
         self.action_correlation_matrix = QAction("Correlation Matrix", self)
+        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
+        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
+
         self.action_box_plot = QAction("Box Plot", self)
+        self.show_box_plot_dialog = BoxPlotDialog(self)
+        self.action_box_plot.triggered.connect(self.open_box_plot_dialog)
+
         self.action_line_plot = QAction("Line Plot", self)
+        self.show_line_plot_dialog = LinePlotDialog(self)
+        self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
+
         self.action_histogram = QAction("Histogram", self)
         self.action_multicollinearity = QAction("Multicollinearity", self)
         self.action_variable_selection = QAction("Variable Selection", self)
         self.menu_exploration.addAction(self.action_summary_data)
         self.menu_exploration.addAction(self.action_normality_test)
-        self.menu_exploration.addAction(self.action_scatterplot)
+        self.menu_exploration.addAction(self.action_scatter_plot)
         self.menu_exploration.addAction(self.action_correlation_matrix)
         self.menu_exploration.addAction(self.action_box_plot)
         self.menu_exploration.addAction(self.action_line_plot)
@@ -302,6 +316,21 @@ class MainWindow(QMainWindow):
         self.show_normality_test_dialog.set_model(self.model1, self.model2)
         self.show_normality_test_dialog.show()
 
+    def open_scatter_plot_dialog(self):
+        self.show_scatter_plot_dialog.set_model(self.model1, self.model2)
+        self.show_scatter_plot_dialog.show()
+
+    def open_line_plot_dialog(self):
+        self.show_line_plot_dialog.set_model(self.model1, self.model2)
+        self.show_line_plot_dialog.show()
+    
+    def open_box_plot_dialog(self):
+        self.show_box_plot_dialog.set_model(self.model1, self.model2)
+        self.show_box_plot_dialog.show()
+
+    def open_correlation_matrix_dialog(self):
+        self.show_correlation_matrix_dialog.set_model(self.model1, self.model2)
+        self.show_correlation_matrix_dialog.show()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
@@ -408,9 +437,8 @@ class MainWindow(QMainWindow):
             self.update_table(1, self.model1)
     
 
-    def add_output(self, script_text, result_text, plot_paths=None):
+    def add_output(self, script_text, result_text=None, plot_paths=None):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
-
         # Membuat frame sebagai card
         card_frame = QFrame()
         card_frame.setStyleSheet("""
@@ -443,30 +471,32 @@ class MainWindow(QMainWindow):
         """)
         script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
 
-        # Bagian Output
-        label_output = QLabel("<b>Output:</b>")
-        label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-        result_box = QTextEdit()
-        result_box.setPlainText(result_text)
-        result_box.setReadOnly(True)
-        result_box.setStyleSheet("""
-            QTextEdit {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-                font-family: Consolas, Courier New, monospace;
-            }
-        """)
-        result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3))
-
         # Tambahkan elemen teks ke layout card
         card_layout.addWidget(label_script)
         card_layout.addWidget(script_box)
-        card_layout.addWidget(label_output)
-        card_layout.addWidget(result_box)
 
-        # Bagian Plot
+        # Bagian Output (jika ada)
+        if result_text:
+            label_output = QLabel("<b>Output:</b>")
+            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+            result_box = QTextEdit()
+            result_box.setPlainText(result_text)
+            result_box.setReadOnly(True)
+            result_box.setStyleSheet("""
+                QTextEdit {
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    padding: 5px;
+                    font-family: Consolas, Courier New, monospace;
+                }
+            """)
+            result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3))
+
+            card_layout.addWidget(label_output)
+            card_layout.addWidget(result_box)
+
+        # Bagian Plot (jika ada)
         if plot_paths:
             label_plot = QLabel("<b>Plot:</b>")
             label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -478,7 +508,7 @@ class MainWindow(QMainWindow):
                     pixmap = QPixmap(plot_path)
                     label = QLabel()
                     label.setPixmap(pixmap)
-                    label.setFixedSize(400, 300)  # Ukuran tetap untuk gambar
+                    label.setFixedSize(700, 500)  # Ukuran tetap untuk gambar
                     label.setScaledContents(True)
                     label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                     card_layout.addWidget(label)
@@ -492,4 +522,3 @@ class MainWindow(QMainWindow):
             for plot_path in plot_paths:
                 if os.path.exists(plot_path):
                     os.remove(plot_path)
-

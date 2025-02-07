@@ -3,8 +3,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QStringListModel
 from model.NormalityTest import NormalityTest
-from controller.Eksploration.NormalityTestController import NormalityTestController
-from io import BytesIO
+from controller.Eksploration.EksplorationController import NormalityTestController
 
 
 class NormalityTestDialog(QDialog):
@@ -40,7 +39,7 @@ class NormalityTestDialog(QDialog):
         left_layout.addWidget(self.data_editor_label)
         left_layout.addWidget(self.data_editor_list)
 
-    # Data Output
+        # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
         self.data_output_list = QListView(self)
@@ -104,7 +103,6 @@ class NormalityTestDialog(QDialog):
         # Script box
         self.script_label = QLabel("Script:", self)
         self.script_box = QTextEdit(self)
-        self.script_box.setReadOnly(True)
         main_layout.addWidget(self.script_label)
         main_layout.addWidget(self.script_box)
 
@@ -127,12 +125,14 @@ class NormalityTestDialog(QDialog):
         self.all_columns_model1 = self.get_column_with_dtype(model1)
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
+
     def get_column_with_dtype(self, model):
+        """Mengembalikan daftar nama kolom dengan tipe datanya"""
         return [
             f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
-
+    
     def add_variable(self):
         # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
@@ -187,41 +187,44 @@ class NormalityTestDialog(QDialog):
     # def generate_r_script(self):
     #     # Mendapatkan nama variabel yang dipilih
     #     selected_vars = self.get_selected_columns()
-    #     if len(selected_vars) != 1:
-    #         self.script_box.setPlainText("stop('Pilih satu variabel untuk diuji.')")
+    #     if len(selected_vars) == 0:
+    #         self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
     #         return
 
-    #     var = selected_vars[0]  # Ambil satu variabel
     #     method = self.method_combo.currentText().lower().replace("-", "_")
     #     show_histogram = self.histogram_checkbox.isChecked()
     #     show_qqplot = self.qqplot_checkbox.isChecked()
 
     #     r_script = ''
-    #     # Menentukan metode pengujian
-    #     if method == "shapiro_wilk":
-    #         r_script += f'normality_results <- shapiro.test(data${var})\n'
-    #     elif method == "jarque_bera":
-    #         r_script += f'normality_results <- tseries::jarque.bera.test(data${var})\n'
-    #     elif method == "lilliefors":
-    #         r_script += f'normality_results <- nortest::lillie.test(data${var})\n'
 
-    #     # Menambahkan skrip untuk histogram jika dipilih
-    #     if show_histogram:
-    #         r_script += f'histogram <- ggplot(data, aes(x = {var})) + ' \
-    #                     f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-    #                     f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
+    #     for var in selected_vars:
+    #         # Menentukan metode pengujian
+    #         if method == "shapiro_wilk":
+    #             r_script += f'normality_results_{var} <- shapiro.test(data${var})\n'
+    #         elif method == "jarque_bera":
+    #             r_script += f'normality_results_{var} <- tseries::jarque.bera.test(data${var})\n'
+    #         elif method == "lilliefors":
+    #             r_script += f'normality_results_{var} <- nortest::lillie.test(data${var})\n'
 
-    #     # Menambahkan skrip untuk Q-Q plot jika dipilih
-    #     if show_qqplot:
-    #         r_script += f'qqplot <- ggplot(data, aes(sample = {var})) + ' \
-    #                     f'stat_qq() + stat_qq_line(color = "red") + ' \
-    #                     f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
+    #         # Menambahkan skrip untuk histogram jika dipilih
+    #         if show_histogram:
+    #             r_script += f'histogram_{var} <- ggplot(data, aes(x = {var})) + ' \
+    #                         f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
+    #                         f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
+
+    #         # Menambahkan skrip untuk Q-Q plot jika dipilih
+    #         if show_qqplot:
+    #             r_script += f'qqplot_{var} <- ggplot(data, aes(sample = {var})) + ' \
+    #                         f'stat_qq() + stat_qq_line(color = "red") + ' \
+    #                         f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
 
     #     # Menampilkan skrip yang dihasilkan di kotak teks
     #     self.script_box.setPlainText(r_script)
+
     def generate_r_script(self):
         # Mendapatkan nama variabel yang dipilih
         selected_vars = self.get_selected_columns()
+
         if len(selected_vars) == 0:
             self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
             return
@@ -235,27 +238,37 @@ class NormalityTestDialog(QDialog):
         for var in selected_vars:
             # Menentukan metode pengujian
             if method == "shapiro_wilk":
-                r_script += f'normality_results_{var} <- shapiro.test(data${var})\n'
+                r_script += f"normality_results_{var} <- shapiro.test(data${var})\n"
+
             elif method == "jarque_bera":
-                r_script += f'normality_results_{var} <- tseries::jarque.bera.test(data${var})\n'
+                r_script += f"normality_results_{var} <- tseries::jarque.bera.test(data${var})\n"
+
             elif method == "lilliefors":
-                r_script += f'normality_results_{var} <- nortest::lillie.test(data${var})\n'
+                r_script += f"normality_results_{var} <- nortest::lillie.test(data${var})\n"
 
             # Menambahkan skrip untuk histogram jika dipilih
             if show_histogram:
-                r_script += f'histogram_{var} <- ggplot(data, aes(x = {var})) + ' \
-                            f'geom_histogram(binwidth = 30, color = "black", fill = "blue") + ' \
-                            f'ggtitle("Histogram of {var}") + xlab("{var}") + ylab("Frequency")\n'
+                r_script += (
+                    f"histogram_{var} <- ggplot(data, aes(x = {var})) +\n"
+                    f"    geom_histogram(binwidth = 30, color = 'black', fill = 'blue') +\n"
+                    f"    ggtitle('Histogram of {var}') +\n"
+                    f"    xlab('{var}') +\n"
+                    f"    ylab('Frequency')\n"
+                )
 
             # Menambahkan skrip untuk Q-Q plot jika dipilih
             if show_qqplot:
-                r_script += f'qqplot_{var} <- ggplot(data, aes(sample = {var})) + ' \
-                            f'stat_qq() + stat_qq_line(color = "red") + ' \
-                            f'ggtitle("Q-Q Plot of {var}") + xlab("Theoretical Quantiles") + ylab("Sample Quantiles")\n'
+                r_script += (
+                    f"qqplot_{var} <- ggplot(data, aes(sample = {var})) +\n"
+                    f"    stat_qq() +\n"
+                    f"    stat_qq_line(color = 'red') +\n"
+                    f"    ggtitle('Q-Q Plot of {var}') +\n"
+                    f"    xlab('Theoretical Quantiles') +\n"
+                    f"    ylab('Sample Quantiles')\n"
+                )
 
         # Menampilkan skrip yang dihasilkan di kotak teks
         self.script_box.setPlainText(r_script)
-
 
 
     def accept(self):
@@ -273,3 +286,10 @@ class NormalityTestDialog(QDialog):
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")
         self.close()
+
+    def closeEvent(self, event):
+        """Menghapus variabel yang dipilih ketika dialog ditutup."""
+        self.selected_model.setStringList([])  # Mengosongkan daftar variabel yang dipilih
+        self.script_box.setPlainText("")  # Mengosongkan kotak teks skrip
+        event.accept()
+
