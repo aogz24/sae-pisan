@@ -39,6 +39,7 @@ def run_model_hb_area(parent):
             'HB_75%': hb_75,
             'HB_97.5%': hb_97_5,
             'SD': hb_sd,})
+        ro.r("detach(data)")
         parent.model2.set_data(df)
         
     except Exception as e:

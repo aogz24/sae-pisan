@@ -27,6 +27,7 @@ def run_model_eblup_unit(parent):
             'Eblup': estimated_value,
             'Sample size': n_size,
             'MSE': mse})
+        ro.r("detach(data)")
         parent.model2.set_data(df)
         parent.result = str(result)
         
