@@ -151,5 +151,4 @@ class ComputeVariableDialog(QDialog):
         self.icon_label.setVisible(False)
         self.ok_button.setText("OK")
         self.ok_button.setEnabled(False)
-        QMessageBox.information(self, "Success", "New variable computed successfully!")
         super().accept()
