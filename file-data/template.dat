@@ -1,0 +1,3 @@
+Sequence Number 1 to Last Data=new_column <- seq_len(nrow(data))
+Compute RSE=new_column <- sqrt({variable1}) / {variable2} * 100
+Custom=

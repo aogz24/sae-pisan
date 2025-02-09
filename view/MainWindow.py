@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         # Model untuk Sheet 2
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
+        self.path = os.path.join(os.path.dirname(__file__), '..')
 
         # Inisialisasi UI
         self.init_ui()
@@ -504,6 +505,9 @@ class MainWindow(QMainWindow):
         if ok and new_type:
             self.model1.set_column_type(column_index, new_type)
             self.update_table(1, self.model1)
+    
+    def set_path(self, path):
+        self.path=path
     
     def add_output(self, script_text, result_text=None, plot_paths=None):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
