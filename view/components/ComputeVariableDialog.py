@@ -1,57 +1,77 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QComboBox, QTextEdit
-from PyQt6.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QComboBox, QTextEdit, QMessageBox
 from service.compute import run_compute
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QSize, Qt
 
 class ComputeVariableDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
         self.model = parent.model1
-        self.column_names = self.parent.model1.get_data().columns
-        self.setWindowTitle("Compute Variable")
+        self.column_names = self.model.get_data().columns
 
+        self.setWindowTitle("Compute New Variable")
+        self.init_ui()
+
+    def init_ui(self):
         self.layout = QVBoxLayout()
 
-        self.label = QLabel("Enter new column name:")
-        self.layout.addWidget(self.label)
-
+        self.column_label = QLabel("Enter new column name:")
+        self.layout.addWidget(self.column_label)
         self.column_name_input = QLineEdit()
+        self.column_name_input.setPlaceholderText("Enter column name here")
         self.layout.addWidget(self.column_name_input)
 
-        self.label = QLabel("Select template:")
-        self.layout.addWidget(self.label)
-
+        self.template_label = QLabel("Select template:")
+        self.layout.addWidget(self.template_label)
         self.template_selection = QComboBox()
-        self.template_selection.addItems(["Sequence Number 1 to Last Data", "Compute RSE", "Custom"])  # Add your templates here
-        self.template_selection.setCurrentIndex(2)
+        self.template_selection.addItems([
+            "Sequence Number 1 to Last Data", 
+            "Compute RSE", 
+            "Custom"
+        ])
+        self.template_selection.setCurrentIndex(0)
         self.layout.addWidget(self.template_selection)
-        
 
-        self.label = QLabel("Select variable 1:")
-        self.layout.addWidget(self.label)
-
+        self.variable1_label = QLabel("Select Nominator:")
+        self.variable1_label.setVisible(False)
+        self.layout.addWidget(self.variable1_label)
         self.variable1_selection = QComboBox()
         self.variable1_selection.addItems(self.column_names)
+        self.variable1_selection.setVisible(False)
         self.layout.addWidget(self.variable1_selection)
 
-        self.label = QLabel("Select variable 2:")
-        self.layout.addWidget(self.label)
-
+        self.variable2_label = QLabel("Select Denominator:")
+        self.variable2_label.setVisible(False)
+        self.layout.addWidget(self.variable2_label)
         self.variable2_selection = QComboBox()
         self.variable2_selection.addItems(self.column_names)
+        self.variable2_selection.setVisible(False)
         self.layout.addWidget(self.variable2_selection)
 
-        self.label = QLabel("Enter script:")
-        self.layout.addWidget(self.label)
+        self.script_label = QLabel("R Script:")
 
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        self.icon_label.setVisible(False)
+
+        # Create a horizontal layout to place the script_label and icon_label in one row
+        script_layout = QHBoxLayout()
+        script_layout.addWidget(self.script_label)
+        script_layout.addWidget(self.icon_label)
+
+        self.layout.addLayout(script_layout)
         self.script_input = QTextEdit()
+        self.script_input.setPlaceholderText("Write r script here...")
         self.layout.addWidget(self.script_input)
 
+        # Tombol OK dan Cancel
         self.button_layout = QHBoxLayout()
         self.ok_button = QPushButton("OK")
         self.ok_button.clicked.connect(self.accept)
         self.button_layout.addWidget(self.ok_button)
-
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.reject)
         self.button_layout.addWidget(self.cancel_button)
@@ -59,18 +79,32 @@ class ComputeVariableDialog(QDialog):
         self.layout.addLayout(self.button_layout)
         self.setLayout(self.layout)
 
+        # Event handler untuk perubahan template
         self.template_selection.currentIndexChanged.connect(self.update_script_input)
-        self.variable1_selection.currentIndexChanged.connect(lambda: self.update_script_input(self.template_selection.currentIndex()))
-        self.variable2_selection.currentIndexChanged.connect(lambda: self.update_script_input(self.template_selection.currentIndex()))
+        self.variable1_selection.currentIndexChanged.connect(self.update_script_input)
+        self.variable2_selection.currentIndexChanged.connect(self.update_script_input)
+
 
     def update_script_input(self, index):
         if index == 0:
+            self.variable1_label.setVisible(False)
+            self.variable1_selection.setVisible(False)
+            self.variable2_label.setVisible(False)
+            self.variable2_selection.setVisible(False)
             self.script_input.setPlainText("new_column <- seq_len(nrow(data))")
         elif index == 1:
+            self.variable1_label.setVisible(True)
+            self.variable1_selection.setVisible(True)
+            self.variable2_label.setVisible(True)
+            self.variable2_selection.setVisible(True)
             variable1 = self.variable1_selection.currentText()
             variable2 = self.variable2_selection.currentText()
             self.script_input.setPlainText(f'new_column = sqrt({variable1}) / {variable2} * 100')
         else:
+            self.variable1_label.setVisible(False)
+            self.variable1_selection.setVisible(False)
+            self.variable2_label.setVisible(False)
+            self.variable2_selection.setVisible(False)
             self.script_input.clear()
     
     def set_model(self, model):
@@ -85,10 +119,19 @@ class ComputeVariableDialog(QDialog):
         return self.script_input.toPlainText()
     
     def accept(self):
-        import polars as pl
+        if self.column_name_input.text() == "":
+            QMessageBox.warning(self, "Error", "Column name cannot be empty!")
+            return
+        self.ok_button.setText("Computing...")
+        self.ok_button.setEnabled(False)
+        self.icon_label.setVisible(True)
         df = self.model.get_data()
         new_column_series = run_compute(self)
         self.model.set_data(df.with_columns(new_column_series))
         self.parent.update_table(1, self.model)
+        self.icon_label.setVisible(False)
+        self.ok_button.setText("OK")
+        self.ok_button.setEnabled(False)
+        QMessageBox.information(self, "Success", "New variable computed successfully!")
         super().accept()
     

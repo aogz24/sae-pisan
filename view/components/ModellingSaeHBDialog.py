@@ -209,5 +209,6 @@ class ModelingSaeHBDialog(QDialog):
         self.option_button.setEnabled(True)
         self.icon_label.setVisible(False)
         self.r_script_edit.setReadOnly(False)
+        QMessageBox.information(self, "Success", "Modelling successfully!")
         self.ok_button.setText("Run Model")
         self.close()
