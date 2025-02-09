@@ -26,6 +26,8 @@ class ComputeVariableDialog(QDialog):
         return templates
 
     def save_template(self):
+        self.save_template_button.setText("Saving...")
+        self.save_template_button.setEnabled(False)
         template_name, ok = QInputDialog.getText(self, "Save Template", "Enter template name:")
         if ok and template_name:
             script = self.get_script()
@@ -126,7 +128,7 @@ class ComputeVariableDialog(QDialog):
 
     def set_model(self, model):
         self.model = model
-        self.column_names = self.model.get_data().columns
+        self.column_names = [col.replace(" ", "_") for col in self.model.get_data().columns]
         self.variable1_selection.clear()
         self.variable1_selection.addItems(self.column_names)
         self.variable2_selection.clear()
