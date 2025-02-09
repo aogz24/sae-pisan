@@ -27,7 +27,6 @@ def run_model_eblup_area(parent):
             'Eblup': estimated_value,
             'MSE': mse,
             'RSE (%)': rse})
-        ro.r("detach(data)")
         parent.model2.set_data(df)
         parent.result = str(result)
         
