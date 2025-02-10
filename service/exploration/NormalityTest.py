@@ -25,6 +25,8 @@ def run_normality_test(parent):
         ro.r('suppressMessages(library(tseries))')
         ro.r('suppressMessages(library(ggplot2))')
 
+        ro.r('rm(list=ls()[ls() != "r_df"])')
+        
         # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
 
@@ -36,31 +38,30 @@ def run_normality_test(parent):
         selected_vars = parent.selected_columns
         result_str = ""
         plot_paths = []  # Sekarang langsung pakai list global
-
-        print(selected_vars)
+        test_names = ["shapiro", "jarque", "lilliefors"]
+        # print(selected_vars)
 
         for var in selected_vars:
-            result_key = f"normality_results_{var}"
-            if ro.r(f"exists('{result_key}')")[0]:
-                result = ro.r(f"capture.output(print({result_key}))")
-                result_str += f"{var}:\n" + "\n".join(result) + "\n"
-            else:
-                result_str += f"Tidak ada hasil uji untuk {var}\n"
+            for test in test_names:
+                result_key = f"normality_results_{var}_{test}"
+                if ro.r(f"exists('{result_key}')")[0]:
+                    result = ro.r(f"capture.output(print({result_key}))")
+                    result_str += f"{var} - {test} Test:\n" + "\n".join(result) + "\n"
+                else:
+                    result_str += f"Tidak ada hasil uji untuk {var} - {test}\n"
 
             # Menyimpan plot jika ada
             for plot_type in ["histogram", "qqplot"]:
-                plot_name = f"{plot_type}_{var}"  # Pastikan setiap variabel punya plot unik
+                plot_name = f"{plot_type}_{var}"
                 if ro.r(f"exists('{plot_name}')")[0]:
                     plot_path = f"temp_{plot_name}.png"
                     grdevices.png(file=plot_path, width=800, height=600)
                     ro.r(f"print({plot_name})")
                     grdevices.dev_off()
-                    plot_paths.append(plot_path)  # Tambahkan langsung ke list global
+                    plot_paths.append(plot_path)
 
-        print(result_str)
-        print(plot_paths)
-
-        # Simpan hasil ke parent
+        # print(result_str)
+        # print(plot_paths)        # Simpan hasil ke parent
         parent.result = result_str
         parent.plot = plot_paths  # Sekarang semua plot langsung disimpan di 1 list
 
