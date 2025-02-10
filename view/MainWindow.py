@@ -25,6 +25,7 @@ from view.components.ComputeVariableDialog import ComputeVariableDialog
 from view.components.ProjectionDialog import ProjectionDialog
 from service.table.DeleteColumn import confirm_delete_selected_columns
 from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
+from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
 
 class MainWindow(QMainWindow):
@@ -71,22 +72,12 @@ class MainWindow(QMainWindow):
         
         self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
         self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
-        
         self.show_compute_variable_dialog = ComputeVariableDialog(self)
         self.show_compute_variable_dialog.set_model(self.model1)
 
-        # Shortcut for showing Compute Variable Dialog
-        self.show_compute_variable_action = QAction(self)
-        self.show_compute_variable_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
-        self.show_compute_variable_action.triggered.connect(self.show_compute_variable_dialog.show)
-        self.addAction(self.show_compute_variable_action)
-        
         self.show_projection_variabel_dialog = ProjectionDialog(self)
         self.show_projection_variabel_dialog.set_model(self.model1)
-        self.show_projection_variabel_action = QAction(self)
-        self.show_projection_variabel_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
-        self.show_projection_variabel_action.triggered.connect(lambda: self.show_projection_variabel_dialog.show() if self.show_projection_variabel_dialog.show_prerequisites() else None)
-        self.addAction(self.show_projection_variabel_action)
+        self.show_compute_variable_dialog.set_model(self.model1)
         
 
         # Tab pertama (Sheet 1)
@@ -245,18 +236,9 @@ class MainWindow(QMainWindow):
 
         # Submenu "Projection"
         menu_projection = QMenu("Projection", self)
-        action_linear_regression = QAction("Linear Regression", self)
-        action_linear_regression.triggered.connect(lambda: print("Projection -> Linear Regression selected"))
-        action_logistic_regression = QAction("Logistic Regression", self)
-        action_logistic_regression.triggered.connect(lambda: print("Projection -> Logistic Regression selected"))
-        action_svm = QAction("SVM", self)
-        action_svm.triggered.connect(lambda: print("Projection -> SVM selected"))
-        action_gboost = QAction("GBoost", self)
-        action_gboost.triggered.connect(lambda: print("Projection -> GBoost selected"))
-        menu_projection.addAction(action_linear_regression)
-        menu_projection.addAction(action_logistic_regression)
-        menu_projection.addAction(action_svm)
-        menu_projection.addAction(action_gboost)
+        action_projection = QAction("Projection", self)
+        action_projection.triggered.connect(lambda: self.show_projection_variabel_dialog.show() if self.show_projection_variabel_dialog.show_prerequisites() else None)
+        menu_projection.addAction(action_projection)
 
         # Menambahkan submenu ke menu "Model"
         menu_model.addMenu(menu_area_level)
@@ -264,11 +246,18 @@ class MainWindow(QMainWindow):
         menu_model.addMenu(menu_pseudo)
         menu_model.addMenu(menu_projection)
 
+         # Menu 'Compute'
+        menu_compute = self.menu_bar.addMenu("Compute")
+        compute_new_var = QAction("Compute New Variable", self)
+        compute_new_var.triggered.connect(self.show_compute_variable_dialog.show)
+        menu_compute.addAction(compute_new_var)
+        
         # Menu "About"
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
         action_about_info.triggered.connect(lambda: print("About -> About This App selected"))
         menu_about.addAction(action_about_info)
+        
 
         # Tool Bar
         self.toolBar = QToolBar(self)
@@ -302,6 +291,13 @@ class MainWindow(QMainWindow):
         self.actionRedo.setText("Redo")
         self.actionRedo.triggered.connect(self.redo_action)
         self.toolBar.addAction(self.actionRedo)
+        
+        self.actionCompute = QAction(self)
+        icon_compute = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'compute.svg'))
+        self.actionCompute.setIcon(icon_compute)
+        self.actionCompute.setText("Compute New Variable")
+        self.actionCompute.triggered.connect(self.show_compute_variable_dialog.show)
+        self.toolBar.addAction(self.actionCompute)
         
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
