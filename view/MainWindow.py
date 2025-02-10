@@ -22,6 +22,7 @@ from view.components.BoxPlotDialog import BoxPlotDialog
 from view.components.LinePlotDialog import LinePlotDialog
 from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
 from view.components.ComputeVariableDialog import ComputeVariableDialog
+from view.components.ProjectionDialog import ProjectionDialog
 from service.table.DeleteColumn import confirm_delete_selected_columns
 from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
 from PyQt6.QtWidgets import QLabel
@@ -79,6 +80,14 @@ class MainWindow(QMainWindow):
         self.show_compute_variable_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_1))
         self.show_compute_variable_action.triggered.connect(self.show_compute_variable_dialog.show)
         self.addAction(self.show_compute_variable_action)
+        
+        self.show_projection_variabel_dialog = ProjectionDialog(self)
+        self.show_projection_variabel_dialog.set_model(self.model1)
+        self.show_projection_variabel_action = QAction(self)
+        self.show_projection_variabel_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
+        self.show_projection_variabel_action.triggered.connect(lambda: self.show_projection_variabel_dialog.show() if self.show_projection_variabel_dialog.show_prerequisites() else None)
+        self.addAction(self.show_projection_variabel_action)
+        
 
         # Tab pertama (Sheet 1)
         self.tab1 = QWidget()
@@ -387,6 +396,8 @@ class MainWindow(QMainWindow):
             self.show_modeling_saeHB_normal_dialog.set_model(model)
             self.show_modellig_sae_pseudo_dialog.set_model(model)
             self.show_compute_variable_dialog.set_model(model)
+            self.show_projection_variabel_dialog.set_model(model)
+            
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
