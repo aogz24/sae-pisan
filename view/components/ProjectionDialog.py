@@ -197,7 +197,7 @@ class ProjectionDialog(QDialog):
         self.weight_var = []
         self.strata_var = []
         self.selection_method = "None"
-        self.projection_method= "linear"
+        self.projection_method= "Linear"
 
     
     def show_prerequisites(self):
@@ -230,6 +230,12 @@ class ProjectionDialog(QDialog):
         layout.addWidget(QLabel("Projection name:"))
         self.projection_name_edit = QLineEdit()  
         layout.addWidget(self.projection_name_edit)
+        
+        # Model selection
+        layout.addWidget(QLabel("Select Model:"))
+        self.model_combo = QComboBox()
+        self.model_combo.addItems(["Linear", "Logistic", "Gradient Boost"])
+        layout.addWidget(self.model_combo)
 
         # Button Layout
         button_layout = QHBoxLayout()
@@ -247,6 +253,7 @@ class ProjectionDialog(QDialog):
             self.var_position = self.var_position_combo.currentText()
             self.model_name = self.model_name_edit.text()
             self.projection_name = self.projection_name_edit.text()
+            self.projection_method = self.model_combo.currentText()
 
             # Filtering unique columns based on separator position
             unique_columns = {}

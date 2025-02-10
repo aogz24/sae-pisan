@@ -202,8 +202,8 @@ def generate_r_script(parent):
     strata = format_single_var(parent.strata_var) if parent.strata_var else 'NULL'
 
     model_var = {
-        "linear": "linear_reg()",
-        "logistic": "logistic_reg()"
+        "Linear": "linear_reg()",
+        "Logistic": "logistic_reg()"
     }.get(parent.projection_method, 'boost_tree(mtry = tune(), trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), engine = "lightgbm")')
 
     if auxilary_vars or as_factor_var:
