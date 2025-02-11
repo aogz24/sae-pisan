@@ -215,59 +215,68 @@ def generate_r_script(parent):
         formula = " ~ ".join(filter(None, formula_parts))
     else:
         formula = f"{of_interest_var} ~ 1"
-
-    r_script = f'names(data) <- gsub(" ", "_", names(data)); # Replace space with underscore\n'
-    r_script += f'formula <- {formula}\n'
+    
+    r_script = f'formula <- {formula}\n'
 
     if parent.var_position == "After":
         for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
             var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data["{var_name_edit}"];\n'
             
-        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name)]:
+        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var(var, prefix + parent.separator)
                 r_script += f'{var} <- data["{var_edit}"];\n'
                 
-        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var
+        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var+parent.weight_var
         r_script += f'data_model <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
+        r_script += f'colnames(data_model) <- sub("^{prefix}\\\\{parent.separator}", "", colnames(data_model))\n'
         
         for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
             var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data["{var_name_edit}"];\n'
 
-        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name)]:
+        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var(var, prefix + parent.separator)
                 r_script += f'{var} <- data["{var_edit}"];\n'
 
-        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var
+        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var+parent.weight_var
         r_script += f'data_proj <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
+        r_script += f'colnames(data_proj) <- colnames(data_model)\n'
     
     if parent.var_position == "Before":
         for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
             var_name_edit = format_edit_var_before(var,parent.separator + parent.model_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data["{var_name_edit}"];\n'
 
-        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name)]:
+        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var_before(var, parent.separator + prefix)
                 r_script += f'{var} <- data["{var_edit}"];\n'
                 
-        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var
+        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var+parent.weight_var
         r_script += f'data_model <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
+        r_script += f'colnames(data_model) <- sub("\\\\{parent.separator}{prefix}$", "", colnames(data_model))\n'
         
         for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
             var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data["{var_name_edit}"];\n'
             
-        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name)]:
+        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var_before(var, parent.separator + prefix)
                 r_script += f'{var} <- data["{var_edit}"];\n'
         
-        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var
-        r_script += f'data_projection <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
+        all_vars = parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var + parent.domain_var + parent.index_var + parent.strata_var+parent.weight_var
+        r_script += f'data_proj <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
+        r_script += f'colnames(data_proj) <- colnames(data_model)\n'
+    
+    r_script += f'data_model <- data_model %>% filter(!is.na({of_interest_var}))\n'
+    r_script += f'data_proj <- data_proj %>% filter(!is.na({of_interest_var}))\n'
+    r_script += f'data_model <- data_model %>% filter(!is.null({of_interest_var}))\n'
+    r_script += f'data_proj <- data_proj %>% filter(!is.null({of_interest_var}))\n'
+    
     
     if parent.selection_method == "Stepwise":
         parent.selection_method = "both"
@@ -277,9 +286,9 @@ def generate_r_script(parent):
         r_script += f'model <- projection(final_formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj)\n'
     else:
         if strata == 'NULL':
-            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj)\n'
+            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj)\n'
         else:
-            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj)\n'
+            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj)\n'
         return r_script
 
 def show_r_script(parent):
