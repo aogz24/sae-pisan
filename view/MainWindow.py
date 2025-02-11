@@ -159,27 +159,21 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
-        self.show_summary_data_dialog = SummaryDataDialog(self)
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
 
         self.action_normality_test = QAction("Normality Test", self)
-        self.show_normality_test_dialog = NormalityTestDialog(self)
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
         self.action_scatter_plot = QAction("Scatterplot", self)
-        self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
 
         self.action_correlation_matrix = QAction("Correlation Matrix", self)
-        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
         self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
 
         self.action_box_plot = QAction("Box Plot", self)
-        self.show_box_plot_dialog = BoxPlotDialog(self)
         self.action_box_plot.triggered.connect(self.open_box_plot_dialog)
 
         self.action_line_plot = QAction("Line Plot", self)
-        self.show_line_plot_dialog = LinePlotDialog(self)
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
 
         self.action_histogram = QAction("Histogram", self)
@@ -331,70 +325,82 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
 
     def open_summary_data_dialog(self):
+        if self.show_summary_data_dialog is None:
+            self.show_summary_data_dialog = SummaryDataDialog(self) 
         self.show_summary_data_dialog.set_model(self.model1, self.model2)
         self.show_summary_data_dialog.show()
         
     def open_normality_test_dialog(self):
+        if self.show_normality_test_dialog is None:
+            self.show_normality_test_dialog = NormalityTestDialog(self)
         # Perbarui data sebelum menampilkan dialog
         self.show_normality_test_dialog.set_model(self.model1, self.model2)
         self.show_normality_test_dialog.show()
 
     def open_scatter_plot_dialog(self):
+        if self.show_scatter_plot_dialog is None:
+            self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.show_scatter_plot_dialog.set_model(self.model1, self.model2)
         self.show_scatter_plot_dialog.show()
 
     def open_line_plot_dialog(self):
+        if self.show_line_plot_dialog is None:
+            self.show_line_plot_dialog = LinePlotDialog(self)
         self.show_line_plot_dialog.set_model(self.model1, self.model2)
         self.show_line_plot_dialog.show()
     
     def open_box_plot_dialog(self):
+        if self.show_box_plot_dialog is None:
+            self.show_box_plot_dialog = BoxPlotDialog(self)
         self.show_box_plot_dialog.set_model(self.model1, self.model2)
         self.show_box_plot_dialog.show()
 
     def open_correlation_matrix_dialog(self):
+        if self.show_correlation_matrix_dialog is None:
+            self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
         self.show_correlation_matrix_dialog.set_model(self.model1, self.model2)
         self.show_correlation_matrix_dialog.show()
 
     def show_modeling_sae_dialog_lazy(self):
         if self.show_modeling_sae_dialog is None:
             self.show_modeling_sae_dialog = ModelingSaeDialog(self)
-            self.show_modeling_sae_dialog.set_model(self.model1)
+        self.show_modeling_sae_dialog.set_model(self.model1)
         self.show_modeling_sae_dialog.show()
 
     def show_modeling_saeHB_dialog_lazy(self):
         if self.show_modeling_saeHB_dialog is None:
             self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
-            self.show_modeling_saeHB_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_dialog.set_model(self.model1)
         self.show_modeling_saeHB_dialog.show()
 
     def show_modeling_sae_unit_dialog_lazy(self):
         if self.show_modeling_sae_unit_dialog is None:
             self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
-            self.show_modeling_sae_unit_dialog.set_model(self.model1)
+        self.show_modeling_sae_unit_dialog.set_model(self.model1)
         self.show_modeling_sae_unit_dialog.show()
 
     def show_modeling_saeHB_normal_dialog_lazy(self):
         if self.show_modeling_saeHB_normal_dialog is None:
             self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
-            self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
         self.show_modeling_saeHB_normal_dialog.show()
 
     def show_modellig_sae_pseudo_dialog_lazy(self):
         if self.show_modellig_sae_pseudo_dialog is None:
             self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
-            self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
+        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
         self.show_modellig_sae_pseudo_dialog.show()
 
     def show_compute_variable_dialog_lazy(self):
         if self.show_compute_variable_dialog is None:
             self.show_compute_variable_dialog = ComputeVariableDialog(self)
-            self.show_compute_variable_dialog.set_model(self.model1)
+        self.show_compute_variable_dialog.set_model(self.model1)
         self.show_compute_variable_dialog.show()
 
     def show_projection_variabel_dialog_lazy(self):
         if self.show_projection_variabel_dialog is None:
             self.show_projection_variabel_dialog = ProjectionDialog(self)
-            self.show_projection_variabel_dialog.set_model(self.model1)
+        self.show_projection_variabel_dialog.set_model(self.model1)
         if self.show_projection_variabel_dialog.show_prerequisites():
             self.show_projection_variabel_dialog.show()
 
