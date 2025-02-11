@@ -198,6 +198,9 @@ class ProjectionDialog(QDialog):
         self.strata_var = []
         self.selection_method = "None"
         self.projection_method= "Linear"
+        self.metric = "NULL"
+        self.k_fold = "3"
+        self.grid="10"
 
     
     def show_prerequisites(self):

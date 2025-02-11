@@ -294,12 +294,12 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model <- projection(final_formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj)\n'
+        r_script += f'model <- projection(final_formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, k-fold={parent.k_fold}, grid={parent.grid})\n'
     else:
         if strata == 'NULL':
-            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj)\n'
+            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, k-fold={parent.k_fold}, grid={parent.grid})\n'
         else:
-            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj)\n'
+            r_script += f'model <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, k-fold={parent.k_fold}, grid={parent.grid})\n'
         return r_script
 
 def show_r_script(parent):
@@ -322,21 +322,29 @@ def show_options(parent):
     # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
     # layout.addWidget(parent.method_combo)
 
-    method_label = QLabel("Method:")
-    layout.addWidget(method_label)
+    model_metric_label = QLabel("Model Metric:")
+    layout.addWidget(model_metric_label)
 
-    parent.method_selection = QComboBox()
-    parent.method_selection.addItems(["ML", "REML", "FH"])
-    parent.method_selection.setCurrentText("REML")
-    layout.addWidget(parent.method_selection)
-    
-    bootstrap_label = QLabel("Bootstrap:")
-    layout.addWidget(bootstrap_label)
-    
-    parent.bootstrap_edit = QLineEdit()
-    parent.bootstrap_edit.setValidator(QIntValidator())
-    parent.bootstrap_edit.setText("50")
-    layout.addWidget(parent.bootstrap_edit)
+    parent.model_metric_combo = QComboBox()
+    parent.model_metric_combo.addItems(["yardstick::metric_set()", "NULL"])
+    parent.model_metric_combo.setCurrentText("NULL")
+    layout.addWidget(parent.model_metric_combo)
+
+    kfold_label = QLabel("The number of partitions :")
+    layout.addWidget(kfold_label)
+
+    parent.kfold_edit = QLineEdit()
+    parent.kfold_edit.setValidator(QIntValidator())
+    parent.kfold_edit.setText("3")
+    layout.addWidget(parent.kfold_edit)
+
+    grid_label = QLabel("Grid:")
+    layout.addWidget(grid_label)
+
+    parent.grid_edit = QLineEdit()
+    parent.grid_edit.setValidator(QIntValidator())
+    parent.grid_edit.setText("10")
+    layout.addWidget(parent.grid_edit)
     
 
     button_layout = QHBoxLayout()
@@ -356,7 +364,8 @@ def show_options(parent):
 
 def set_selection_method(parent, dialog):
     # parent.selection_method = parent.method_combo.currentText()
-    parent.method = parent.method_selection.currentText()
-    parent.bootstrap = parent.bootstrap_edit.text()
+    parent.metric = parent.model_metric_combo.currentText()
+    parent.k_fold = parent.kfold_edit.text()
+    parent.grid = parent.grid_edit.text()
     dialog.accept()
     show_r_script(parent)
