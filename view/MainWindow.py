@@ -58,26 +58,14 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
         self.tab_widget.setTabPosition(QTabWidget.TabPosition.South)
         
-        self.show_modeling_sae_dialog = ModelingSaeDialog(self)
-        self.show_modeling_sae_dialog.set_model(self.model1)
         
-        self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
-        self.show_modeling_saeHB_dialog.set_model(self.model1)
-        
-        self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
-        self.show_modeling_sae_unit_dialog.set_model(self.model1)
-        
-        self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
-        self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
-        
-        self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
-        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
-        self.show_compute_variable_dialog = ComputeVariableDialog(self)
-        self.show_compute_variable_dialog.set_model(self.model1)
-
-        self.show_projection_variabel_dialog = ProjectionDialog(self)
-        self.show_projection_variabel_dialog.set_model(self.model1)
-        self.show_compute_variable_dialog.set_model(self.model1)
+        self.show_modeling_sae_dialog = None
+        self.show_modeling_saeHB_dialog = None
+        self.show_modeling_sae_unit_dialog = None
+        self.show_modeling_saeHB_normal_dialog = None
+        self.show_modellig_sae_pseudo_dialog = None
+        self.show_compute_variable_dialog = None
+        self.show_projection_variabel_dialog = None
         
 
         # Tab pertama (Sheet 1)
@@ -213,26 +201,32 @@ class MainWindow(QMainWindow):
         # Submenu "Area Level"
         menu_area_level = QMenu("Area Level", self)
         action_eblup_area = QAction("EBLUP", self)
-        action_eblup_area.triggered.connect(self.show_modeling_sae_dialog.show)
+        action_eblup_area.triggered.connect(self.show_modeling_sae_dialog_lazy)
         action_hb_beta = QAction("HB Beta", self)
-        action_hb_beta.triggered.connect(self.show_modeling_saeHB_dialog.show)
+        action_hb_beta.triggered.connect(self.show_modeling_saeHB_dialog_lazy)
         menu_area_level.addAction(action_eblup_area)
         menu_area_level.addAction(action_hb_beta)
 
         # Submenu "Unit Level"
         menu_unit_level = QMenu("Unit Level", self)
         action_eblup_unit = QAction("EBLUP", self)
-        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog.show)
+        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog_lazy)
         action_hb_normal = QAction("HB Normal", self)
-        action_hb_normal.triggered.connect(self.show_modeling_saeHB_normal_dialog.show)
+        action_hb_normal.triggered.connect(self.show_modeling_saeHB_normal_dialog_lazy)
         menu_unit_level.addAction(action_eblup_unit)
         menu_unit_level.addAction(action_hb_normal)
 
         # Submenu "Pseudo"
         menu_pseudo = QMenu("Pseudo", self)
         action_eblup_pseudo = QAction("EBLUP", self)
-        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog.show)
+        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog_lazy)
         menu_pseudo.addAction(action_eblup_pseudo)
+
+        # Submenu "Projection"
+        menu_projection = QMenu("Projection", self)
+        action_projection = QAction("Projection", self)
+        action_projection.triggered.connect(self.show_projection_variabel_dialog_lazy)
+        menu_projection.addAction(action_projection)
 
         # Submenu "Projection"
         menu_projection = QMenu("Projection", self)
@@ -249,7 +243,7 @@ class MainWindow(QMainWindow):
          # Menu 'Compute'
         menu_compute = self.menu_bar.addMenu("Compute")
         compute_new_var = QAction("Compute New Variable", self)
-        compute_new_var.triggered.connect(self.show_compute_variable_dialog.show)
+        compute_new_var.triggered.connect(self.show_compute_variable_dialog_lazy)
         menu_compute.addAction(compute_new_var)
         
         # Menu "About"
@@ -296,7 +290,7 @@ class MainWindow(QMainWindow):
         icon_compute = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'compute.svg'))
         self.actionCompute.setIcon(icon_compute)
         self.actionCompute.setText("Compute New Variable")
-        self.actionCompute.triggered.connect(self.show_compute_variable_dialog.show)
+        self.actionCompute.triggered.connect(self.show_compute_variable_dialog_lazy)
         self.toolBar.addAction(self.actionCompute)
         
         # Shortcuts for "Go to Start/End Row/Column"
@@ -360,6 +354,49 @@ class MainWindow(QMainWindow):
     def open_correlation_matrix_dialog(self):
         self.show_correlation_matrix_dialog.set_model(self.model1, self.model2)
         self.show_correlation_matrix_dialog.show()
+
+    def show_modeling_sae_dialog_lazy(self):
+        if self.show_modeling_sae_dialog is None:
+            self.show_modeling_sae_dialog = ModelingSaeDialog(self)
+            self.show_modeling_sae_dialog.set_model(self.model1)
+        self.show_modeling_sae_dialog.show()
+
+    def show_modeling_saeHB_dialog_lazy(self):
+        if self.show_modeling_saeHB_dialog is None:
+            self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
+            self.show_modeling_saeHB_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_dialog.show()
+
+    def show_modeling_sae_unit_dialog_lazy(self):
+        if self.show_modeling_sae_unit_dialog is None:
+            self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
+            self.show_modeling_sae_unit_dialog.set_model(self.model1)
+        self.show_modeling_sae_unit_dialog.show()
+
+    def show_modeling_saeHB_normal_dialog_lazy(self):
+        if self.show_modeling_saeHB_normal_dialog is None:
+            self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
+            self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_normal_dialog.show()
+
+    def show_modellig_sae_pseudo_dialog_lazy(self):
+        if self.show_modellig_sae_pseudo_dialog is None:
+            self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
+            self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
+        self.show_modellig_sae_pseudo_dialog.show()
+
+    def show_compute_variable_dialog_lazy(self):
+        if self.show_compute_variable_dialog is None:
+            self.show_compute_variable_dialog = ComputeVariableDialog(self)
+            self.show_compute_variable_dialog.set_model(self.model1)
+        self.show_compute_variable_dialog.show()
+
+    def show_projection_variabel_dialog_lazy(self):
+        if self.show_projection_variabel_dialog is None:
+            self.show_projection_variabel_dialog = ProjectionDialog(self)
+            self.show_projection_variabel_dialog.set_model(self.model1)
+        if self.show_projection_variabel_dialog.show_prerequisites():
+            self.show_projection_variabel_dialog.show()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
