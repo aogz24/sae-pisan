@@ -217,6 +217,7 @@ boxplot_multiple <- ggplot(data_long, aes(x = variable, y = value, fill = variab
         controller.run_model(r_script)
 
         self.parent.add_output(script_text = r_script, plot_paths = box_plot.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")

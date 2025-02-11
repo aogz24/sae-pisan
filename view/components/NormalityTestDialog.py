@@ -282,6 +282,7 @@ class NormalityTestDialog(QDialog):
         controller.run_model(r_script)
 
         self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")

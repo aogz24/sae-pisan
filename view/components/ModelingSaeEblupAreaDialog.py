@@ -204,6 +204,7 @@ class ModelingSaeDialog(QDialog):
         self.parent.output_layout.addWidget(label)
         self.parent.output_layout.addWidget(label_output)
         self.parent.output_layout.addWidget(result_output)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.ok_button.setEnabled(True)
         self.option_button.setEnabled(True)
         self.icon_label.setVisible(False)
