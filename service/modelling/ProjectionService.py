@@ -76,6 +76,14 @@ def assign_domains(parent):
 def assign_weight(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        type_of_var = selected_indexes[0].data().split(" [")[1].replace("]", "")
+        if type_of_var == "String":
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setText("Selected variable is of type String. Weight variable must be of type Numeric.")
+            msg.setWindowTitle("Warning")
+            msg.exec()
+            return
         parent.weight_var = [selected_indexes[0].data()]  # Only one variable
         parent.weight_model.setStringList(parent.weight_var)
         parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
