@@ -47,9 +47,9 @@ class FileController:
 
                 # Baca data dari CSV dengan atau tanpa header
                 if header:
-                    data = pl.read_csv(file_path, separator=separator, has_header=True)
+                    data = pl.read_csv(file_path, separator=separator, has_header=True, null_values=["NA", "NULL", "na", "null"])
                 else:
-                    data = pl.read_csv(file_path, separator=separator, has_header=False)
+                    data = pl.read_csv(file_path, separator=separator, has_header=False, null_values=["NA", "NULL", "na", "null"])
                     data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
             elif selected_filter == "Excel Files (*.xlsx)":
                 import pandas as pd

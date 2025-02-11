@@ -429,14 +429,20 @@ class MainWindow(QMainWindow):
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
-            self.show_modeling_sae_dialog.set_model(model)
-            self.show_modeling_saeHB_dialog.set_model(model)
-            self.show_modeling_sae_unit_dialog.set_model(model)
-            self.show_modeling_saeHB_normal_dialog.set_model(model)
-            self.show_modellig_sae_pseudo_dialog.set_model(model)
-            self.show_compute_variable_dialog.set_model(model)
-            self.show_projection_variabel_dialog.set_model(model)
-            
+            if self.show_modeling_sae_dialog:
+                self.show_modeling_sae_dialog.set_model(model)
+            if self.show_modeling_saeHB_dialog:
+                self.show_modeling_saeHB_dialog.set_model(model)
+            if self.show_modeling_sae_unit_dialog:
+                self.show_modeling_sae_unit_dialog.set_model(model)
+            if self.show_modeling_saeHB_normal_dialog:
+                self.show_modeling_saeHB_normal_dialog.set_model(model)
+            if self.show_modellig_sae_pseudo_dialog:
+                self.show_modellig_sae_pseudo_dialog.set_model(model)
+            if self.show_compute_variable_dialog:
+                self.show_compute_variable_dialog.set_model(model)
+            if self.show_projection_variabel_dialog:
+                self.show_projection_variabel_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
