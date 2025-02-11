@@ -204,7 +204,7 @@ def generate_r_script(parent):
     model_var = {
         "Linear": "linear_reg()",
         "Logistic": "logistic_reg()"
-    }.get(parent.projection_method, 'boost_tree(mtry = tune(), trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), engine = "lightgbm")')
+    }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
         formula_parts = [of_interest_var]
@@ -217,6 +217,9 @@ def generate_r_script(parent):
         formula = f"{of_interest_var} ~ 1"
     
     r_script = f'formula <- {formula}\n'
+    if parent.projection_method=="Gradient Boost":
+        r_script += f'show_engines("boost_tree")\n'
+        r_script += f'lgbm_model <- boost_tree( mtry = tune(), trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), engine = "xgboost")\n'
 
     if parent.var_position == "After":
         for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
