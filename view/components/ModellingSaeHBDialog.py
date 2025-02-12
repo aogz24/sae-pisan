@@ -9,6 +9,8 @@ from controller.modelling.SaeHBcontroller import SaeHBController
 from model.SaeHB import SaeHB
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
+from service.utils.utils import display_script_and_output
+from service.utils.enable_disable import enable_service, disable_service
 
 class ModelingSaeHBDialog(QDialog):
     def __init__(self, parent):
@@ -178,11 +180,7 @@ class ModelingSaeHBDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        self.r_script_edit.setReadOnly(True)
-        self.icon_label.setVisible(True)
-        self.ok_button.setText("Running model...")
-        self.ok_button.setEnabled(False)
-        self.option_button.setEnabled(False)
+        disable_service(self)
 
         view = self.parent
         r_script = get_script(self)
@@ -191,25 +189,6 @@ class ModelingSaeHBDialog(QDialog):
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
-        label_script = QLabel("Script R:")
-        label = QTextEdit()
-        label.setPlainText(r_script)
-        label.setReadOnly(True)
-        label.setFixedHeight(100)
-        label_output = QLabel("Output:")
-        result_output = QTextEdit()
-        result_output.setPlainText(sae_model.result)
-        result_output.setReadOnly(True)
-        result_output.setFixedHeight(300)
-        self.parent.output_layout.addWidget(label_script)
-        self.parent.output_layout.addWidget(label)
-        self.parent.output_layout.addWidget(label_output)
-        self.parent.output_layout.addWidget(result_output)
-        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
-        self.ok_button.setEnabled(True)
-        self.option_button.setEnabled(True)
-        self.icon_label.setVisible(False)
-        self.r_script_edit.setReadOnly(False)
-        QMessageBox.information(self, "Success", "Modelling successfully!")
-        self.ok_button.setText("Run Model")
+        display_script_and_output(self.parent, r_script, sae_model.result)
+        enable_service(self)
         self.close()
