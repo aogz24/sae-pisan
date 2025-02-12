@@ -3,6 +3,10 @@ QMainWindow {
     background-color: #EAEAEA; /* light-gray */
 }
 
+QTableView {
+    font-size: 14px;
+}
+
 /* Tab widget */
 QTabWidget::pane {
     background: #FFFFFF; /* white */

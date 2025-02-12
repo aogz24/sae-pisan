@@ -2,30 +2,22 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 from service.modelling.running_model.convert_df import convert_df
 
-def run_model_eblup_unit(parent):
+def run_model_projection(parent):
     import rpy2.robjects as ro
-    import rpy2_arrow.polars as rpy2polars
     parent.activate_R()
     df = parent.model1.get_data()
-    df = df.drop_nulls()
+    # df = df.drop_nulls()
     convert_df(df, parent)
     try:
-        ro.r('suppressMessages(library(sae))')
+        ro.r('suppressMessages(library(sae.projection))')
         ro.r('data <- as.data.frame(r_df)')
         ro.r(parent.r_script)
         ro.r("print(model)")
-        ro.r('domain <- model$est$eblup$domain\n estimated_value <- model$est$eblup$eblup\n n_size <- model$est$eblup$sampsize \n mse <- model$mse$mse')
         result_str = ro.r('capture.output(print(model))')
+        ro.r('projection <- model$projection')
+        proj = ro.conversion.rpy2py(ro.r("projection"))
         result = "\n".join(result_str)
-        domain = ro.r('domain')
-        estimated_value = ro.r('estimated_value')
-        n_size = ro.r('n_size')
-        mse = ro.r('mse')
-        df = pl.DataFrame({
-            'Domain': domain,
-            'Eblup': estimated_value,
-            'Sample size': n_size,
-            'MSE': mse})
+        df = pl.from_pandas(proj)
         parent.model2.set_data(df)
         parent.result = str(result)
         

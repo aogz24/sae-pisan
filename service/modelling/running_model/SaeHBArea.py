@@ -1,5 +1,6 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+from service.modelling.running_model.convert_df import convert_df
 
 def run_model_hb_area(parent):
     import rpy2.robjects as ro
@@ -7,12 +8,11 @@ def run_model_hb_area(parent):
     parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df
+    convert_df(df, parent)
     try:
         ro.r('suppressMessages(library(saeHB))')
         ro.r('data <- as.data.frame(r_df)')
+        ro.r('attach(data)')
         ro.r(parent.r_script)
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
@@ -38,6 +38,7 @@ def run_model_hb_area(parent):
             'HB_75%': hb_75,
             'HB_97.5%': hb_97_5,
             'SD': hb_sd,})
+        ro.r("detach(data)")
         parent.model2.set_data(df)
         
     except Exception as e:

@@ -22,9 +22,12 @@ from view.components.BoxPlotDialog import BoxPlotDialog
 from view.components.LinePlotDialog import LinePlotDialog
 from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
 from view.components.MulticollinearityDialog import MulticollinearityDialog
+from view.components.ComputeVariableDialog import ComputeVariableDialog
+from view.components.ProjectionDialog import ProjectionDialog
+from service.table.DeleteColumn import confirm_delete_selected_columns
+from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
+from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
-from io import BytesIO
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -42,6 +45,7 @@ class MainWindow(QMainWindow):
         # Model untuk Sheet 2
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
+        self.path = os.path.join(os.path.dirname(__file__), '..')
 
         # Inisialisasi UI
         self.init_ui()
@@ -55,20 +59,13 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
         self.tab_widget.setTabPosition(QTabWidget.TabPosition.South)
         
-        self.show_modeling_sae_dialog = ModelingSaeDialog(self)
-        self.show_modeling_sae_dialog.set_model(self.model1)
-        
-        self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
-        self.show_modeling_saeHB_dialog.set_model(self.model1)
-        
-        self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
-        self.show_modeling_sae_unit_dialog.set_model(self.model1)
-        
-        self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
-        self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
-        
-        self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
-        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
+        self.show_modeling_sae_dialog = None
+        self.show_modeling_saeHB_dialog = None
+        self.show_modeling_sae_unit_dialog = None
+        self.show_modeling_saeHB_normal_dialog = None
+        self.show_modellig_sae_pseudo_dialog = None
+        self.show_compute_variable_dialog = None
+        self.show_projection_variabel_dialog = None
         
 
         # Tab pertama (Data Editor)
@@ -99,9 +96,14 @@ class MainWindow(QMainWindow):
         # Tab ketiga (Output)
         self.tab3 = QWidget()
         self.scroll_area = QScrollArea(self.tab3)
+        
+        # Tab output
+        self.output_tab = QWidget()
+        self.scroll_area = QScrollArea(self.output_tab)
         self.scroll_area.setWidgetResizable(True)
         self.output_container = QWidget()
         self.output_layout = QVBoxLayout(self.output_container)
+        self.scroll_area.verticalScrollBar().rangeChanged.connect(lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))
         self.output_container.setLayout(self.output_layout)
         self.scroll_area.setWidget(self.output_container)
 
@@ -125,38 +127,6 @@ class MainWindow(QMainWindow):
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
-
-        # # Bagian kanan: QTabWidget untuk output
-        # self.output_tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
-        # self.output_tab_widget.setTabPosition(QTabWidget.TabPosition.South)
-
-        # # Tab untuk output
-        # self.output_tab = QWidget()
-        # self.scroll_area = QScrollArea(self.output_tab)
-        # self.scroll_area.setWidgetResizable(True)
-        # self.output_container = QWidget()
-        # self.output_layout = QVBoxLayout(self.output_container)
-        # self.output_container.setLayout(self.output_layout)
-        # self.scroll_area.setWidget(self.output_container)
-        # output_tab_layout = QVBoxLayout(self.output_tab)
-        # output_tab_layout.addWidget(self.scroll_area)
-
-        # # Set fixed size for widgets added to output layout
-        # self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        # self.output_layout.setSpacing(0)
-        
-
-        # # Menambahkan tab ke QTabWidget
-        # self.output_tab_widget.addTab(self.output_tab, "Output")
-
-        # # Membuat layout utama
-        # layout = QVBoxLayout()
-        # layout.addWidget(self.splitter_main)
-
-        # # Widget utama dan layout
-        # central_widget = QWidget(self)
-        # central_widget.setLayout(layout)
-        # self.setCentralWidget(central_widget)
 
         # Membuat menu bar
         self.menu_bar = self.menuBar()
@@ -193,7 +163,7 @@ class MainWindow(QMainWindow):
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
 
         self.action_normality_test = QAction("Normality Test", self)
-        self.show_normality_test_dialog = NormalityTestDialog(self)
+        self.show_normality_test_dialog = NormalityTestDialog
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
         self.action_correlation = QAction("Correlation", self)  # Mengubah nama menjadi Correlation
@@ -213,15 +183,15 @@ class MainWindow(QMainWindow):
         self.menu_graph = self.menu_bar.addMenu("Graph")
 
         self.action_scatter_plot = QAction("Scatterplot", self)
-        self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
 
+        self.action_correlation_matrix = QAction("Correlation Matrix", self)
+        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
+
         self.action_box_plot = QAction("Box Plot", self)
-        self.show_box_plot_dialog = BoxPlotDialog(self)
         self.action_box_plot.triggered.connect(self.open_box_plot_dialog)
 
         self.action_line_plot = QAction("Line Plot", self)
-        self.show_line_plot_dialog = LinePlotDialog(self)
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
 
         self.action_histogram = QAction("Histogram", self)
@@ -240,41 +210,38 @@ class MainWindow(QMainWindow):
         # Submenu "Area Level"
         menu_area_level = QMenu("Area Level", self)
         action_eblup_area = QAction("EBLUP", self)
-        action_eblup_area.triggered.connect(self.show_modeling_sae_dialog.show)
+        action_eblup_area.triggered.connect(self.show_modeling_sae_dialog_lazy)
         action_hb_beta = QAction("HB Beta", self)
-        action_hb_beta.triggered.connect(self.show_modeling_saeHB_dialog.show)
+        action_hb_beta.triggered.connect(self.show_modeling_saeHB_dialog_lazy)
         menu_area_level.addAction(action_eblup_area)
         menu_area_level.addAction(action_hb_beta)
 
         # Submenu "Unit Level"
         menu_unit_level = QMenu("Unit Level", self)
         action_eblup_unit = QAction("EBLUP", self)
-        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog.show)
+        action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog_lazy)
         action_hb_normal = QAction("HB Normal", self)
-        action_hb_normal.triggered.connect(self.show_modeling_saeHB_normal_dialog.show)
+        action_hb_normal.triggered.connect(self.show_modeling_saeHB_normal_dialog_lazy)
         menu_unit_level.addAction(action_eblup_unit)
         menu_unit_level.addAction(action_hb_normal)
 
         # Submenu "Pseudo"
         menu_pseudo = QMenu("Pseudo", self)
         action_eblup_pseudo = QAction("EBLUP", self)
-        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog.show)
+        action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog_lazy)
         menu_pseudo.addAction(action_eblup_pseudo)
 
         # Submenu "Projection"
         menu_projection = QMenu("Projection", self)
-        action_linear_regression = QAction("Linear Regression", self)
-        action_linear_regression.triggered.connect(lambda: print("Projection -> Linear Regression selected"))
-        action_logistic_regression = QAction("Logistic Regression", self)
-        action_logistic_regression.triggered.connect(lambda: print("Projection -> Logistic Regression selected"))
-        action_svm = QAction("SVM", self)
-        action_svm.triggered.connect(lambda: print("Projection -> SVM selected"))
-        action_gboost = QAction("GBoost", self)
-        action_gboost.triggered.connect(lambda: print("Projection -> GBoost selected"))
-        menu_projection.addAction(action_linear_regression)
-        menu_projection.addAction(action_logistic_regression)
-        menu_projection.addAction(action_svm)
-        menu_projection.addAction(action_gboost)
+        action_projection = QAction("Projection", self)
+        action_projection.triggered.connect(self.show_projection_variabel_dialog_lazy)
+        menu_projection.addAction(action_projection)
+
+        # Submenu "Projection"
+        menu_projection = QMenu("Projection", self)
+        action_projection = QAction("Projection", self)
+        action_projection.triggered.connect(lambda: self.show_projection_variabel_dialog.show() if self.show_projection_variabel_dialog.show_prerequisites() else None)
+        menu_projection.addAction(action_projection)
 
         # Menambahkan submenu ke menu "Model"
         menu_model.addMenu(menu_area_level)
@@ -282,11 +249,18 @@ class MainWindow(QMainWindow):
         menu_model.addMenu(menu_pseudo)
         menu_model.addMenu(menu_projection)
 
+         # Menu 'Compute'
+        menu_compute = self.menu_bar.addMenu("Compute")
+        compute_new_var = QAction("Compute New Variable", self)
+        compute_new_var.triggered.connect(self.show_compute_variable_dialog_lazy)
+        menu_compute.addAction(compute_new_var)
+        
         # Menu "About"
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
         action_about_info.triggered.connect(lambda: print("About -> About This App selected"))
         menu_about.addAction(action_about_info)
+        
 
         # Tool Bar
         self.toolBar = QToolBar(self)
@@ -320,6 +294,13 @@ class MainWindow(QMainWindow):
         self.actionRedo.setText("Redo")
         self.actionRedo.triggered.connect(self.redo_action)
         self.toolBar.addAction(self.actionRedo)
+        
+        self.actionCompute = QAction(self)
+        icon_compute = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'compute.svg'))
+        self.actionCompute.setIcon(icon_compute)
+        self.actionCompute.setText("Compute New Variable")
+        self.actionCompute.triggered.connect(self.show_compute_variable_dialog_lazy)
+        self.toolBar.addAction(self.actionCompute)
         
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
@@ -363,7 +344,6 @@ class MainWindow(QMainWindow):
         self.show_summary_data_dialog.show()
         
     def open_normality_test_dialog(self):
-        # Perbarui data sebelum menampilkan dialog
         self.show_normality_test_dialog.set_model(self.model1, self.model2)
         self.show_normality_test_dialog.show()
 
@@ -386,6 +366,49 @@ class MainWindow(QMainWindow):
     def open_multicollinearity_dialog(self):
         self.show_multicollinearity_dialog.set_model(self.model1, self.model2)
         self.show_multicollinearity_dialog.show()
+
+    def show_modeling_sae_dialog_lazy(self):
+        if self.show_modeling_sae_dialog is None:
+            self.show_modeling_sae_dialog = ModelingSaeDialog(self)
+        self.show_modeling_sae_dialog.set_model(self.model1)
+        self.show_modeling_sae_dialog.show()
+
+    def show_modeling_saeHB_dialog_lazy(self):
+        if self.show_modeling_saeHB_dialog is None:
+            self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
+        self.show_modeling_saeHB_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_dialog.show()
+
+    def show_modeling_sae_unit_dialog_lazy(self):
+        if self.show_modeling_sae_unit_dialog is None:
+            self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
+        self.show_modeling_sae_unit_dialog.set_model(self.model1)
+        self.show_modeling_sae_unit_dialog.show()
+
+    def show_modeling_saeHB_normal_dialog_lazy(self):
+        if self.show_modeling_saeHB_normal_dialog is None:
+            self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
+        self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
+        self.show_modeling_saeHB_normal_dialog.show()
+
+    def show_modellig_sae_pseudo_dialog_lazy(self):
+        if self.show_modellig_sae_pseudo_dialog is None:
+            self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
+        self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
+        self.show_modellig_sae_pseudo_dialog.show()
+
+    def show_compute_variable_dialog_lazy(self):
+        if self.show_compute_variable_dialog is None:
+            self.show_compute_variable_dialog = ComputeVariableDialog(self)
+        self.show_compute_variable_dialog.set_model(self.model1)
+        self.show_compute_variable_dialog.show()
+
+    def show_projection_variabel_dialog_lazy(self):
+        if self.show_projection_variabel_dialog is None:
+            self.show_projection_variabel_dialog = ProjectionDialog(self)
+        self.show_projection_variabel_dialog.set_model(self.model1)
+        if self.show_projection_variabel_dialog.show_prerequisites():
+            self.show_projection_variabel_dialog.show()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
@@ -411,14 +434,25 @@ class MainWindow(QMainWindow):
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
-            self.show_modeling_sae_dialog.set_model(model)
-            self.show_modeling_saeHB_dialog.set_model(model)
-            self.show_modeling_sae_unit_dialog.set_model(model)
-            self.show_modeling_saeHB_normal_dialog.set_model(model)
-            self.show_modellig_sae_pseudo_dialog.set_model(model)
+            self.spreadsheet.resizeColumnsToContents()
+            if self.show_modeling_sae_dialog:
+                self.show_modeling_sae_dialog.set_model(model)
+            if self.show_modeling_saeHB_dialog:
+                self.show_modeling_saeHB_dialog.set_model(model)
+            if self.show_modeling_sae_unit_dialog:
+                self.show_modeling_sae_unit_dialog.set_model(model)
+            if self.show_modeling_saeHB_normal_dialog:
+                self.show_modeling_saeHB_normal_dialog.set_model(model)
+            if self.show_modellig_sae_pseudo_dialog:
+                self.show_modellig_sae_pseudo_dialog.set_model(model)
+            if self.show_compute_variable_dialog:
+                self.show_compute_variable_dialog.set_model(model)
+            if self.show_projection_variabel_dialog:
+                self.show_projection_variabel_dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
+            self.table_view2.resizeColumnsToContents()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
@@ -490,6 +524,24 @@ class MainWindow(QMainWindow):
         edit_type_action.triggered.connect(lambda: self.edit_data_type(logical_index))
         menu.addAction(edit_type_action)
         
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        has_selection = bool(selection)
+        
+        delete_column_action = QAction("Delete Column", self)
+        delete_column_action.triggered.connect(lambda : confirm_delete_selected_columns(self))
+        delete_column_action.setEnabled(has_selection)
+        menu.addAction(delete_column_action)
+        
+        add_column_before_action = QAction("Add Column Before", self)
+        add_column_before_action.triggered.connect(lambda: show_add_column_before_dialog(self))
+        add_column_before_action.setEnabled(has_selection)
+        menu.addAction(add_column_before_action)
+        
+        add_column_after_action = QAction("Add Column After", self)
+        add_column_after_action.triggered.connect(lambda: show_add_column_after_dialog(self))
+        add_column_after_action.setEnabled(has_selection)
+        menu.addAction(add_column_after_action)
+        
         menu.exec(header.mapToGlobal(pos))
 
     def rename_column(self, column_index):
@@ -516,7 +568,9 @@ class MainWindow(QMainWindow):
             self.model1.set_column_type(column_index, new_type)
             self.update_table(1, self.model1)
     
-
+    def set_path(self, path):
+        self.path=path
+    
     def add_output(self, script_text, result_text=None, plot_paths=None):
         """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
         # Membuat frame sebagai card

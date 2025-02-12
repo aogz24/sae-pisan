@@ -2,13 +2,15 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
+from service.utils.utils import display_script_and_output
+from service.utils.enable_disable import enable_service, disable_service
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent):
@@ -32,6 +34,7 @@ class ModelingSaeDialog(QDialog):
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
         self.variables_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.variables_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         left_layout.addWidget(self.variables_label)
         left_layout.addWidget(self.variables_list)
         
@@ -76,20 +79,25 @@ class ModelingSaeDialog(QDialog):
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.auxilary_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
-        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
+        self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
-        self.vardir_label = QLabel("Varian Direct:")
+        self.vardir_label = QLabel("Direct Variance:")
         self.vardir_list = QListView()
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
+        self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.vardir_label)
         right_layout.addWidget(self.vardir_list)
 
@@ -105,14 +113,28 @@ class ModelingSaeDialog(QDialog):
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
         self.text_script = QLabel("R Script:")
-        self.option_button.clicked.connect(lambda : show_options(self))
-        main_layout.addWidget(self.text_script)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        # Create a horizontal layout to place the text_script and icon_label in one row
+        script_layout = QHBoxLayout()
+        script_layout.addWidget(self.text_script)
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
+        script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        script_layout.setAlignment(self.icon_label, Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addLayout(script_layout)
+        self.option_button.clicked.connect(lambda: show_options(self))
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
         self.r_script_edit.setFixedHeight(200)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
+        
 
         # Tombol untuk tindakan dialog
         button_layout = QHBoxLayout()
@@ -157,9 +179,8 @@ class ModelingSaeDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        self.ok_button.setText("Running model...")
-        self.ok_button.setEnabled(False)
-        self.option_button.setEnabled(False)
+        
+        disable_service(self)
 
         view = self.parent
         r_script = get_script(self)
@@ -168,21 +189,6 @@ class ModelingSaeDialog(QDialog):
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
-        label_script = QLabel("Script R:")
-        label = QTextEdit()
-        label.setPlainText(r_script)
-        label.setReadOnly(True)
-        label.setFixedHeight(100)
-        label_output = QLabel("Output:")
-        result_output = QTextEdit()
-        result_output.setPlainText(sae_model.result)
-        result_output.setReadOnly(True)
-        result_output.setFixedHeight(300)
-        self.parent.output_layout.addWidget(label_script)
-        self.parent.output_layout.addWidget(label)
-        self.parent.output_layout.addWidget(label_output)
-        self.parent.output_layout.addWidget(result_output)
-        self.ok_button.setEnabled(True)
-        self.option_button.setEnabled(True)
-        self.ok_button.setText("Run Model")
+        display_script_and_output(self.parent, r_script, sae_model.result)
+        enable_service(self)
         self.close()

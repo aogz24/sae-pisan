@@ -290,6 +290,7 @@ class ScatterPlotDialog(QDialog):
         controller.run_model(r_script)
 
         self.parent.add_output(script_text = r_script, plot_paths = scatter_plot.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")

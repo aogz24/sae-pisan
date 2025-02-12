@@ -200,6 +200,7 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         controller.run_model(r_script)
 
         self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.run_button.setEnabled(True)
         self.run_button.setText("Run")

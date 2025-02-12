@@ -125,7 +125,7 @@ def generate_r_script(parent):
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
-    as_factor_var = " + ".join([f'as.factor(data${var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
+    as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
@@ -162,13 +162,13 @@ def show_options(parent):
     layout = QVBoxLayout()
 
     method_label = QLabel("Stepwise Selection Method:")
-    layout.addWidget(method_label)
+    # layout.addWidget(method_label)
 
-    parent.method_combo = QComboBox()
-    parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    layout.addWidget(parent.method_combo)
+    # parent.method_combo = QComboBox()
+    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
+    # layout.addWidget(parent.method_combo)
 
-    iter_update_label = QLabel("Number of Iteration Update:")
+    iter_update_label = QLabel("Number of Iteration Update (minimum 2):")
     layout.addWidget(iter_update_label)
     
     parent.iter_update = QLineEdit()
@@ -209,7 +209,7 @@ def show_options(parent):
     options_dialog.exec()
 
 def set_selection_method(parent, dialog):
-    parent.selection_method = parent.method_combo.currentText()
+    # parent.selection_method = parent.method_combo.currentText()
     parent.iter_update = parent.iter_update.text()
     parent.iter_mcmc = parent.iter_mcmc.text()
     parent.burn_in = parent.burn_in.text()

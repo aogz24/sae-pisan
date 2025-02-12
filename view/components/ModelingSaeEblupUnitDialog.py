@@ -2,13 +2,15 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeEblupUnit import *
 from controller.modelling.SaeEblupUnitController import SaeEblupUnitController
 from model.SaeEblupUnit import SaeEblupUnit
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
+from service.utils.utils import display_script_and_output
+from service.utils.enable_disable import enable_service, disable_service
 
 class ModelingSaeUnitDialog(QDialog):
     def __init__(self, parent):
@@ -86,6 +88,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.of_interest_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.of_interest_label)
         right_layout.addWidget(self.of_interest_list)
 
@@ -94,13 +97,15 @@ class ModelingSaeUnitDialog(QDialog):
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.auxilary_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
-        self.as_factor_label = QLabel("as Factor Auxilary Variable(s):")
+        self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
+        self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.as_factor_label)
         right_layout.addWidget(self.as_factor_list)
         
@@ -108,6 +113,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.domain_list = QListView()
         self.domain_model = QStringListModel()
         self.domain_list.setModel(self.domain_model)
+        self.domain_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.domain_label)
         right_layout.addWidget(self.domain_list)
         
@@ -115,13 +121,16 @@ class ModelingSaeUnitDialog(QDialog):
         self.index_list = QListView()
         self.index_model = QStringListModel()
         self.index_list.setModel(self.index_model)
+        self.index_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.index_label)
         right_layout.addWidget(self.index_list)
         
         self.auxilary_vars_mean = QLabel("Auxilary Variable(s) Mean:")
         self.auxilary_vars_mean_list = QListView()
         self.aux_mean_model = QStringListModel()
+        self.auxilary_vars_mean_list.setMinimumHeight(80)
         self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
+        self.auxilary_vars_mean_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_vars_mean)
         right_layout.addWidget(self.auxilary_vars_mean_list)
         
@@ -129,6 +138,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.population_sample_size_list = QListView()
         self.population_sample_size_model = QStringListModel()
         self.population_sample_size_list.setModel(self.population_sample_size_model)
+        self.population_sample_size_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.population_sample_size)
         right_layout.addWidget(self.population_sample_size_list)
         
@@ -146,8 +156,21 @@ class ModelingSaeUnitDialog(QDialog):
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
         self.text_script = QLabel("R Script:")
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        # Create a horizontal layout to place the text_script and icon_label in one row
+        script_layout = QHBoxLayout()
+        script_layout.addWidget(self.text_script)
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
+        script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        script_layout.setAlignment(self.icon_label, Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addLayout(script_layout)
         self.option_button.clicked.connect(lambda : show_options(self))
-        main_layout.addWidget(self.text_script)
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
@@ -176,6 +199,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.population_sample_size_var = []
         self.selection_method = "None"
         self.method = "REML"
+        self.bootstrap = "50"
 
     def set_model(self, model):
         self.model = model
@@ -189,9 +213,7 @@ class ModelingSaeUnitDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        self.ok_button.setText("Running model...")
-        self.ok_button.setEnabled(False)
-        self.option_button.setEnabled(False)
+        disable_service(self)
 
         view = self.parent
         r_script = get_script(self)
@@ -200,21 +222,6 @@ class ModelingSaeUnitDialog(QDialog):
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
-        label_script = QLabel("Script R:")
-        label = QTextEdit()
-        label.setPlainText(r_script)
-        label.setReadOnly(True)
-        label.setFixedHeight(100)
-        label_output = QLabel("Output:")
-        result_output = QTextEdit()
-        result_output.setPlainText(sae_model.result)
-        result_output.setReadOnly(True)
-        result_output.setFixedHeight(300)
-        self.parent.output_layout.addWidget(label_script)
-        self.parent.output_layout.addWidget(label)
-        self.parent.output_layout.addWidget(label_output)
-        self.parent.output_layout.addWidget(result_output)
-        self.ok_button.setEnabled(True)
-        self.option_button.setEnabled(True)
-        self.ok_button.setText("Run Model")
+        display_script_and_output(self.parent, r_script, sae_model.result)
+        enable_service(self)
         self.close()
