@@ -1,15 +1,13 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+from service.modelling.running_model.convert_df import convert_df
 
 def run_model_projection(parent):
     import rpy2.robjects as ro
-    import rpy2_arrow.polars as rpy2polars
     parent.activate_R()
     df = parent.model1.get_data()
     # df = df.drop_nulls()
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df
+    convert_df(df, parent)
     try:
         ro.r('suppressMessages(library(sae.projection))')
         ro.r('data <- as.data.frame(r_df)')
