@@ -26,8 +26,10 @@ def run_correlation_matrix(parent):
         ro.r('suppressMessages(library(tidyr))')
         ro.r('suppressMessages(library(ggcorrplot))')
 
-        # Menghapus objek korelasi sebelumnya dari lingkungan R
-        ro.r('rm(list=ls(pattern="^correlation_matrix"))')
+        ro.r('rm(list=ls()[ls() != "r_df"])')
+
+        # # Menghapus objek korelasi sebelumnya dari lingkungan R
+        # ro.r('rm(list=ls(pattern="^correlation_matrix"))')
 
         # Menyiapkan data di R
         ro.r('data <- as.data.frame(r_df)')

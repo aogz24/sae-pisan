@@ -15,7 +15,7 @@ class CorrelationMatrixDialog(QDialog):
         self.all_columns_model1 = []
         self.all_columns_model2 = []
 
-        self.setWindowTitle("Box Plot")
+        self.setWindowTitle("Correlation")
 
         # Menyimpan status variabel yang dipilih
         self.selected_status = {}
