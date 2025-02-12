@@ -22,8 +22,7 @@ def run_lineplot(parent):
         # Load required R libraries
         ro.r('suppressMessages(library(ggplot2))')
 
-        # Remove previous lineplot objects from the R environment
-        ro.r('rm(list=ls(pattern="^lineplot_"))')
+        ro.r('rm(list=ls()[ls() != "r_df"])')
 
         # Set up data in R
         ro.r('data <- as.data.frame(r_df)')

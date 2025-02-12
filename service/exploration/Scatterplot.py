@@ -21,9 +21,7 @@ def run_scatterplot(parent):
     try:
         # Load required R libraries
         ro.r('suppressMessages(library(ggplot2))')
-
-        # Remove previous scatterplot objects from the R environment
-        ro.r('rm(list=ls(pattern="^scatterplot_"))')
+        ro.r('rm(list=ls()[ls() != "r_df"])')
 
         # Set up data in R
         ro.r('data <- as.data.frame(r_df)')

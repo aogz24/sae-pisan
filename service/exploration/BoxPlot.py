@@ -23,8 +23,7 @@ def run_box_plot(parent):
         ro.r('suppressMessages(library(ggplot2))')
         ro.r('suppressMessages(library(tidyr))')
 
-        # Remove previous boxplot objects from the R environment
-        ro.r('rm(list=ls(pattern="^boxplot_"))')
+        ro.r('rm(list=ls()[ls() != "r_df"])')
 
         # Set up data in R
         ro.r('data <- as.data.frame(r_df)')
