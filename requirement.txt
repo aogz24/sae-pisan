@@ -3,3 +3,9 @@ polars
 matplotlib
 fastexcel
 openpyexcel
+rpy2
+XlsxWriter
+pyintaller
+fastexcel
+pyspread
+Jinja2
