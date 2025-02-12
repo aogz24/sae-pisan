@@ -53,14 +53,14 @@ class NormalityTestDialog(QDialog):
 
         # Layout tengah: Tombol
         button_layout = QVBoxLayout()
-        self.add_button = QPushButton("🡆", self)  # Tombol untuk menambahkan variabel
+        self.add_button = QPushButton("🡆", self)  
         self.add_button.clicked.connect(self.add_variable)
-        self.add_button.setFixedSize(50, 35)  # Ukuran tombol tetap sama
-        self.add_button.setStyleSheet("font-size: 24px;")  # Perbesar font
-        self.remove_button = QPushButton("🡄", self)  # Tombol untuk menghapus variabel
+        self.add_button.setFixedSize(50, 35) 
+        self.add_button.setStyleSheet("font-size: 24px;")  
+        self.remove_button = QPushButton("🡄", self)  
         self.remove_button.clicked.connect(self.remove_variable)
         self.remove_button.setFixedSize(50, 35)
-        self.remove_button.setStyleSheet("font-size: 24px;")  # Perbesar font
+        self.remove_button.setStyleSheet("font-size: 24px;") 
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.remove_button)
