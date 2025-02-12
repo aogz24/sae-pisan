@@ -64,7 +64,7 @@ class SummaryDataDialog(QDialog):
 
         # Layout kanan
         right_layout = QVBoxLayout()
-        self.selected_label = QLabel("Variabel", self)
+        self.selected_label = QLabel("Variable", self)
         self.selected_model = QStringListModel()
         self.selected_list = QListView(self)
         self.selected_list.setModel(self.selected_model)

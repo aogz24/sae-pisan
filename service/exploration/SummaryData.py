@@ -25,7 +25,6 @@ def run_summary_data(parent):
     try:
         # Mengatur data di R
         ro.r('data <- as.data.frame(r_df)')
-
         # Menjalankan script R dari parent
         ro.r(parent.r_script)
 
