@@ -21,6 +21,7 @@ from view.components.ScatterPlotDialog import ScatterPlotDialog
 from view.components.BoxPlotDialog import BoxPlotDialog
 from view.components.LinePlotDialog import LinePlotDialog
 from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
+from view.components.MulticollinearityDialog import MulticollinearityDialog
 from PyQt6.QtWidgets import QLabel
 from io import BytesIO
 
@@ -70,7 +71,7 @@ class MainWindow(QMainWindow):
         self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
         
 
-        # Tab pertama (Sheet 1)
+        # Tab pertama (Data Editor)
         self.tab1 = QWidget()
         self.spreadsheet = QTableView(self.tab1)
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -81,53 +82,81 @@ class MainWindow(QMainWindow):
         self.spreadsheet.horizontalHeader().sectionDoubleClicked.connect(self.rename_column)
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
+
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
         self.spreadsheet.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
-        # Tab kedua (Sheet 2)
+        # Tab kedua (Data Output)
         self.tab2 = QWidget()
         self.table_view2 = QTableView(self.tab2)
         self.table_view2.setModel(self.model2)
         self.table_view2.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
         tab2_layout = QVBoxLayout(self.tab2)
         tab2_layout.addWidget(self.table_view2)
 
-        # Menambahkan tab ke QTabWidget
-        self.tab_widget.addTab(self.tab1, "Data Editor")
-        self.tab_widget.addTab(self.tab2, "Output Data")
-
-        # Bagian kanan: QTabWidget untuk output
-        self.output_tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
-        self.output_tab_widget.setTabPosition(QTabWidget.TabPosition.South)
-
-        # Tab untuk output
-        self.output_tab = QWidget()
-        self.scroll_area = QScrollArea(self.output_tab)
+        # Tab ketiga (Output)
+        self.tab3 = QWidget()
+        self.scroll_area = QScrollArea(self.tab3)
         self.scroll_area.setWidgetResizable(True)
         self.output_container = QWidget()
         self.output_layout = QVBoxLayout(self.output_container)
         self.output_container.setLayout(self.output_layout)
         self.scroll_area.setWidget(self.output_container)
-        output_tab_layout = QVBoxLayout(self.output_tab)
-        output_tab_layout.addWidget(self.scroll_area)
 
-        # Set fixed size for widgets added to output layout
+        # Atur layout output
         self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.output_layout.setSpacing(0)
-        
+
+        tab3_layout = QVBoxLayout(self.tab3)
+        tab3_layout.addWidget(self.scroll_area)
 
         # Menambahkan tab ke QTabWidget
-        self.output_tab_widget.addTab(self.output_tab, "Output")
+        self.tab_widget.addTab(self.tab1, "Data Editor")
+        self.tab_widget.addTab(self.tab2, "Data Output")
+        self.tab_widget.addTab(self.tab3, "Output")  # Tab baru untuk output
 
         # Membuat layout utama
         layout = QVBoxLayout()
-        layout.addWidget(self.splitter_main)
+        layout.addWidget(self.tab_widget)
 
         # Widget utama dan layout
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+
+        # # Bagian kanan: QTabWidget untuk output
+        # self.output_tab_widget = QTabWidget(self.splitter_main)  # Ditambahkan ke splitter utama
+        # self.output_tab_widget.setTabPosition(QTabWidget.TabPosition.South)
+
+        # # Tab untuk output
+        # self.output_tab = QWidget()
+        # self.scroll_area = QScrollArea(self.output_tab)
+        # self.scroll_area.setWidgetResizable(True)
+        # self.output_container = QWidget()
+        # self.output_layout = QVBoxLayout(self.output_container)
+        # self.output_container.setLayout(self.output_layout)
+        # self.scroll_area.setWidget(self.output_container)
+        # output_tab_layout = QVBoxLayout(self.output_tab)
+        # output_tab_layout.addWidget(self.scroll_area)
+
+        # # Set fixed size for widgets added to output layout
+        # self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # self.output_layout.setSpacing(0)
+        
+
+        # # Menambahkan tab ke QTabWidget
+        # self.output_tab_widget.addTab(self.output_tab, "Output")
+
+        # # Membuat layout utama
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.splitter_main)
+
+        # # Widget utama dan layout
+        # central_widget = QWidget(self)
+        # central_widget.setLayout(layout)
+        # self.setCentralWidget(central_widget)
 
         # Membuat menu bar
         self.menu_bar = self.menuBar()
@@ -167,13 +196,25 @@ class MainWindow(QMainWindow):
         self.show_normality_test_dialog = NormalityTestDialog(self)
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
+        self.action_correlation = QAction("Correlation", self)  # Mengubah nama menjadi Correlation
+        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
+        self.action_correlation.triggered.connect(self.open_correlation_matrix_dialog)
+
+        self.action_multicollinearity = QAction("Multicollinearity", self)  # Menambahkan Multicollinearity
+        self.show_multicollinearity_dialog = MulticollinearityDialog(self)
+        self.action_multicollinearity.triggered.connect(self.open_multicollinearity_dialog)
+
+        self.menu_exploration.addAction(self.action_summary_data)
+        self.menu_exploration.addAction(self.action_normality_test)
+        self.menu_exploration.addAction(self.action_correlation)
+        self.menu_exploration.addAction(self.action_multicollinearity)  # Menambahkan Multicollinearity ke menu Exploration
+
+        # Menu "Graph"
+        self.menu_graph = self.menu_bar.addMenu("Graph")
+
         self.action_scatter_plot = QAction("Scatterplot", self)
         self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
-
-        self.action_correlation_matrix = QAction("Correlation Matrix", self)
-        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
-        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
 
         self.action_box_plot = QAction("Box Plot", self)
         self.show_box_plot_dialog = BoxPlotDialog(self)
@@ -184,17 +225,14 @@ class MainWindow(QMainWindow):
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
 
         self.action_histogram = QAction("Histogram", self)
-        self.action_multicollinearity = QAction("Multicollinearity", self)
-        self.action_variable_selection = QAction("Variable Selection", self)
-        self.menu_exploration.addAction(self.action_summary_data)
-        self.menu_exploration.addAction(self.action_normality_test)
-        self.menu_exploration.addAction(self.action_scatter_plot)
-        self.menu_exploration.addAction(self.action_correlation_matrix)
-        self.menu_exploration.addAction(self.action_box_plot)
-        self.menu_exploration.addAction(self.action_line_plot)
-        self.menu_exploration.addAction(self.action_histogram)
-        self.menu_exploration.addAction(self.action_multicollinearity)
-        self.menu_exploration.addAction(self.action_variable_selection)
+
+        # Menambahkan plot-plot ke menu Graph
+        self.menu_graph.addAction(self.action_scatter_plot)
+        self.menu_graph.addAction(self.action_box_plot)
+        self.menu_graph.addAction(self.action_line_plot)
+        self.menu_graph.addAction(self.action_histogram)
+
+
 
         # Menu "Model"
         menu_model = self.menu_bar.addMenu("Model")
@@ -344,6 +382,10 @@ class MainWindow(QMainWindow):
     def open_correlation_matrix_dialog(self):
         self.show_correlation_matrix_dialog.set_model(self.model1, self.model2)
         self.show_correlation_matrix_dialog.show()
+    
+    def open_multicollinearity_dialog(self):
+        self.show_multicollinearity_dialog.set_model(self.model1, self.model2)
+        self.show_multicollinearity_dialog.show()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
