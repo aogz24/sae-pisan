@@ -39,3 +39,10 @@ class CorrelationMatrixController:
     
     def run_model(self, r_script):
         self.CorrelationMatrixModel.run_model(r_script)
+
+class MulticollinearityController:
+    def __init__(self, multicollinearityModel):
+        self.MulticollinearityModel = multicollinearityModel
+    
+    def run_model(self, r_script):
+        self.MulticollinearityModel.run_model(r_script)
