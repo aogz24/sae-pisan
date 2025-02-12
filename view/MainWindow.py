@@ -237,11 +237,6 @@ class MainWindow(QMainWindow):
         action_projection.triggered.connect(self.show_projection_variabel_dialog_lazy)
         menu_projection.addAction(action_projection)
 
-        # Submenu "Projection"
-        menu_projection = QMenu("Projection", self)
-        action_projection = QAction("Projection", self)
-        action_projection.triggered.connect(lambda: self.show_projection_variabel_dialog.show() if self.show_projection_variabel_dialog.show_prerequisites() else None)
-        menu_projection.addAction(action_projection)
 
         # Menambahkan submenu ke menu "Model"
         menu_model.addMenu(menu_area_level)
