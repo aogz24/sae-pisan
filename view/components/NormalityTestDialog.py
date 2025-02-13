@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QComboBox, QCheckBox, QTextEdit, QGroupBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QSizePolicy, QMessageBox, QSpacerItem
 )
-from PyQt6.QtCore import Qt, QStringListModel
+from PyQt6.QtCore import Qt, QStringListModel, QSize
+from PyQt6.QtGui import QIcon
 from model.NormalityTest import NormalityTest
 from controller.Eksploration.EksplorationController import NormalityTestController
 
@@ -108,10 +109,23 @@ class NormalityTestDialog(QDialog):
 
         main_layout.addLayout(content_layout)
 
-        # Script box
-        self.script_label = QLabel("Script:", self)
+        script_layout = QHBoxLayout()
+        self.script_label = QLabel("R Script:", self)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        script_layout.addWidget(self.script_label)
+        script_layout.addItem(spacer)  
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
         self.script_box = QTextEdit(self)
-        main_layout.addWidget(self.script_label)
+
+        # Tambahkan ke layout utama
+        main_layout.addLayout(script_layout)  # Tambahkan layout horizontal ke layout utama
         main_layout.addWidget(self.script_box)
 
         # Tombol Run
@@ -255,7 +269,8 @@ class NormalityTestDialog(QDialog):
         r_script = self.script_box.toPlainText()
         if not r_script:
             return
-        
+        self.run_button.setText("Running...")
+        self.icon_label.setVisible(True)
         normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
         # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
         controller = NormalityTestController(normality_test)
@@ -264,8 +279,9 @@ class NormalityTestDialog(QDialog):
         self.parent.add_output(r_script, normality_test.result, normality_test.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
-        self.run_button.setEnabled(True)
+        self.run_button.setEnabled(False)
         self.run_button.setText("Run")
+        QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
         self.close()
 
     def closeEvent(self, event):
