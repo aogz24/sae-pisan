@@ -47,6 +47,8 @@ def main():
     view.setWindowFlags(view.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint)  # Remove the always on top flag
     controller = FileController(view.model1, view.model2, view)
     # ControllerExploration = ExplorationController(view.model1, view.model2, view)
+    
+    app.setStyleSheet(view.load_stylesheet_with_font_size(14))
 
     def load_stylesheet():
         # Gunakan jalur relatif untuk mengakses style.qss

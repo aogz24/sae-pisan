@@ -17,4 +17,4 @@ def display_script_and_output(parent, r_script, result):
     parent.output_layout.addWidget(label)
     parent.output_layout.addWidget(label_output)
     parent.output_layout.addWidget(result_output)
-    parent.tab_widget.setCurrentWidget(parent.output_tab)
+    parent.tab_widget.setCurrentWidget(parent.tab3)
