@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame,
-    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit
+    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit, QFontDialog 
 )
 from PyQt6.QtCore import Qt, QSize 
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
@@ -328,12 +328,44 @@ class MainWindow(QMainWindow):
         icon_setting = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'setting.svg'))
         self.actionSetting.setIcon(icon_setting)
         self.actionSetting.setText("Setting")
+        self.actionSetting.triggered.connect(self.change_font_size)
         self.toolBar.addAction(self.actionSetting)
+
+        # Menu "Settings"
+        menu_settings = self.menu_bar.addMenu("Settings")
+        action_change_font_size = QAction("Change Font Size", self)
+        action_change_font_size.triggered.connect(self.change_font_size)
+        menu_settings.addAction(action_change_font_size)
 
 
         # Menetapkan ukuran default
         self.resize(800, 600)
 
+    
+    def change_font_size(self):
+        current_font = self.font()
+        font, ok = QFontDialog.getFont(current_font, self, "Select Font Size")
+        if ok:
+            self.set_font_size(font.pointSize())
+
+    def set_font_size(self, size):
+        stylesheet = self.load_stylesheet_with_font_size(size)
+        self.setStyleSheet(stylesheet)
+
+    def load_stylesheet_with_font_size(self, size):
+        """
+        Memuat stylesheet dan mengganti ukuran font global.
+        """
+        stylesheet_path = os.path.join(self.path, 'assets', 'style', 'style.qss')
+        if os.path.exists(stylesheet_path):
+            with open(stylesheet_path, 'r') as file:
+                stylesheet = file.read()
+                stylesheet = stylesheet.replace("font-size: 14px;", f"font-size: {size}px;")
+                return stylesheet
+        else:
+            print(f"Stylesheet tidak ditemukan di {stylesheet_path}")
+            return ""
+    
     def open_summary_data_dialog(self):
         self.show_summary_data_dialog.set_model(self.model1, self.model2)
         self.show_summary_data_dialog.show()
