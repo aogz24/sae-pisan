@@ -656,7 +656,13 @@ class MainWindow(QMainWindow):
                     font-family: Consolas, Courier New, monospace;
                 }
             """)
-            result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3))
+            max_height = 400
+            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
+            result_box.setFixedHeight(min(calculated_height, max_height))
+            if calculated_height > max_height:
+                result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+            else:
+                result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
             card_layout.addWidget(label_output)
             card_layout.addWidget(result_box)
@@ -681,6 +687,7 @@ class MainWindow(QMainWindow):
         # Tambahkan card ke layout utama
         self.output_layout.addWidget(card_frame)
         self.output_layout.addStretch()
+        self.tab_widget.setCurrentWidget(self.tab3)
 
         # Hapus file sementara setelah ditampilkan
         if plot_paths:

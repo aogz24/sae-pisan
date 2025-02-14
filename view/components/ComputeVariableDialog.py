@@ -150,5 +150,5 @@ class ComputeVariableDialog(QDialog):
         self.parent.update_table(1, self.model)
         self.icon_label.setVisible(False)
         self.ok_button.setText("OK")
-        self.ok_button.setEnabled(False)
+        self.ok_button.setEnabled(True)
         super().accept()

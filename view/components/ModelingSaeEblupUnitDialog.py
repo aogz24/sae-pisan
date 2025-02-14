@@ -205,6 +205,13 @@ class ModelingSaeUnitDialog(QDialog):
         self.model = model
         self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
         self.variables_model.setStringList(self.columns)
+        self.aux_mean_model.setStringList([])
+        self.auxilary_model.setStringList([])
+        self.of_interest_model.setStringList([])
+        self.domain_model.setStringList([])
+        self.index_model.setStringList([])
+        self.population_sample_size_model.setStringList([])
+        self.as_factor_model.setStringList([])
     
     def accept(self):
         if not self.of_interest_var or self.of_interest_var == [""]:

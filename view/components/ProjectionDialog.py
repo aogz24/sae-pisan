@@ -282,6 +282,14 @@ class ProjectionDialog(QDialog):
     def set_model(self, model):
         self.model = model
         self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
+        self.of_interest_model.setStringList([])
+        self.auxilary_model.setStringList([])
+        self.as_factor_model.setStringList([])
+        self.domain_model.setStringList([])
+        self.index_model.setStringList([])
+        self.weight_model.setStringList([])
+        self.strata_model.setStringList([])
+        
     
     def accept(self):
         if not self.of_interest_var or self.of_interest_var == [""]:
