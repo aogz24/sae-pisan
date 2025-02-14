@@ -1,0 +1,201 @@
+WEIGHT.y,PROV.y,REGENCY.y,STRATA.y,income.y,neet.y,sex.y,age.y,disability.y,edu.y
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+281,35,1,2,3000000,0,1,61,0,Elementary school and below
+425,35,1,2,1500000,0,2,31,0,middle-high school
+281,35,1,2,1500000,0,1,60,1,Elementary school and below
+266,35,1,2,900000,0,1,83,0,Elementary school and below
+409,35,1,2,800000,0,2,75,0,Elementary school and below
+384,35,1,2,1600000,0,1,47,0,Elementary school and below
+348,35,1,2,2000000,0,2,21,0,middle-high school
+345,35,1,2,1000000,0,1,35,0,middle-high school
+348,35,1,2,3000000,0,2,22,0,Elementary school and below
+479,35,1,2,900000,0,2,17,0,middle-high school
+353,35,1,2,200000,0,1,58,0,Elementary school and below
+345,35,1,2,2100000,0,1,35,0,middle-high school
+348,35,1,2,900000,0,2,23,0,middle-high school
+215,35,1,2,3600000,0,1,38,0,middle-high school
+179,35,1,2,2100000,0,1,51,0,Elementary school and below
+217,35,1,2,1700000,0,2,24,0,middle-high school
+166,35,1,2,700000,0,1,76,0,Elementary school and below
+223,35,1,2,1000000,0,1,74,0,Elementary school and below
+167,35,1,2,500000,0,2,46,0,Elementary school and below
+179,35,1,2,2100000,0,1,51,0,Elementary school and below
+217,35,1,2,1700000,0,2,24,0,middle-high school
+241,35,1,2,1500000,0,1,34,0,middle-high school
+265,35,1,2,1000000,0,2,33,0,middle-high school
+179,35,1,2,150000,0,1,51,0,Elementary school and below
+167,35,1,2,350000,0,2,45,0,Elementary school and below
+175,35,1,2,1600000,0,1,60,0,Elementary school and below
+203,35,1,2,260000,0,2,44,0,middle-high school
+385,35,1,2,850000,0,1,23,0,middle-high school
+705,35,1,2,2000000,0,1,30,0,middle-high school
+801,35,1,2,1000000,0,2,32,0,college/university
+762,35,1,2,360000,0,2,49,0,Elementary school and below
+850,35,1,2,1000000,0,1,27,0,middle-high school
+833,35,1,2,1000000,0,1,19,0,middle-high school
+859,35,1,2,1500000,0,1,43,0,middle-high school
+810,35,1,2,450000,0,2,40,0,middle-high school
+780,35,1,2,450000,0,1,60,0,middle-high school
+775,35,1,2,1500000,0,1,75,0,Elementary school and below
+838,35,1,2,3000000,0,1,48,0,college/university
+780,35,1,2,500000,0,1,63,0,Elementary school and below
+838,35,1,2,250000,0,1,47,0,middle-high school
+766,35,1,2,800000,0,2,38,0,middle-high school
+838,35,1,2,900000,0,1,49,0,middle-high school
+251,35,1,1,500000,0,1,61,0,college/university
+241,35,1,1,600000,0,1,50,0,middle-high school
+298,35,1,1,800000,0,2,49,0,middle-high school
+379,35,1,1,1500000,0,2,25,0,college/university
+249,35,1,1,1100000,0,1,56,0,middle-high school
+188,35,1,1,900000,0,2,54,0,Elementary school and below
+356,35,1,1,2000000,0,2,21,0,middle-high school
+364,35,1,1,2000000,0,1,39,0,middle-high school
+236,35,1,1,900000,0,2,36,0,college/university
+188,35,1,1,2000000,0,1,67,1,Elementary school and below
+420,35,1,1,1000000,0,1,30,0,middle-high school
+326,35,1,1,1000000,0,2,30,0,middle-high school
+241,35,1,1,500000,0,1,53,0,middle-high school
+188,35,1,1,1200000,0,2,50,0,middle-high school
+374,35,1,1,8000000,0,1,45,0,college/university
+278,35,1,1,3000000,0,2,40,0,college/university
+253,35,1,1,1850000,0,1,41,0,middle-high school
+273,35,1,2,910000,0,1,48,0,middle-high school
+232,35,1,2,900000,0,2,40,0,middle-high school
+291,35,1,2,950000,0,2,75,0,Elementary school and below
+228,35,1,2,1200000,0,1,41,0,middle-high school
+251,35,1,2,1260000,0,1,55,0,middle-high school
+191,35,1,2,1000000,0,2,47,0,middle-high school
+287,35,1,2,1200000,0,1,27,0,middle-high school
+200,35,1,2,1080000,0,1,62,0,Elementary school and below
+276,35,1,2,2080000,0,1,34,0,middle-high school
+228,35,1,2,2000000,0,1,41,0,college/university
+235,35,1,2,1400000,0,2,59,0,Elementary school and below
+228,35,1,2,7800000,0,1,44,0,middle-high school
+253,35,1,2,1920000,0,2,38,0,middle-high school
+224,35,1,2,1200000,0,1,18,0,middle-high school
+200,35,1,2,750000,0,1,61,0,Elementary school and below
+232,35,1,2,500000,0,2,43,0,middle-high school
+440,35,1,2,1000000,0,1,22,0,middle-high school
+248,35,1,2,800000,0,2,23,0,middle-high school
+219,35,1,1,1800000,0,1,54,0,middle-high school
+331,35,1,1,2400000,0,1,35,0,college/university
+171,35,1,1,1000000,0,1,67,0,Elementary school and below
+226,35,1,1,2100000,0,1,57,0,middle-high school
+171,35,1,1,760000,0,2,54,0,middle-high school
+297,35,1,1,2850000,0,2,32,0,middle-high school
+312,35,1,1,3000000,0,1,20,0,middle-high school
+219,35,1,1,750000,0,1,54,0,middle-high school
+171,35,1,1,680000,0,1,67,0,Elementary school and below
+259,35,1,1,600000,0,2,66,0,Elementary school and below
+381,35,1,1,3100000,0,1,32,0,college/university
+297,35,1,1,3190000,0,2,30,0,college/university
+226,35,1,1,2500000,0,1,56,0,middle-high school
+331,35,1,1,1800000,0,1,38,0,middle-high school
+171,35,1,1,780000,0,1,65,0,Elementary school and below
+585,35,1,1,2200000,0,1,26,0,middle-high school
+322,35,1,1,650000,0,2,84,0,Elementary school and below
+314,35,1,2,2170000,0,1,52,0,middle-high school
+395,35,1,2,200000,0,2,52,0,middle-high school
+465,35,1,2,200000,0,2,30,0,middle-high school
+308,35,1,2,1050000,0,1,64,1,Elementary school and below
+423,35,1,2,1600000,0,1,32,0,middle-high school
+381,35,1,2,650000,0,2,24,0,middle-high school
