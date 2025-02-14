@@ -8,7 +8,7 @@ def assign_of_interest(parent):
         all_string = True
         for index in selected_indexes:
             type_of_var = index.data().split(" [")[1].replace("]", "")
-            if type_of_var != "String":
+            if type_of_var != "String" and parent.projection_method != "Linear":
                 all_string = False
                 parent.of_interest_var = [index.data()]
                 parent.of_interest_model.setStringList(parent.of_interest_var)
@@ -193,7 +193,7 @@ def generate_r_script(parent):
         if not var_list:
             return ''
         if as_factor:
-            return " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in var_list])
+            return " + ".join([f'{var.split(" [")[0].replace(" ", "_")}' for var in var_list])
         return " + ".join([var.split(" [")[0].replace(" ", "_") for var in var_list])
 
     def format_single_var(var):
@@ -224,7 +224,7 @@ def generate_r_script(parent):
             formula_parts.append(auxilary_vars)
         if as_factor_var:
             formula_parts.append(as_factor_var)
-        formula = " ~ ".join(filter(None, formula_parts))
+        formula = f"{of_interest_var} ~ {' + '.join(filter(None, formula_parts[1:]))}"
     else:
         formula = f"{of_interest_var} ~ 1"
     
@@ -234,9 +234,13 @@ def generate_r_script(parent):
         r_script += f'gb_model <- boost_tree( mtry = tune(), trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), engine = "xgboost")\n'
 
     if parent.var_position == "After":
-        for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
+        for var in parent.auxilary_vars + parent.of_interest_var:
             var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.as_factor_var:
+            var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
             
         for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
@@ -264,9 +268,13 @@ def generate_r_script(parent):
         r_script += f'colnames(data_proj) <- colnames(data_model)\n'
     
     if parent.var_position == "Before":
-        for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
-            var_name_edit = format_edit_var_before(var,parent.separator + parent.model_name)
+        for var in parent.auxilary_vars + parent.of_interest_var:
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.as_factor_var:
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
 
         for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
