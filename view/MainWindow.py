@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
 
         self.action_normality_test = QAction("Normality Test", self)
-        self.show_normality_test_dialog = NormalityTestDialog
+        self.show_normality_test_dialog = NormalityTestDialog(self)
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
 
         self.action_correlation = QAction("Correlation", self)  # Mengubah nama menjadi Correlation
@@ -371,7 +371,7 @@ class MainWindow(QMainWindow):
         self.show_summary_data_dialog.show()
         
     def open_normality_test_dialog(self):
-        self.show_normality_test_dialog.set_model(self.model1, self.model2)
+        self.show_normality_test_dialog.set_model( self.model1, self.model2)
         self.show_normality_test_dialog.show()
 
     def open_scatter_plot_dialog(self):

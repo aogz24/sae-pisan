@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QSpacerItem, QSizePolicy, QMessageBox
 )
-from PyQt6.QtCore import Qt, QStringListModel
+from PyQt6.QtCore import Qt, QStringListModel, QSize
+from PyQt6.QtGui import QIcon
 from model.SummaryData import SummaryData
 from controller.Eksploration.EksplorationController import SummaryDataController
 class SummaryDataDialog(QDialog):
@@ -75,11 +76,30 @@ class SummaryDataDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
+        # Layout horizontal untuk label dan ikon
+        script_layout = QHBoxLayout()
+        self.script_label = QLabel("R Script:", self)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        # Spacer agar icon_label tetap di ujung kanan
+        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        # Tambahkan widget ke dalam layout horizontal
+        script_layout.addWidget(self.script_label)
+        script_layout.addItem(spacer)  # Menambahkan spasi fleksibel
+        script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
         # Box untuk menampilkan script
-        self.script_label = QLabel("Script:", self)
         self.script_box = QTextEdit(self)
-        main_layout.addWidget(self.script_label)
+
+        # Tambahkan ke layout utama
+        main_layout.addLayout(script_layout)  # Tambahkan layout horizontal ke layout utama
         main_layout.addWidget(self.script_box)
+
+        
 
         # Tombol Run
         button_row_layout = QHBoxLayout()
@@ -168,15 +188,16 @@ class SummaryDataDialog(QDialog):
         r_script = self.script_box.toPlainText()
         if not r_script:
             return
-        summary_data= SummaryData(self.model1, self.model2, self.parent)
-        controller =SummaryDataController(summary_data)
+        self.run_button.setText("Running...")
+        self.icon_label.setVisible(True)
+        summary_data = SummaryData(self.model1, self.model2, self.parent)
+        controller = SummaryDataController(summary_data)
         controller.run_model(r_script)
-
-        self.parent.add_output(r_script,summary_data.result)
+        self.parent.add_output(r_script, summary_data.result)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
-        
-        self.run_button.setEnabled(True)
+        self.icon_label.setVisible(False)
         self.run_button.setText("Run")
+        QMessageBox.information(self, "Summary Completed", "Summary completed successfully.")
         self.close()
 
     def closeEvent(self, event):
