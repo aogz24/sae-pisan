@@ -677,6 +677,7 @@ class MainWindow(QMainWindow):
         # Tambahkan card ke layout utama
         self.output_layout.addWidget(card_frame)
         self.output_layout.addStretch()
+        self.tab_widget.setCurrentWidget(self.tab3)
 
         # Hapus file sementara setelah ditampilkan
         if plot_paths:
