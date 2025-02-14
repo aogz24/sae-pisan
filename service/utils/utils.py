@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout
+from PyQt6.QtCore import Qt
 
 def display_script_and_output(parent, r_script, result):
     """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
@@ -54,7 +55,13 @@ def display_script_and_output(parent, r_script, result):
                 font-family: Consolas, Courier New, monospace;
             }
         """)
-        result_box.setFixedHeight(result_box.fontMetrics().lineSpacing() * (result.count('\n') + 3))
+        max_height = 400
+        calculated_height = result_box.fontMetrics().lineSpacing() * (result.count('\n') + 3)
+        result_box.setFixedHeight(min(calculated_height, max_height))
+        if calculated_height > max_height:
+            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        else:
+            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         card_layout.addWidget(label_output)
         card_layout.addWidget(result_box)
