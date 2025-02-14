@@ -11,6 +11,7 @@ def loadR(splash):
                 if (!require("arrow", quietly = TRUE)) install.packages("arrow", lib=r_home);
                 if (!require("sae.projection", quietly = TRUE)) install.packages("sae.projection", lib=r_home); library(sae.projection, lib.loc=r_home);
                 if (!require("emdi", quietly = TRUE)) install.packages("emdi", lib=r_home); library(emdi, lib.loc=r_home);
+                if (!require("xgboost", quietly = TRUE)) install.packages("xgboost", lib=r_home);
             })
             """
     ro.r(r_script)
