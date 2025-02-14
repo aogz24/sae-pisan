@@ -160,6 +160,10 @@ class ModelingSaeHBDialog(QDialog):
         self.model = model
         self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
         self.variables_model.setStringList(self.columns)
+        self.of_interest_model.setStringList([])
+        self.auxilary_model.setStringList([])
+        self.as_factor_model.setStringList([])
+        self.vardir_model.setStringList([])
     
     def accept(self):
         if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
