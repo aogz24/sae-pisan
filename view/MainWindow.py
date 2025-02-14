@@ -183,15 +183,19 @@ class MainWindow(QMainWindow):
         self.menu_graph = self.menu_bar.addMenu("Graph")
 
         self.action_scatter_plot = QAction("Scatterplot", self)
+        self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
 
         self.action_correlation_matrix = QAction("Correlation Matrix", self)
+        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
         self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
 
         self.action_box_plot = QAction("Box Plot", self)
+        self.show_box_plot_dialog = BoxPlotDialog(self)
         self.action_box_plot.triggered.connect(self.open_box_plot_dialog)
 
         self.action_line_plot = QAction("Line Plot", self)
+        self.show_line_plot_dialog = LinePlotDialog(self)
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
 
         self.action_histogram = QAction("Histogram", self)

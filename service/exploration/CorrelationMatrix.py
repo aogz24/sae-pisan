@@ -39,6 +39,9 @@ def run_correlation_matrix(parent):
         ro.r(script)
 
         # Mendapatkan hasil matriks korelasi sebagai teks
+        # correlation_result = ro.r('capture.output(write.table(correlation_matrix, sep="\t", quote=FALSE, row.names=TRUE, col.names=NA))')
+        # correlation_text = "  ".join(correlation_result)
+
         correlation_result = ro.r('capture.output(print(correlation_matrix))')
         correlation_text = "\n".join(correlation_result)  # Gabungkan menjadi teks
         print("Correlation result as text:\n", correlation_text)
@@ -55,7 +58,6 @@ def run_correlation_matrix(parent):
             grdevices.png(file=plot_path, width=800, height=600)
             ro.r('print(correlation_plot)')
             grdevices.dev_off()
-            print(plot_path)
             parent.plot = plot_path
 
     except Exception as e:

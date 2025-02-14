@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox, QSizePolicy, QMessageBox, QSpacerItem
 )
-from PyQt6.QtCore import Qt, QStringListModel
+from PyQt6.QtCore import Qt, QStringListModel, QSize
+from PyQt6.QtGui import QIcon
 from model.CorrelationMatrix import CorrelationMatrix
 from controller.Eksploration.EksplorationController import CorrelationMatrixController
 
@@ -81,11 +82,24 @@ class CorrelationMatrixDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
-        # Box untuk menampilkan script
-        self.script_label = QLabel("Script:", self)
+        self.script_layout = QHBoxLayout()  
+        self.script_label = QLabel("R Script:", self)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.script_layout.addWidget(self.script_label)
+        self.script_layout.addItem(spacer)  
+        self.script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
+
         self.script_box = QTextEdit(self)
-        main_layout.addWidget(self.script_label)
-        main_layout.addWidget(self.script_box)
+
+        main_layout.addLayout(self.script_layout)  # Menambahkan layout horizontal ke layout utama
+        main_layout.addWidget(self.script_box)  # Menambahkan QTextEdit ke layout utama
 
         # Tombol Run
         button_row_layout = QHBoxLayout()
@@ -169,20 +183,17 @@ class CorrelationMatrixDialog(QDialog):
             self.script_box.setPlainText("No columns selected.")
             return
 
-        # Format the selected columns into a string that can be used in the R script
         formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
         r_script = ""
 
         # Step 1: Generate the correlation matrix
         r_script += f"""
-# Create correlation matrix for the selected columns
 correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")
         """
 
         # Step 2: Check if the correlation plot is requested
         if self.correlation_plot_checkbox.isChecked():
             r_script += """
-# Create a correlation plot with ggcorrplot
 correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "upper", lab = TRUE)
             """
 
@@ -194,7 +205,8 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         r_script = self.script_box.toPlainText()
         if not r_script:
             return
-        
+        self.run_button.setText("Running...")
+        self.icon_label.setVisible(True)
         correlation_matrix = CorrelationMatrix(self.model1, self.model2, self.parent)
         controller = CorrelationMatrixController(correlation_matrix)
         controller.run_model(r_script)
@@ -202,8 +214,9 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
-        self.run_button.setEnabled(True)
+        self.icon_label.setVisible(False)
         self.run_button.setText("Run")
+        QMessageBox.information(self, "Correlation Matrix", "Correlation Matrix has been generated successfully.")
         self.close()
 
     def closeEvent(self, event):
