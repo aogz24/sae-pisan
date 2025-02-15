@@ -106,10 +106,9 @@ class NormalityTestDialog(QDialog):
         right_layout.addWidget(graph_group)
 
         content_layout.addLayout(right_layout)
-
         main_layout.addLayout(content_layout)
 
-        script_layout = QHBoxLayout()
+        self.script_layout = QHBoxLayout()  # Tambahkan self. di sini
         self.script_label = QLabel("R Script:", self)
         self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
@@ -118,14 +117,14 @@ class NormalityTestDialog(QDialog):
 
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        script_layout.addWidget(self.script_label)
-        script_layout.addItem(spacer)  
-        script_layout.addWidget(self.icon_label)
+        self.script_layout.addWidget(self.script_label)
+        self.script_layout.addItem(spacer)  
+        self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
         self.script_box = QTextEdit(self)
 
         # Tambahkan ke layout utama
-        main_layout.addLayout(script_layout)  # Tambahkan layout horizontal ke layout utama
+        main_layout.addLayout(self.script_layout)  # Sekarang script_layout adalah atribut kelas
         main_layout.addWidget(self.script_box)
 
         # Tombol Run
@@ -134,7 +133,7 @@ class NormalityTestDialog(QDialog):
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
         main_layout.addLayout(button_row_layout)
-        
+
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
@@ -211,10 +210,10 @@ class NormalityTestDialog(QDialog):
         selected_vars = self.get_selected_columns()
         
         if len(selected_vars) == 0:
-            self.script_box.setPlainText("stop('Pilih minimal satu variabel untuk diuji.')")
+            self.script_box.setPlainText("stop('Select at least one variable to test.')")
             return
         
-        # Menentukan metode yang dipilih
+        # Determine the selected methods
         selected_methods = []
         if self.shapiro_checkbox.isChecked():
             selected_methods.append("shapiro")
@@ -224,9 +223,8 @@ class NormalityTestDialog(QDialog):
             selected_methods.append("lilliefors")
         
         if not selected_methods:
-            self.script_box.setPlainText("stop('Pilih minimal satu metode pengujian.')")
+            self.script_box.setPlainText("stop('Select at least one testing method.')")
             return
-        
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
         
@@ -274,15 +272,29 @@ class NormalityTestDialog(QDialog):
         normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
         # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
         controller = NormalityTestController(normality_test)
-        controller.run_model(r_script)
+        if self.check_variable_selected() and self.check_method_selected():
+            controller.run_model(r_script)
+            self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+            self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
+            self.icon_label.setVisible(False)
+            self.run_button.setText("Run")
+            QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
+            self.close()
+        else:
+            self.run_button.setText("Run")
+            self.icon_label.setVisible(False)
+            QMessageBox.warning(self, "Error", "Please select at least one variable and one testing method.")
 
-        self.parent.add_output(r_script, normality_test.result, normality_test.plot)
-        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
+    def check_variable_selected(self):
+        selected_vars = self.get_selected_columns()
+        if len(selected_vars) > 0:
+            return True
+        return False
 
-        self.run_button.setEnabled(False)
-        self.run_button.setText("Run")
-        QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
-        self.close()
+    def check_method_selected(self):
+        if self.shapiro_checkbox.isChecked() or self.jarque_checkbox.isChecked() or self.lilliefors_checkbox.isChecked():
+            return True
+        return False
 
     def closeEvent(self, event):
         """Menghapus variabel yang dipilih ketika dialog ditutup."""
