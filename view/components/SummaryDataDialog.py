@@ -3,8 +3,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
+import polars as pl
 from model.SummaryData import SummaryData
 from controller.Eksploration.EksplorationController import SummaryDataController
+
 class SummaryDataDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -17,14 +19,14 @@ class SummaryDataDialog(QDialog):
 
         self.setWindowTitle("Summary Data")
 
-        # Menyimpan status variabel yang dipilih
+        # Store selected variable status
         self.selected_status = {}
 
-        # Layout utama
+        # Main layout
         main_layout = QVBoxLayout(self)
         content_layout = QHBoxLayout()
 
-        # Layout kiri untuk Data Editor dan Data Output
+        # Left layout for Data Editor and Data Output
         left_layout = QVBoxLayout()
 
         self.data_editor_label = QLabel("Data Editor", self)
@@ -47,7 +49,7 @@ class SummaryDataDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah untuk tombol
+        # Middle layout for buttons
         button_layout = QVBoxLayout()
         self.add_button = QPushButton("🡆", self)
         self.add_button.clicked.connect(self.add_variable)
@@ -63,7 +65,7 @@ class SummaryDataDialog(QDialog):
         button_layout.addStretch()
         content_layout.addLayout(button_layout)
 
-        # Layout kanan
+        # Right layout
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variable", self)
         self.selected_model = QStringListModel()
@@ -76,7 +78,7 @@ class SummaryDataDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
-        # Layout horizontal untuk label dan ikon
+        # Horizontal layout for label and icon
         script_layout = QHBoxLayout()
         self.script_label = QLabel("R Script:", self)
         self.icon_label = QLabel()
@@ -84,24 +86,22 @@ class SummaryDataDialog(QDialog):
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
-        # Spacer agar icon_label tetap di ujung kanan
+        # Spacer to keep the icon_label on the right end
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        # Tambahkan widget ke dalam layout horizontal
+        # Add widgets to the horizontal layout
         script_layout.addWidget(self.script_label)
-        script_layout.addItem(spacer)  # Menambahkan spasi fleksibel
+        script_layout.addItem(spacer)  # Add flexible space
         script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        # Box untuk menampilkan script
+        # Box to display script
         self.script_box = QTextEdit(self)
 
-        # Tambahkan ke layout utama
-        main_layout.addLayout(script_layout)  # Tambahkan layout horizontal ke layout utama
+        # Add to the main layout
+        main_layout.addLayout(script_layout)  # Add horizontal layout to main layout
         main_layout.addWidget(self.script_box)
 
-        
-
-        # Tombol Run
+        # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
@@ -121,15 +121,22 @@ class SummaryDataDialog(QDialog):
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
     def get_column_with_dtype(self, model):
-        return [
-            f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
+        return self.columns 
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
+        
+        contains_string = any("[String]" in item for item in selected_items)   
+        selected_items = [item for item in selected_items if "[String]" not in item] 
+
+        if contains_string:
+            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -145,7 +152,7 @@ class SummaryDataDialog(QDialog):
                 selected_list.append(item)
 
         self.selected_model.setStringList(selected_list)
-        self.update_script()
+        self.generate_r_script()
 
     def remove_variable(self):
         selected_indexes = self.selected_list.selectedIndexes()
@@ -167,7 +174,7 @@ class SummaryDataDialog(QDialog):
                 selected_list.remove(item)
 
         self.selected_model.setStringList(selected_list)
-        self.update_script()
+        self.generate_r_script()
 
     def get_selected_columns(self):
         return [
@@ -175,19 +182,22 @@ class SummaryDataDialog(QDialog):
             for item in self.selected_model.stringList()
         ]
 
-    def update_script(self):
+    def generate_r_script(self):
         selected_columns = self.get_selected_columns()
         if not selected_columns:
-            self.script_box.setPlainText("Tidak ada kolom yang dipilih.")
+            self.script_box.setPlainText("")
             return
         formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
         script = f"summary_results <- summary(data[, c({formatted_columns})])"
         self.script_box.setPlainText(script)
 
+
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
+        
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         summary_data = SummaryData(self.model1, self.model2, self.parent)
