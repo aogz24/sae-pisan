@@ -1,11 +1,12 @@
-from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QSpacerItem,  QCheckBox, QTextEdit, QGroupBox,QSizePolicy, QMessageBox
-)
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, QStringListModel, QSize
+import polars as pl
 from model.Scatterplot import Scatterplot
 from controller.Eksploration.EksplorationController import ScatterPlotController
 
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QSpacerItem,  QCheckBox, QTextEdit, QGroupBox,QSizePolicy, QMessageBox
+)
 
 class ScatterPlotDialog(QDialog):
     def __init__(self, parent):
@@ -18,16 +19,16 @@ class ScatterPlotDialog(QDialog):
 
         self.setWindowTitle("Scatter Plot")
 
-        # Menyimpan status variabel yang dipilih
+        # Store selected variable status
         self.selected_status = {}
 
-        # Layout utama
+        # Main layout
         main_layout = QVBoxLayout(self)
 
-        # Layout konten utama
+        # Main content layout
         content_layout = QHBoxLayout()
 
-        # Layout kiri: Data Editor dan Data Output
+        # Left layout: Data Editor and Data Output
         left_layout = QVBoxLayout()
 
         # Data Editor
@@ -52,7 +53,7 @@ class ScatterPlotDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah untuk tombol
+        # Middle layout for buttons
         button_layout = QVBoxLayout()
         self.add_button = QPushButton("🡆", self)
         self.add_button.clicked.connect(self.add_variable)
@@ -68,7 +69,7 @@ class ScatterPlotDialog(QDialog):
         button_layout.addStretch()
         content_layout.addLayout(button_layout)
 
-        # Layout kanan
+        # Right layout
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variable", self)
         self.selected_model = QStringListModel()
@@ -81,20 +82,20 @@ class ScatterPlotDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
-        # Grup grafik
-        graph_group = QGroupBox("Graph Options")  # Change the name of the graph group
+        # Graph group
+        graph_group = QGroupBox("Graph Options") 
         graph_layout = QVBoxLayout()
-        self.regression_line_checkbox = QCheckBox("Show Regression Line", self)  # New checkbox for regression line
+        self.regression_line_checkbox = QCheckBox("Show Regression Line", self) 
         self.regression_line_checkbox.stateChanged.connect(self.generate_r_script)
-        graph_layout.addWidget(self.regression_line_checkbox)  # Add the regression line checkbox to the layout
+        graph_layout.addWidget(self.regression_line_checkbox) 
 
-        self.correlation_checkbox = QCheckBox("Show Correlation", self)  # New checkbox for correlation
+        self.correlation_checkbox = QCheckBox("Show Correlation", self)  
         self.correlation_checkbox.stateChanged.connect(self.generate_r_script)
-        graph_layout.addWidget(self.correlation_checkbox)  # Add the correlation checkbox to the layout
+        graph_layout.addWidget(self.correlation_checkbox) 
 
-        self.density_plot_checkbox = QCheckBox("Show Density Plot", self)  # New checkbox for density plot
+        self.density_plot_checkbox = QCheckBox("Show Density Plot", self) 
         self.density_plot_checkbox.stateChanged.connect(self.generate_r_script)
-        graph_layout.addWidget(self.density_plot_checkbox)  # Add the density plot checkbox to the layout
+        graph_layout.addWidget(self.density_plot_checkbox)
 
         graph_group.setLayout(graph_layout)
         right_layout.addWidget(graph_group)
@@ -103,7 +104,7 @@ class ScatterPlotDialog(QDialog):
 
         main_layout.addLayout(content_layout)
 
-        # Layout horizontal untuk label dan ikon
+        # Horizontal layout for label and icon
         script_layout = QHBoxLayout()
         self.script_label = QLabel("R Script:", self)
         self.icon_label = QLabel()
@@ -111,22 +112,22 @@ class ScatterPlotDialog(QDialog):
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
-        # Spacer agar icon_label tetap di ujung kanan
+        # Spacer to keep the icon_label on the right end
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        # Tambahkan widget ke dalam layout horizontal
+        # Add widgets to the horizontal layout
         script_layout.addWidget(self.script_label)
-        script_layout.addItem(spacer)  # Menambahkan spasi fleksibel
+        script_layout.addItem(spacer)  
         script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        # Box untuk menampilkan script
+        # Box to display the script
         self.script_box = QTextEdit(self)
 
-        # Tambahkan ke layout utama
-        main_layout.addLayout(script_layout)  # Tambahkan layout horizontal ke layout utama
+        # Add to the main layout
+        main_layout.addLayout(script_layout)  
         main_layout.addWidget(self.script_box)
 
-        # Tombol Run
+        # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
@@ -154,15 +155,24 @@ class ScatterPlotDialog(QDialog):
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
     def get_column_with_dtype(self, model):
-        return [
-            f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
+        return self.columns 
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
+        
+        contains_string = any("[String]" in item for item in selected_items)   
+        selected_items = [item for item in selected_items if "[String]" not in item] 
+
+        if contains_string:
+            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+
+        print(selected_items) 
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -234,36 +244,34 @@ class ScatterPlotDialog(QDialog):
         self.close()
 
     def closeEvent(self, event):
-        """Menghapus variabel yang dipilih ketika dialog ditutup."""
+        """Clear selected variables when the dialog is closed."""
         self.selected_model.setStringList([])
         self.script_box.setPlainText("")  
         event.accept()
 
     def generate_r_script(self):
-        selected_columns = self.get_selected_columns()  
+        selected_columns = self.get_selected_columns()
 
-        # Ambil status checkbox
-        show_regression = self.regression_line_checkbox.isChecked() 
-        show_correlation = self.correlation_checkbox.isChecked() 
-        show_density = self.density_plot_checkbox.isChecked() 
+        # Get checkbox status
+        show_regression = self.regression_line_checkbox.isChecked()
+        show_correlation = self.correlation_checkbox.isChecked()
+        show_density = self.density_plot_checkbox.isChecked()
 
-        # Cek jumlah variabel yang dipilih
+        # Check the number of selected variables
         if len(selected_columns) < 2:
-            # Jika kurang dari 2 variabel, tampilkan pesan
             self.script_box.setPlainText("Please select at least 2 variables.")
             return
 
-        # Mulai membuat R script untuk scatterplot matrix
-        r_script = f"""
-data_plot <- data[, c({', '.join(f'"{col}"' for col in selected_columns)})]
-
-scatterplot_ <- ggpairs(
-    data_plot,
-    lower = list(continuous = {"wrap('smooth', method='lm')" if show_regression else '"points"'}),
-    upper = list(continuous = {"'cor'" if show_correlation else "'blank'"}),
-    diag = list(continuous = {"'densityDiag'" if show_density else "'blankDiag'"})
-)
-        """
+        # Start creating R script for scatterplot matrix
+        r_script = (
+            f"data_plot <- data[, c({', '.join(f'\"{col}\"' for col in selected_columns)})]\n\n"
+            f"scatterplot_ <- ggpairs(\n"
+            f"    data_plot,\n"
+            f"    lower = list(continuous = {'wrap(\"smooth\", method=\"lm\")' if show_regression else '\"points\"'}),\n"
+            f"    upper = list(continuous = {'\"cor\"' if show_correlation else '\"blank\"'}),\n"
+            f"    diag = list(continuous = {'\"densityDiag\"' if show_density else '\"blankDiag\"'})\n"
+            f")\n"
+        )
 
         # Display the R script in the text box
         self.script_box.setPlainText(r_script)

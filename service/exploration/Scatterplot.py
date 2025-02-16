@@ -1,6 +1,7 @@
 import os
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
@@ -8,68 +9,68 @@ def run_scatterplot(parent):
     import rpy2_arrow.polars as rpy2polars
 
     try:
-        # Aktivasi R
+        # Activate R
         parent.activate_R()
 
-        # Ambil data dari model1 dan model2
+        # Get data from model1 and model2
         df1 = parent.model1.get_data()
         df2 = parent.model2.get_data()
 
-        # Gabungkan data menjadi satu dataframe
+        # Merge the data into one dataframe
         df = pl.concat([df1, df2], how="horizontal")
-        df = df.drop_nulls()  # Hapus nilai yang null
+        df = df.drop_nulls() 
 
-        # Convert Polars DataFrame ke R DataFrame
+        # Convert Polars DataFrame to R DataFrame
         with rpy2polars.converter.context() as cv_ctx:
             r_df = rpy2polars.converter.py2rpy(df)
             ro.globalenv['r_df'] = r_df
 
-        # Muat library R yang diperlukan
+        # Load required R libraries
         ro.r('suppressMessages(library(GGally))')
         ro.r('rm(list=ls()[ls() != "r_df"])')
 
-        # Set data dalam R
+        # Set data in R
         ro.r('data <- as.data.frame(r_df)')
 
-        # Ambil script R yang dibuat dari dialog
+        # Get the R script created from the dialog
         script = parent.r_script
 
-        # Jalankan script R
+        # Run the R script
         ro.r(script)
 
-        # Ambil daftar objek di R
-        r_objects = ro.r("ls()")  # Daftar semua objek di R
+        # Get the list of objects in R
+        r_objects = ro.r("ls()")  
 
-        # Cari objek scatterplot
+        # Find scatterplot objects
         scatterplot_vars = [obj for obj in r_objects if obj.startswith("scatterplot_")]
 
         plot_paths = []
 
-        # Simpan scatterplot sebagai gambar
+        # Save scatterplots as images
         for plot_name in scatterplot_vars:
             plot_path = f"{plot_name}.png"
             
-            # Tentukan file output untuk gambar
+            # Specify the output file for the image
             grdevices.png(file=plot_path, width=800, height=600)
 
-            # Cetak plot
+            # Print the plot
             ro.r(f"print({plot_name})")
             
-            # Tutup device gambar
+            # Close the image device
             grdevices.dev_off()
 
-            # Simpan path gambar ke daftar
+            # Save the image path to the list
             plot_paths.append(plot_path)
 
-        # Simpan hasil plot dalam parent (optional)
-        parent.plot = plot_paths  # Semua plot disimpan dalam daftar
+        # Save the plot results in the parent (optional)
+        parent.plot = plot_paths  # All plots are stored in a list
 
     except Exception as e:
-        # Menampilkan dialog error jika ada masalah
+        # Display an error dialog if there is a problem
         error_dialog = QMessageBox()
         error_dialog.setIcon(QMessageBox.Icon.Critical)
         error_dialog.setText("Error")
         error_dialog.setInformativeText(str(e))
         error_dialog.exec()
-        # Debug: print error yang terjadi
+        # Debug: print the error that occurred
         print("Error occurred:", str(e))
