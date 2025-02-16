@@ -1,7 +1,9 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QComboBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QComboBox, QSpacerItem, QSizePolicy, QMessageBox
 )
-from PyQt6.QtCore import Qt, QStringListModel
+from PyQt6.QtCore import Qt, QStringListModel, QSize
+from PyQt6.QtGui import QIcon
+import polars as pl
 from model.BoxPlot import BoxPlot
 from controller.Eksploration.EksplorationController import BoxPlotController
 
@@ -49,10 +51,14 @@ class BoxPlotDialog(QDialog):
 
         # Layout tengah untuk tombol
         button_layout = QVBoxLayout()
-        self.add_button = QPushButton("→", self)
+        self.add_button = QPushButton("🡆", self)
         self.add_button.clicked.connect(self.add_variable)
-        self.remove_button = QPushButton("←", self)
+        self.add_button.setFixedSize(50, 35) 
+        self.add_button.setStyleSheet("font-size: 24px;")  
+        self.remove_button = QPushButton("🡄", self)
         self.remove_button.clicked.connect(self.remove_variable)
+        self.remove_button.setFixedSize(50, 35)
+        self.remove_button.setStyleSheet("font-size: 24px;") 
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.remove_button)
@@ -82,10 +88,23 @@ class BoxPlotDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
-        # Box untuk menampilkan script
-        self.script_label = QLabel("Script:", self)
+        self.script_layout = QHBoxLayout()  # Tambahkan self. di sini
+        self.script_label = QLabel("R Script:", self)
+        self.icon_label = QLabel()
+        self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
+        self.icon_label.setFixedSize(16, 30)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.script_layout.addWidget(self.script_label)
+        self.script_layout.addItem(spacer)  
+        self.script_layout.addWidget(self.icon_label)
+        self.icon_label.setVisible(False)
         self.script_box = QTextEdit(self)
-        main_layout.addWidget(self.script_label)
+
+        # Tambahkan ke layout utama
+        main_layout.addLayout(self.script_layout)  # Sekarang script_layout adalah atribut kelas
         main_layout.addWidget(self.script_box)
 
         # Tombol Run
@@ -108,15 +127,25 @@ class BoxPlotDialog(QDialog):
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
     def get_column_with_dtype(self, model):
-        return [
-            f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
+        return self.columns  
+
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
+        
+        contains_string = any("[String]" in item for item in selected_items)   
+        selected_items = [item for item in selected_items if "[String]" not in item] 
+
+        if contains_string:
+            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+
+        print(selected_items) 
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -161,7 +190,7 @@ class BoxPlotDialog(QDialog):
             item.split(" [")[0].replace(" ", "_")
             for item in self.selected_model.stringList()
         ]
-
+   
     def generate_r_script(self):
         # Get selected columns
         selected_columns = self.get_selected_columns()
@@ -177,41 +206,46 @@ class BoxPlotDialog(QDialog):
         # Single Box Plot: If there are multiple variables, create separate plots
         if method == "Single Box plot":
             for col in selected_columns:
-                r_script += f"""
-# Box plot for {col}
-boxplot_{col} <- ggplot(data, aes(y = {col})) +
-    geom_boxplot(fill = sample(colors(), 1)) +
-    ggtitle("Box Plot: {col}") +
-    ylab("{col}") +
-    theme_minimal()
-"""
-    
+                r_script += (
+                    f"# Box plot for {col}\n"
+                    f"boxplot_{col} <- ggplot(data, aes(y = {col})) +\n"
+                    f"    geom_boxplot(fill = sample(colors(), 1)) +\n"
+                    f"    ggtitle('Box Plot: {col}') +\n"
+                    f"    ylab('{col}') +\n"
+                    f"    theme_minimal()\n\n"
+                )
+
         # Multiple Box Plot: Combine all selected variables into a single plot
         elif method == "Multiple Box Plot":
-            r_script += f"""
-# Multiple Box Plot for selected variables
-        
-# Convert to long format for ggplot compatibility
-data_long <- pivot_longer(data, cols = c({formatted_columns}), 
-    names_to = "variable", values_to = "value")
-
-# Create multiple box plot
-boxplot_multiple <- ggplot(data_long, aes(x = variable, y = value, fill = variable)) +
-    geom_boxplot() +
-    ggtitle("Multiple Box Plot") +
-    xlab("Variable") +
-    ylab("Value") +
-    theme_minimal()
-"""
+            r_script += (
+                f"# Convert to long format for ggplot compatibility\n"
+                f"data_long <- pivot_longer(data, cols = c({formatted_columns}), \n"
+                f"    names_to = 'variable', values_to = 'value')\n\n"
+                f"# Create multiple box plot\n"
+                f"boxplot_multiple <- ggplot(data_long, aes(x = variable, y = value, fill = variable)) +\n"
+                f"    geom_boxplot() +\n"
+                f"    ggtitle('Multiple Box Plot') +\n"
+                f"    xlab('Variable') +\n"
+                f"    ylab('Value') +\n"
+                f"    theme_minimal()\n"
+            )
         # Show script in text box
         self.script_box.setPlainText(r_script)
 
 
+    def is_selected_empty(self):
+        return len(self.selected_model.stringList()) == 0
+    
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
-        
+        if self.is_selected_empty():
+            QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
+            return
+        self.run_button.setText("Running...")
+        self.icon_label.setVisible(True)
         box_plot = BoxPlot(self.model1, self.model2, self.parent)
         controller = BoxPlotController(box_plot)
         controller.run_model(r_script)
@@ -219,8 +253,9 @@ boxplot_multiple <- ggplot(data_long, aes(x = variable, y = value, fill = variab
         self.parent.add_output(script_text = r_script, plot_paths = box_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
-        self.run_button.setEnabled(True)
+        self.icon_label.setVisible(False)
         self.run_button.setText("Run")
+        QMessageBox.information(self, "Success", "Box plot has been generated successfully.")
         self.close()
 
     def closeEvent(self, event):
