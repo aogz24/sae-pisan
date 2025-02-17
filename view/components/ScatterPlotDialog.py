@@ -221,6 +221,9 @@ class ScatterPlotDialog(QDialog):
 
     def accept(self):
         selected_columns = self.get_selected_columns()
+        if not r_script:
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
+            return
         if len(selected_columns) < 2:
             QMessageBox.warning(self, "Scatter Plot", "Please select at least 2 variables.")
             return
