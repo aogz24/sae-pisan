@@ -1,10 +1,12 @@
+from PyQt6.QtCore import Qt, QStringListModel, QSize
+from PyQt6.QtGui import QIcon
+import polars as pl
+from model.CorrelationMatrix import CorrelationMatrix
+from controller.Eksploration.EksplorationController import CorrelationMatrixController
+
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox, QSizePolicy, QMessageBox, QSpacerItem
 )
-from PyQt6.QtCore import Qt, QStringListModel, QSize
-from PyQt6.QtGui import QIcon
-from model.CorrelationMatrix import CorrelationMatrix
-from controller.Eksploration.EksplorationController import CorrelationMatrixController
 
 class CorrelationMatrixDialog(QDialog):
     def __init__(self, parent):
@@ -18,14 +20,14 @@ class CorrelationMatrixDialog(QDialog):
 
         self.setWindowTitle("Correlation")
 
-        # Menyimpan status variabel yang dipilih
+        # Store selected variable status
         self.selected_status = {}
 
-        # Layout utama
+        # Main layout
         main_layout = QVBoxLayout(self)
         content_layout = QHBoxLayout()
 
-        # Layout kiri untuk Data Editor dan Data Output
+        # Left layout for Data Editor and Data Output
         left_layout = QVBoxLayout()
 
         self.data_editor_label = QLabel("Data Editor", self)
@@ -48,21 +50,25 @@ class CorrelationMatrixDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah untuk tombol
+        # Middle layout: Buttons
         button_layout = QVBoxLayout()
-        self.add_button = QPushButton("→", self)
+        self.add_button = QPushButton("🡆", self)  
         self.add_button.clicked.connect(self.add_variable)
-        self.remove_button = QPushButton("←", self)
+        self.add_button.setFixedSize(50, 35) 
+        self.add_button.setStyleSheet("font-size: 24px;")  
+        self.remove_button = QPushButton("🡄", self)  
         self.remove_button.clicked.connect(self.remove_variable)
+        self.remove_button.setFixedSize(50, 35)
+        self.remove_button.setStyleSheet("font-size: 24px;") 
         button_layout.addStretch()
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.remove_button)
         button_layout.addStretch()
         content_layout.addLayout(button_layout)
 
-        # Layout kanan
+        # Right layout
         right_layout = QVBoxLayout()
-        self.selected_label = QLabel("Variabel", self)
+        self.selected_label = QLabel("Variables", self)
         self.selected_model = QStringListModel()
         self.selected_list = QListView(self)
         self.selected_list.setModel(self.selected_model)
@@ -70,7 +76,7 @@ class CorrelationMatrixDialog(QDialog):
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
-        # Grup grafik
+        # Graph group
         graph_group = QGroupBox("Visualization")
         graph_layout = QVBoxLayout()
         self.correlation_plot_checkbox = QCheckBox("Show Correlation Plot", self)
@@ -98,10 +104,10 @@ class CorrelationMatrixDialog(QDialog):
 
         self.script_box = QTextEdit(self)
 
-        main_layout.addLayout(self.script_layout)  # Menambahkan layout horizontal ke layout utama
-        main_layout.addWidget(self.script_box)  # Menambahkan QTextEdit ke layout utama
+        main_layout.addLayout(self.script_layout)  
+        main_layout.addWidget(self.script_box)  
 
-        # Tombol Run
+        # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
@@ -122,15 +128,22 @@ class CorrelationMatrixDialog(QDialog):
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
     def get_column_with_dtype(self, model):
-        return [
-            f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
+        return self.columns 
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
+        
+        contains_string = any("[String]" in item for item in selected_items)   
+        selected_items = [item for item in selected_items if "[String]" not in item] 
+
+        if contains_string:
+            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -171,16 +184,15 @@ class CorrelationMatrixDialog(QDialog):
         self.generate_r_script()
 
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
+        return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
+
+
 
     def generate_r_script(self):
         """Function to generate R script for Correlation Matrix using ggcorrplot"""
         selected_columns = self.get_selected_columns()
         if not selected_columns:
-            self.script_box.setPlainText("No columns selected.")
+            self.script_box.setPlainText("")
             return
 
         formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
@@ -204,6 +216,7 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
