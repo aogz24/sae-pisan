@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
+import polars as pl
 from model.NormalityTest import NormalityTest
 from controller.Eksploration.EksplorationController import NormalityTestController
 
@@ -18,16 +19,16 @@ class NormalityTestDialog(QDialog):
 
         self.setWindowTitle("Normality Test")
 
-        # Menyimpan status variabel yang dipilih
+        # Store selected variable status
         self.selected_status = {}
 
-        # Layout utama
+        # Main layout
         main_layout = QVBoxLayout(self)
 
-        # Layout konten utama
+        # Main content layout
         content_layout = QHBoxLayout()
 
-        # Layout kiri: Data Editor dan Data Output
+        # Left layout: Data Editor and Data Output
         left_layout = QVBoxLayout()
 
         # Data Editor
@@ -52,7 +53,7 @@ class NormalityTestDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Layout tengah: Tombol
+        # Middle layout: Buttons
         button_layout = QVBoxLayout()
         self.add_button = QPushButton("🡆", self)  
         self.add_button.clicked.connect(self.add_variable)
@@ -68,9 +69,9 @@ class NormalityTestDialog(QDialog):
         button_layout.addStretch()
         content_layout.addLayout(button_layout)
 
-        # Layout kanan: Variabel yang dipilih, metode, dan grafik
+        # Right layout: Selected variables, methods, and graphs
         right_layout = QVBoxLayout()
-        self.selected_label = QLabel("Variabel", self)
+        self.selected_label = QLabel("Variables", self)
         self.selected_model = QStringListModel()
         self.selected_list = QListView(self)
         self.selected_list.setModel(self.selected_model)
@@ -78,8 +79,8 @@ class NormalityTestDialog(QDialog):
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
-        # Grup metode dengan checkbox
-        method_group = QGroupBox("Metode")
+        # Method group with checkboxes
+        method_group = QGroupBox("Methods")
         method_layout = QVBoxLayout()
         self.shapiro_checkbox = QCheckBox("Shapiro-Wilk")
         self.jarque_checkbox = QCheckBox("Jarque-Bera")
@@ -93,7 +94,7 @@ class NormalityTestDialog(QDialog):
         method_group.setLayout(method_layout)
         right_layout.addWidget(method_group)
 
-        # Grup grafik
+        # Graph group
         graph_group = QGroupBox("Graph")
         graph_layout = QVBoxLayout()
         self.histogram_checkbox = QCheckBox("Histogram", self)
@@ -108,7 +109,7 @@ class NormalityTestDialog(QDialog):
         content_layout.addLayout(right_layout)
         main_layout.addLayout(content_layout)
 
-        self.script_layout = QHBoxLayout()  # Tambahkan self. di sini
+        self.script_layout = QHBoxLayout() 
         self.script_label = QLabel("R Script:", self)
         self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
@@ -123,11 +124,11 @@ class NormalityTestDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_box = QTextEdit(self)
 
-        # Tambahkan ke layout utama
-        main_layout.addLayout(self.script_layout)  # Sekarang script_layout adalah atribut kelas
+        # Add to main layout
+        main_layout.addLayout(self.script_layout)  
         main_layout.addWidget(self.script_box)
 
-        # Tombol Run
+        # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
@@ -148,17 +149,22 @@ class NormalityTestDialog(QDialog):
 
 
     def get_column_with_dtype(self, model):
-        """Mengembalikan daftar nama kolom dengan tipe datanya"""
-        return [
-            f"{col} [numerik]" if dtype in ['int64', 'float64'] else f"{col} [{dtype}]"
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
+        return self.columns 
     
     def add_variable(self):
-        # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
+        
+        contains_string = any("[String]" in item for item in selected_items)   
+        selected_items = [item for item in selected_items if "[String]" not in item] 
+
+        if contains_string:
+            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -177,7 +183,6 @@ class NormalityTestDialog(QDialog):
         self.generate_r_script()
 
     def remove_variable(self):
-        # Ambil semua indeks yang dipilih dari daftar variabel yang dipilih
         selected_indexes = self.selected_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
@@ -200,20 +205,16 @@ class NormalityTestDialog(QDialog):
         self.generate_r_script()
     
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
+        return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
+
 
     def generate_r_script(self):
-        # Mendapatkan nama variabel yang dipilih
         selected_vars = self.get_selected_columns()
         
         if len(selected_vars) == 0:
-            self.script_box.setPlainText("stop('Select at least one variable to test.')")
+            self.script_box.setPlainText("")
             return
         
-        # Determine the selected methods
         selected_methods = []
         if self.shapiro_checkbox.isChecked():
             selected_methods.append("shapiro")
@@ -223,7 +224,7 @@ class NormalityTestDialog(QDialog):
             selected_methods.append("lilliefors")
         
         if not selected_methods:
-            self.script_box.setPlainText("stop('Select at least one testing method.')")
+            self.script_box.setPlainText("")
             return
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
@@ -239,7 +240,6 @@ class NormalityTestDialog(QDialog):
                 elif method == "lilliefors":
                     r_script += f"normality_results_{var}_lilliefors <- nortest::lillie.test(data${var})\n"
             
-            # Menambahkan skrip untuk histogram jika dipilih
             if show_histogram:
                 r_script += (
                     f"histogram_{var} <- ggplot(data, aes(x = {var})) +\n"
@@ -249,7 +249,6 @@ class NormalityTestDialog(QDialog):
                     f"    ylab('Frequency')\n"
                 )
 
-            # Menambahkan skrip untuk Q-Q plot jika dipilih
             if show_qqplot:
                 r_script += (
                     f"qqplot_{var} <- ggplot(data, aes(sample = {var})) +\n"
@@ -259,46 +258,27 @@ class NormalityTestDialog(QDialog):
                     f"    xlab('Theoretical Quantiles') +\n"
                     f"    ylab('Sample Quantiles')\n"
                 )
-        
-        # Menampilkan skrip yang dihasilkan di kotak teks
         self.script_box.setPlainText(r_script)
 
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
         # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
         controller = NormalityTestController(normality_test)
-        if self.check_variable_selected() and self.check_method_selected():
-            controller.run_model(r_script)
-            self.parent.add_output(r_script, normality_test.result, normality_test.plot)
-            self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
-            self.icon_label.setVisible(False)
-            self.run_button.setText("Run")
-            QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
-            self.close()
-        else:
-            self.run_button.setText("Run")
-            self.icon_label.setVisible(False)
-            QMessageBox.warning(self, "Error", "Please select at least one variable and one testing method.")
-
-    def check_variable_selected(self):
-        selected_vars = self.get_selected_columns()
-        if len(selected_vars) > 0:
-            return True
-        return False
-
-    def check_method_selected(self):
-        if self.shapiro_checkbox.isChecked() or self.jarque_checkbox.isChecked() or self.lilliefors_checkbox.isChecked():
-            return True
-        return False
+        controller.run_model(r_script)
+        self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
+        self.icon_label.setVisible(False)
+        self.run_button.setText("Run")
+        QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
+        self.close()
 
     def closeEvent(self, event):
-        """Menghapus variabel yang dipilih ketika dialog ditutup."""
-        self.selected_model.setStringList([])  # Mengosongkan daftar variabel yang dipilih
-        self.script_box.setPlainText("")  # Mengosongkan kotak teks skrip
+        self.selected_model.setStringList([]) 
+        self.script_box.setPlainText("") 
         event.accept()
-
