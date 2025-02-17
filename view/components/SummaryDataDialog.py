@@ -129,6 +129,7 @@ class SummaryDataDialog(QDialog):
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
+        print(selected_indexes)
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
         
@@ -177,13 +178,12 @@ class SummaryDataDialog(QDialog):
         self.generate_r_script()
 
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
+        return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
+
 
     def generate_r_script(self):
         selected_columns = self.get_selected_columns()
+        print(selected_columns)
         if not selected_columns:
             self.script_box.setPlainText("")
             return
