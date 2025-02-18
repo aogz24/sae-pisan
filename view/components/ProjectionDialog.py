@@ -82,6 +82,8 @@ class ProjectionDialog(QDialog):
         middle_layout.addWidget(self.assign_weight_button)
         middle_layout.addWidget(self.assign_strata_button)
 
+        
+        
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
         self.of_interest_label = QLabel("Variable of interest:")

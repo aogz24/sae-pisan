@@ -5,10 +5,13 @@ from PyQt6.QtWidgets import QMessageBox
 def assign_of_interest(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
-        all_string = True
+        all_string = False
         for index in selected_indexes:
             type_of_var = index.data().split(" [")[1].replace("]", "")
-            if type_of_var != "String" and parent.projection_method != "Linear":
+            if type_of_var == "String" and parent.projection_method == "Linear":
+                all_string = True
+                break
+            else:
                 all_string = False
                 parent.of_interest_var = [index.data()]
                 parent.of_interest_model.setStringList(parent.of_interest_var)
@@ -216,8 +219,8 @@ def generate_r_script(parent):
     model_var = {
         "Linear": "linear_reg()",
         "Logistic": "logistic_reg()",
-        "SVM Linear": "svm_linear()",
-        "SVM RBF": "svm_rbf"
+        "SVM Linear": "svm_linear(mode='classification')",
+        "SVM RBF": "svm_rbf(mode='classification')"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
@@ -236,7 +239,15 @@ def generate_r_script(parent):
         r_script += f'gb_model <- boost_tree( mtry = tune(), trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune(), engine = "xgboost")\n'
 
     if parent.var_position == "After":
-        for var in parent.auxilary_vars + parent.of_interest_var:
+        if parent.of_interest_var:
+            var = parent.of_interest_var[0]
+            var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
+            if parent.projection_method != "Linear":
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
+            else:
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.auxilary_vars:
             var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
         
@@ -253,9 +264,21 @@ def generate_r_script(parent):
         r_script += f'data_model <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
         r_script += f'colnames(data_model) <- sub("^{prefix}\\\\{parent.separator}", "", colnames(data_model))\n'
         
-        for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
+        if parent.of_interest_var:
+            var = parent.of_interest_var[0]
+            var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
+            if parent.projection_method != "Linear":
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
+            else:
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.auxilary_vars:
             var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.as_factor_var:
+            var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
 
         for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
@@ -270,7 +293,15 @@ def generate_r_script(parent):
         r_script += f'colnames(data_proj) <- colnames(data_model)\n'
     
     if parent.var_position == "Before":
-        for var in parent.auxilary_vars + parent.of_interest_var:
+        if parent.of_interest_var:
+            var = parent.of_interest_var[0]
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
+            if parent.projection_method != "Linear":
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
+            else:
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.auxilary_vars:
             var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
         
@@ -287,9 +318,21 @@ def generate_r_script(parent):
         r_script += f'data_model <- data.frame({", ".join([var.split(" [")[0].replace(" ", "_") for var in all_vars])});\n'
         r_script += f'colnames(data_model) <- sub("\\\\{parent.separator}{prefix}$", "", colnames(data_model))\n'
         
-        for var in parent.auxilary_vars + parent.as_factor_var + parent.of_interest_var:
+        if parent.of_interest_var:
+            var = parent.of_interest_var[0]
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
+            if parent.projection_method != "Linear":
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
+            else:
+                r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.auxilary_vars:
             var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data[["{var_name_edit}"]];\n'
+        
+        for var in parent.as_factor_var:
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data[["{var_name_edit}"]]);\n'
             
         for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
