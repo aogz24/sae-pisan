@@ -9,7 +9,7 @@ from controller.modelling.ProjectionController import ProjectionController
 from model.ProjectionModel import Projection
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
-from service.utils.utils import display_script_and_output
+from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 
 class ProjectionDialog(QDialog):
@@ -301,10 +301,12 @@ class ProjectionDialog(QDialog):
             self.ok_button.setText("Run Model")
             return
         
+        r_script = get_script(self)
+        if not check_script(r_script):
+            return
         disable_service(self)
 
         view = self.parent
-        r_script = get_script(self)
         sae_model = Projection(self.model, self.model2, view)
         controller = ProjectionController(sae_model)
         

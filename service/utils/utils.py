@@ -1,5 +1,13 @@
 from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMessageBox
+
+def check_script(r_script):
+    if r_script == "":
+        QMessageBox.warning(None, "Warning", "R sript cannot empty")
+        return False
+    return True
+        
 
 def display_script_and_output(parent, r_script, result):
     """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
