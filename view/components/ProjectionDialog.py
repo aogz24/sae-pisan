@@ -239,7 +239,7 @@ class ProjectionDialog(QDialog):
         # Model selection
         layout.addWidget(QLabel("Select Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["Linear", "Logistic", "Gradient Boost"])
+        self.model_combo.addItems(["Linear", "Logistic", "SVM Linear", "SVM RBF", "Gradient Boost"])
         layout.addWidget(self.model_combo)
 
         # Button Layout

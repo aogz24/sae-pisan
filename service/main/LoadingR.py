@@ -12,6 +12,8 @@ def loadR(splash):
                 if (!require("sae.projection", quietly = TRUE)) install.packages("sae.projection", lib=r_home); library(sae.projection, lib.loc=r_home);
                 if (!require("emdi", quietly = TRUE)) install.packages("emdi", lib=r_home); library(emdi, lib.loc=r_home);
                 if (!require("xgboost", quietly = TRUE)) install.packages("xgboost", lib=r_home);
+                if (!require("LiblineaR", quietly = TRUE)) install.packages("LiblineaR", lib=r_home);
+                if (!require("kernlab", quietly = TRUE)) install.packages("kernlab", lib=r_home);
             })
             """
     ro.r(r_script)

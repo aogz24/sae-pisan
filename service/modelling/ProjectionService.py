@@ -215,7 +215,9 @@ def generate_r_script(parent):
 
     model_var = {
         "Linear": "linear_reg()",
-        "Logistic": "logistic_reg()"
+        "Logistic": "logistic_reg()",
+        "SVM Linear": "svm_linear()",
+        "SVM RBF": "svm_rbf"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
