@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QLabel, QFrame
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
-from PyQt6.QtCore import Qt, QCoreApplication
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QInputDialog
-from PyQt6.QtGui import QPainter, QPdfWriter, QImage
+from PyQt6.QtGui import QPainter, QPdfWriter
 from PyQt6.QtCore import QRectF
 
 class FileController:
@@ -30,10 +30,6 @@ class FileController:
         if not file_path:  # Jika file tidak dipilih
             return
 
-        progress_dialog = QProgressDialog("Loading file...", "Cancel", 0, 100, self.view)
-        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        progress_dialog.show()
-
         try:
             if selected_filter == "CSV Files (*.csv)":
                 dialog = CSVOptionsDialog(self.view)
@@ -59,19 +55,10 @@ class FileController:
                     return
                 data = pl.read_excel(file_path, sheet_name=sheet_name)
 
-            for i in range(1, 101):
-                QCoreApplication.processEvents()
-                progress_dialog.setValue(i)
-                if progress_dialog.wasCanceled():
-                    break
-                break
-
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
-        finally:
-            progress_dialog.setValue(100)
 
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
@@ -81,9 +68,6 @@ class FileController:
         )
         
         if file_path:
-            progress_dialog = QProgressDialog("Saving data...", "Cancel", 0, 100, self.view)
-            progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-            progress_dialog.show()
 
             try:
                 if selected_filter == "CSV Files (*.csv)":
@@ -98,8 +82,6 @@ class FileController:
                 QMessageBox.information(self.view, "Success", "File saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
-            finally:
-                progress_dialog.setValue(100)
 
     def save_data_output(self):
         """Simpan data dari model kedua (Sheet 2)."""
@@ -109,9 +91,6 @@ class FileController:
         )
         
         if file_path:
-            progress_dialog = QProgressDialog("Saving output data...", "Cancel", 0, 100, self.view)
-            progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-            progress_dialog.show()
 
             try:
                 if selected_filter == "CSV Files (*.csv)":
@@ -126,8 +105,6 @@ class FileController:
                 QMessageBox.information(self.view, "Success", "Output file saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
-            finally:
-                progress_dialog.setValue(100)
 
     def save_as_csv(self, file_path, model):
         """Simpan data sebagai CSV."""

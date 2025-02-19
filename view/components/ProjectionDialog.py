@@ -205,6 +205,9 @@ class ProjectionDialog(QDialog):
         self.metric = "NULL"
         self.k_fold = "3"
         self.grid="10"
+        self.epoch="10"
+        self.hidden_unit = "5"
+        self.learning_rate = "0.01"
 
     
     def show_prerequisites(self):
@@ -241,7 +244,7 @@ class ProjectionDialog(QDialog):
         # Model selection
         layout.addWidget(QLabel("Select Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["Linear", "Logistic", "SVM Linear", "SVM RBF", "Gradient Boost"])
+        self.model_combo.addItems(["Linear", "Logistic", "SVM Linear", "SVM RBF", "Gradient Boost", "Neural Network"])
         layout.addWidget(self.model_combo)
 
         # Button Layout

@@ -220,7 +220,8 @@ def generate_r_script(parent):
         "Linear": "linear_reg()",
         "Logistic": "logistic_reg()",
         "SVM Linear": "svm_linear(mode='classification')",
-        "SVM RBF": "svm_rbf(mode='classification')"
+        "SVM RBF": "svm_rbf(mode='classification')",
+        "Neural Network": f"mlp(mode='classification', engine='nnet', epochs={parent.epoch}, hidden_units={parent.hidden_unit}, learn_rate={parent.learning_rate})"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
@@ -409,6 +410,44 @@ def show_options(parent):
     parent.grid_edit.setText("10")
     layout.addWidget(parent.grid_edit)
     
+    epoch_label = QLabel("Epoch")
+    epoch_label.setVisible(False)
+    layout.addWidget(epoch_label)
+    
+    parent.epoch_edit = QLineEdit()
+    parent.epoch_edit.setValidator(QIntValidator())
+    parent.epoch_edit.setText("10")
+    parent.epoch_edit.setVisible(False)
+    layout.addWidget(parent.epoch_edit)
+    
+    hidden_unit_label = QLabel("Hidden Unit")
+    hidden_unit_label.setVisible(False)
+    layout.addWidget(hidden_unit_label)
+    
+    parent.hidden_edit = QLineEdit()
+    parent.hidden_edit.setVisible(False)
+    parent.hidden_edit.setValidator(QIntValidator())
+    parent.hidden_edit.setText("5")
+    layout.addWidget(parent.hidden_edit)
+    
+    learning_label = QLabel("Learning Rate")
+    learning_label.setVisible(False)
+    layout.addWidget(learning_label)
+    
+    parent.learning_edit = QLineEdit()
+    parent.learning_edit.setVisible(False)
+    parent.learning_edit.setValidator(QDoubleValidator())
+    parent.learning_edit.setText("0.01")
+    layout.addWidget(parent.learning_edit)
+    
+    if(parent.projection_method=="Neural Network"):
+        epoch_label.setVisible(True)
+        parent.epoch_edit.setVisible(True)
+        hidden_unit_label.setVisible(True)
+        parent.hidden_edit.setVisible(True)
+        learning_label.setVisible(True)
+        parent.learning_edit.setVisible(True)
+    
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -430,5 +469,8 @@ def set_selection_method(parent, dialog):
     parent.metric = parent.model_metric_combo.currentText()
     parent.k_fold = parent.kfold_edit.text()
     parent.grid = parent.grid_edit.text()
+    parent.epoch = parent.epoch_edit.text()
+    parent.hidden_unit = parent.hidden_edit.text()
+    parent.learning_rate = parent.learning_edit.text()
     dialog.accept()
     show_r_script(parent)
