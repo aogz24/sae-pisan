@@ -9,7 +9,7 @@ from controller.modelling.ProjectionController import ProjectionController
 from model.ProjectionModel import Projection
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
-from service.utils.utils import display_script_and_output
+from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 
 class ProjectionDialog(QDialog):
@@ -82,6 +82,8 @@ class ProjectionDialog(QDialog):
         middle_layout.addWidget(self.assign_weight_button)
         middle_layout.addWidget(self.assign_strata_button)
 
+        
+        
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
         self.of_interest_label = QLabel("Variable of interest:")
@@ -203,6 +205,9 @@ class ProjectionDialog(QDialog):
         self.metric = "NULL"
         self.k_fold = "3"
         self.grid="10"
+        self.epoch="10"
+        self.hidden_unit = "5"
+        self.learning_rate = "0.01"
 
     
     def show_prerequisites(self):
@@ -239,7 +244,7 @@ class ProjectionDialog(QDialog):
         # Model selection
         layout.addWidget(QLabel("Select Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["Linear", "Logistic", "Gradient Boost"])
+        self.model_combo.addItems(["Linear", "Logistic", "SVM Linear", "SVM RBF", "Gradient Boost", "Neural Network"])
         layout.addWidget(self.model_combo)
 
         # Button Layout
@@ -299,10 +304,12 @@ class ProjectionDialog(QDialog):
             self.ok_button.setText("Run Model")
             return
         
+        r_script = get_script(self)
+        if not check_script(r_script):
+            return
         disable_service(self)
 
         view = self.parent
-        r_script = get_script(self)
         sae_model = Projection(self.model, self.model2, view)
         controller = ProjectionController(sae_model)
         

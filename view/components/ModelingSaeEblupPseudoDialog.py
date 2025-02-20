@@ -9,7 +9,7 @@ from controller.modelling.SaePseudoController import SaePseudoController
 from model.SaeEblupPseudo import SaeEblupPseudo
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
-from service.utils.utils import display_script_and_output
+from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 
 class ModelingSaePseudoDialog(QDialog):
@@ -204,15 +204,17 @@ class ModelingSaePseudoDialog(QDialog):
             self.ok_button.setText("Run Model")
             return
         
-        enable_service(self)
+        r_script = get_script(self)
+        if not check_script(r_script):
+            return
+        disable_service(self)
 
         view = self.parent
-        r_script = get_script(self)
         sae_model = SaeEblupPseudo(self.model, self.model2, view)
         controller = SaePseudoController(sae_model)
         
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, sae_model.result)
-        disable_service(self)
+        enable_service(self)
         self.close()
