@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QComboBox,  QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy
 )
+from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
-from PyQt6.QtCore import Qt, QStringListModel, QSize
-from model.Multicollinearity import Multicollinearity
-from controller.Eksploration.EksplorationController import MulticollinearityController
+from model.LinePlot import Lineplot
+from controller.Graph.GraphController import LinePlotController
 
 
-class MulticollinearityDialog(QDialog):
+class LinePlotDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -17,8 +17,9 @@ class MulticollinearityDialog(QDialog):
         self.all_columns_model1 = []
         self.all_columns_model2 = []
 
-        self.setWindowTitle("Multicollinearity")
+        self.setWindowTitle("Line Plot")
 
+        
         # Menyimpan status variabel yang dipilih
         self.selected_status = {}
 
@@ -53,9 +54,9 @@ class MulticollinearityDialog(QDialog):
 
         content_layout.addLayout(left_layout)
 
-        # Central Layout: Buttons
+        # Layout tengah: Tombol
         button_layout1 = QVBoxLayout()
-        self.remove_button1 = QPushButton("🡄", self)
+        self.remove_button1 = QPushButton("🡄", self)  
         self.remove_button1.clicked.connect(self.remove_variable) 
         self.remove_button1.setStyleSheet("font-size: 24px;") 
         self.remove_button1.setFixedSize(50,35)
@@ -64,24 +65,19 @@ class MulticollinearityDialog(QDialog):
         button_layout1.addStretch(7)
 
         button_layout2 = QVBoxLayout()
-        self.add_dependent_variable_button = QPushButton("🡆", self)
-        self.add_dependent_variable_button.clicked.connect(self.add_variable_dependent_variable)
-        self.add_dependent_variable_button.setStyleSheet("font-size: 24px;")
-        self.add_dependent_variable_button.setFixedSize(50,35)
-
-
-        self.add_independent_variable_button = QPushButton("🡆", self)  
-        self.add_independent_variable_button.clicked.connect(self.add_variable_independent_variables)
-        self.add_independent_variable_button.setStyleSheet("font-size: 24px;")
-        self.add_independent_variable_button.setFixedSize(50,35)
-
-
+        self.add_horizontal_button = QPushButton("🡆", self)  
+        self.add_horizontal_button.clicked.connect(self.add_variable_horizontal)
+        self.add_horizontal_button.setFixedSize(50,35)
+        self.add_horizontal_button.setStyleSheet("font-size: 24px;")
+        self.add_vertical_button = QPushButton("🡆", self)
+        self.add_vertical_button.clicked.connect(self.add_variable_vertical)
+        self.add_vertical_button.setFixedSize(50,35)
+        self.add_vertical_button.setStyleSheet("font-size: 24px;")
         button_layout2.addStretch(2)
-        button_layout2.addWidget(self.add_dependent_variable_button)
+        button_layout2.addWidget(self.add_horizontal_button)
         button_layout2.addStretch(5)
-        button_layout2.addWidget(self.add_independent_variable_button)
+        button_layout2.addWidget(self.add_vertical_button)
         button_layout2.addStretch(5)
-
 
         # Menambahkan kedua layout tombol ke content_layout
         content_layout.addLayout(button_layout1)
@@ -90,45 +86,48 @@ class MulticollinearityDialog(QDialog):
         # Layout kanan: Variabel yang dipilih, metode, dan grafik
         right_layout = QVBoxLayout()
 
-        # dependent_variable Axis
-        dependent_variable_layout = QVBoxLayout()
-        self.dependent_variable_label = QLabel("Dependent Variable", self)
-        self.dependent_variable_model = QStringListModel()
-        self.dependent_variable_list = QListView(self)
-        self.dependent_variable_list.setModel(self.dependent_variable_model)
-        self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        # Horizontal Axis
+        horizontal_layout = QVBoxLayout()
+        self.horizontal_label = QLabel("Horizontal Axis", self)
+        self.horizontal_model = QStringListModel()
+        self.horizontal_list = QListView(self)
+        self.horizontal_list.setModel(self.horizontal_model)
+        self.horizontal_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
 
         # Batasi tinggi 
         item_height = 30  
-        self.dependent_variable_list.setFixedHeight(item_height + 4)  
+        self.horizontal_list.setFixedHeight(item_height + 4)  
 
-        dependent_variable_layout.addWidget(self.dependent_variable_label)
-        dependent_variable_layout.addWidget(self.dependent_variable_list)
-        right_layout.addLayout(dependent_variable_layout)
-
-
-        # independent_variable Axis
-        independent_variable_layout = QVBoxLayout()
-        self.independent_variable_label = QLabel("Independent Variable", self)
-        self.independent_variable_model = QStringListModel()
-        self.independent_variable_list = QListView(self)
-        self.independent_variable_list.setModel(self.independent_variable_model)
-        self.independent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
-        independent_variable_layout.addWidget(self.independent_variable_label)
-        independent_variable_layout.addWidget(self.independent_variable_list)
-        right_layout.addLayout(independent_variable_layout)
+        horizontal_layout.addWidget(self.horizontal_label)
+        horizontal_layout.addWidget(self.horizontal_list)
+        right_layout.addLayout(horizontal_layout)
 
 
-        # Grup grafik
-        model_options_group = QGroupBox("Model Options")  # Change the name of the model options group
-        model_options_layout = QVBoxLayout()
-        self.regression_line_checkbox = QCheckBox("Show Regression Model", self)  # New checkbox for regression line
-        self.regression_line_checkbox.stateChanged.connect(self.generate_r_script)
-        model_options_layout.addWidget(self.regression_line_checkbox)  # Add the regression line checkbox to the layout
-        model_options_group.setLayout(model_options_layout)
-        right_layout.addWidget(model_options_group)
+        # Vertical Axis
+        vertical_layout = QVBoxLayout()
+        self.vertical_label = QLabel("Vertical Axis", self)
+        self.vertical_model = QStringListModel()
+        self.vertical_list = QListView(self)
+        self.vertical_list.setModel(self.vertical_model)
+        self.vertical_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
+        vertical_layout.addWidget(self.vertical_label)
+        vertical_layout.addWidget(self.vertical_list)
+        right_layout.addLayout(vertical_layout)
+
+
+        # Grup metode
+        method_group = QGroupBox("Metode")
+        method_layout = QVBoxLayout()
+        self.method_combo = QComboBox(self)
+        self.method_combo.addItems(["Single Lineplot", "Multiple Lineplot"])
+        self.method_combo.currentIndexChanged.connect(self.generate_r_script)
+        method_layout.addWidget(self.method_combo)
+        method_group.setLayout(method_layout)
+        right_layout.addWidget(method_group)
+
 
         content_layout.addLayout(right_layout)
+
         main_layout.addLayout(content_layout)
 
         # Script box
@@ -160,8 +159,8 @@ class MulticollinearityDialog(QDialog):
         
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
-        self.independent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
-        self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.vertical_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.horizontal_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -180,10 +179,10 @@ class MulticollinearityDialog(QDialog):
         return self.columns 
     
 
-    def add_variable_dependent_variable(self):
-        # Check if there is already a variable in the dependent_variable axis
-        if len(self.dependent_variable_model.stringList()) >= 1:
-            QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
+    def add_variable_horizontal(self):
+        # Check if there is already a variable in the horizontal axis
+        if len(self.horizontal_model.stringList()) >= 1:
+            QMessageBox.warning(self, "Warning", "You can only add one variable to the Horizontal Axis!")
             return  # Do not add if one variable is already present
 
         # Get all selected indexes from data editor and data output
@@ -215,24 +214,22 @@ class MulticollinearityDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Masukkan ke dependent_variable_model
-        self.dependent_variable_model.setStringList([item])
+        # Masukkan ke horizontal_model
+        self.horizontal_model.setStringList([item])
 
         # Generate R script setelah variabel ditambahkan
         self.generate_r_script()
 
-
     
-    def add_variable_independent_variables(self):
-
+    def add_variable_vertical(self):
+        # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
-        selected_list = self.independent_variable_model.stringList()
+        selected_list = self.vertical_model.stringList()
 
         contains_string = any("[String]" in item for item in selected_items)
         selected_items = [item for item in selected_items if "[String]" not in item]
 
-        
         if contains_string:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
@@ -249,25 +246,25 @@ class MulticollinearityDialog(QDialog):
             if item not in selected_list:
                 selected_list.append(item)
 
-        self.independent_variable_model.setStringList(selected_list)
+        self.vertical_model.setStringList(selected_list)
         self.generate_r_script()
 
 
     def remove_variable(self):
-        # Ambil indeks yang dipilih dari daftar variabel dependent_variable dan independent_variable
-        selected_dependent_variable_indexes = self.dependent_variable_list.selectedIndexes()
-        selected_independent_variable_indexes = self.independent_variable_list.selectedIndexes()
+        # Ambil indeks yang dipilih dari daftar variabel horizontal dan vertical
+        selected_horizontal_indexes = self.horizontal_list.selectedIndexes()
+        selected_vertical_indexes = self.vertical_list.selectedIndexes()
 
         # Ambil nama variabel yang dipilih
-        selected_dependent_variable_items = [index.data() for index in selected_dependent_variable_indexes]
-        selected_independent_variable_items = [index.data() for index in selected_independent_variable_indexes]
+        selected_horizontal_items = [index.data() for index in selected_horizontal_indexes]
+        selected_vertical_items = [index.data() for index in selected_vertical_indexes]
 
         # Gabungkan kedua daftar variabel yang dipilih
-        selected_items = selected_dependent_variable_items + selected_independent_variable_items
+        selected_items = selected_horizontal_items + selected_vertical_items
 
         # Ambil daftar semua variabel yang sedang dipilih
-        dependent_variable_list = self.dependent_variable_model.stringList()
-        independent_variable_list = self.independent_variable_model.stringList()
+        horizontal_list = self.horizontal_model.stringList()
+        vertical_list = self.vertical_model.stringList()
 
         # Periksa apakah variabel dikembalikan ke data editor atau data output
         for item in selected_items:
@@ -285,31 +282,30 @@ class MulticollinearityDialog(QDialog):
                     output_list.append(item)
                     self.data_output_model.setStringList(output_list)
 
-            # Hapus item dari daftar dependent_variable atau independent_variable jika ada
-            if item in dependent_variable_list:
-                dependent_variable_list.remove(item)
+            # Hapus item dari daftar horizontal atau vertical jika ada
+            if item in horizontal_list:
+                horizontal_list.remove(item)
 
-            if item in independent_variable_list:
-                independent_variable_list.remove(item)
+            if item in vertical_list:
+                vertical_list.remove(item)
 
         # Perbarui daftar variabel yang dipilih
-        self.dependent_variable_model.setStringList(dependent_variable_list)
-        self.independent_variable_model.setStringList(independent_variable_list)
+        self.horizontal_model.setStringList(horizontal_list)
+        self.vertical_model.setStringList(vertical_list)
 
         # Perbarui script R setelah perubahan
         self.generate_r_script()
 
-    
-    def get_selected_dependent_variable(self):
+    def get_selected_horizontal(self):
         return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.dependent_variable_model.stringList()
+            item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0]
+            for item in self.horizontal_model.stringList()
         ]
-    
-    def get_selected_independent_variables(self):
+
+    def get_selected_vertical(self):
         return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.independent_variable_model.stringList()
+            item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0]
+            for item in self.vertical_model.stringList()
         ]
     
     def accept(self):
@@ -317,61 +313,72 @@ class MulticollinearityDialog(QDialog):
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
-
-        if len(self.get_selected_independent_variables()) < 2:
-            QMessageBox.warning(self, "Invalid Independent Variables", "Please select at least two independent variables.")
-            return
         
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
 
-        multicollinearity = Multicollinearity(self.model1, self.model2, self.parent)
-        
-        if self.regression_line_checkbox.isChecked():
-            multicollinearity.reg_model = True
-        
-        controller = MulticollinearityController(multicollinearity)
+        line_plot = Lineplot(self.model1, self.model2, self.parent)
+        controller = LinePlotController(line_plot)
         controller.run_model(r_script)
 
-        self.parent.add_output(script_text=r_script, result_text=multicollinearity.result)
+        self.parent.add_output(script_text = r_script, plot_paths = line_plot.plot)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
+
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Multicollinearity", "Multicollinearity analysis has been completed.")
+        QMessageBox.information(self, "Line Plot", "Line Plot has been successfully generated.")
         self.close()
 
     def closeEvent(self, event):
         """Menghapus variabel yang dipilih ketika dialog ditutup."""
-        self.dependent_variable_model.setStringList([]) 
-        self.independent_variable_model.setStringList([])
+        self.horizontal_model.setStringList([]) 
+        self.vertical_model.setStringList([])
         self.script_box.setPlainText("")  
         event.accept()
 
-    def generate_r_script(self):
-        """Function to generate R script for Variance Inflation Factor (VIF) calculation"""
-        # Get selected dependent and independent variables
-        dependent_var = self.get_selected_dependent_variable()
-        independent_vars = self.get_selected_independent_variables()
+    def generate_r_script(self): 
+        # Get selected variables
+        selected_var_horizontal = self.get_selected_horizontal()
+        selected_var_vertical = self.get_selected_vertical()
 
-        # Check if dependent_var and independent_vars are empty
-        if not dependent_var or not independent_vars:
-            self.script_box.setPlainText("") 
-            return
+        # Get selected method
+        method = self.method_combo.currentText()
 
-        # Pastikan dependent_var adalah string dan bersihkan tanda kutip
-        if isinstance(dependent_var, list):
-            dependent_var = dependent_var[0]  
-        dependent_var = str(dependent_var).strip("[]'\"")  
+        r_script = ""
 
-        # Format independent variables dengan backticks jika mengandung karakter khusus
-        formatted_independent_vars = " + ".join(
-            [f"`{var}`" for var in independent_vars]
-        )
-        
-        # Buat script R yang valid
-        r_script = (
-            f"regression_model <- lm(`{dependent_var}` ~ {formatted_independent_vars}, data=data)\n"
-            f"vif_values <- vif(regression_model)\n"
-        )
+        # Pastikan hanya mengambil elemen pertama untuk horizontal
+        selected_var_horizontal = selected_var_horizontal[0] if selected_var_horizontal else None
 
-        # Display the generated R script
+        # Single Line Plot: Buat line plot untuk setiap variabel vertikal
+        if method == "Single Lineplot":
+            r_script = ""
+            for var in selected_var_vertical:
+                r_script += (
+                    f"# Line plot for {selected_var_horizontal} vs. {var}\n"
+                    f"lineplot_{var} <- ggplot(data, aes(x = {selected_var_horizontal}, y = {var})) +\n"
+                    f"    geom_line(color = sample(colors(), 1)) +\n"
+                    f"    ggtitle(\"Line Plot: {selected_var_horizontal} vs. {var}\") +\n"
+                    f"    xlab(\"{selected_var_horizontal}\") +\n"
+                    f"    ylab(\"{var}\") +\n"
+                    f"    theme_minimal()\n\n"
+                )
+
+        elif method == "Multiple Lineplot":
+            vertical_vars = ", ".join(f'"{var}"' for var in selected_var_vertical)
+            formatted_var_list = ", ".join(selected_var_vertical)
+
+            r_script = (
+                f"# Multiple line plot for {selected_var_horizontal} vs. multiple y variables\n\n"
+                f"# Convert to long format for ggplot\n"
+                f"data_long <- pivot_longer(data, cols = c({vertical_vars}),\n"
+                f"                        names_to = \"variable\", values_to = \"value\")\n\n"
+                f"# Create line plot\n"
+                f"lineplot_multiple <- ggplot(data_long, aes(x = {selected_var_horizontal}, y = value, color = variable)) +\n"
+                f"    geom_line() +\n"
+                f"    ggtitle(\"Multiple Line Plot: {selected_var_horizontal} vs. {formatted_var_list}\") +\n"
+                f"    xlab(\"{selected_var_horizontal}\") +\n"
+                f"    ylab(\"Value\") +\n"
+                f"    theme_minimal()\n"
+            )
+
         self.script_box.setPlainText(r_script)
