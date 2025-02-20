@@ -1,4 +1,4 @@
-from service.exploration.Lineplot import run_lineplot
+from service.graph.Lineplot import run_lineplot
 
 class Lineplot:
     def __init__(self, model1, model2, view):

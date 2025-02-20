@@ -1,4 +1,4 @@
-from service.exploration.Scatterplot import run_scatterplot
+from service.graph.Scatterplot import run_scatterplot
 
 class Scatterplot:
     def __init__(self, model1, model2, view):

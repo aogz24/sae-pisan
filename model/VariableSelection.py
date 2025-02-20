@@ -1,17 +1,18 @@
-from service.graph.BoxPlot import run_box_plot
+from service.exploration.VariableSelection import run_variable_selection
 
-class BoxPlot:
+class VariableSelection:
     def __init__(self, model1, model2, view):
         self.model1 = model1
         self.model2 = model2
         self.view = view
-        self.plot = None
+        self.result =""
 
     def run_model(self, r_script):
         self.r_script = r_script
-        run_box_plot(self)
+        run_variable_selection(self)
 
     def activate_R(self):
         from rpy2.robjects import pandas2ri
         pandas2ri.activate()
-    
+
+
