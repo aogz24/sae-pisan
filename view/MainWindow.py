@@ -15,13 +15,16 @@ from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
 from view.components.ModelingSaeEblupUnitDialog import ModelingSaeUnitDialog
 from view.components.ModellingSaeHbNormal import ModelingSaeHBNormalDialog
 from view.components.ModelingSaeEblupPseudoDialog import ModelingSaePseudoDialog
-from view.components.SummaryDataDialog import SummaryDataDialog
-from view.components.NormalityTestDialog import NormalityTestDialog
-from view.components.ScatterPlotDialog import ScatterPlotDialog
-from view.components.BoxPlotDialog import BoxPlotDialog
-from view.components.LinePlotDialog import LinePlotDialog
-from view.components.CorrelationMatrikDialog import CorrelationMatrixDialog
-from view.components.MulticollinearityDialog import MulticollinearityDialog
+from view.components.exploration.SummaryDataDialog import SummaryDataDialog
+from view.components.exploration.NormalityTestDialog import NormalityTestDialog
+from view.components.exploration.CorrelationMatrikDialog import CorrelationMatrixDialog
+from view.components.exploration.MulticollinearityDialog import MulticollinearityDialog
+from view.components.exploration.VariableSelectionDialog import VariableSelectionDialog
+from view.components.graph.ScatterPlotDialog import ScatterPlotDialog
+from view.components.graph.BoxPlotDialog import BoxPlotDialog
+from view.components.graph.LinePlotDialog import LinePlotDialog
+from view.components.graph.HistogramDialog import HistogramDialog
+from view.components.AboutDialog import AboutDialog
 from view.components.ComputeVariableDialog import ComputeVariableDialog
 from view.components.ProjectionDialog import ProjectionDialog
 from service.table.DeleteColumn import confirm_delete_selected_columns
@@ -106,7 +109,7 @@ class MainWindow(QMainWindow):
         self.scroll_area.verticalScrollBar().rangeChanged.connect(lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))
         self.output_container.setLayout(self.output_layout)
         self.scroll_area.setWidget(self.output_container)
-
+        
         # Atur layout output
         self.output_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.output_layout.setSpacing(0)
@@ -122,6 +125,7 @@ class MainWindow(QMainWindow):
         # Membuat layout utama
         layout = QVBoxLayout()
         layout.addWidget(self.tab_widget)
+        
 
         # Widget utama dan layout
         central_widget = QWidget(self)
@@ -174,15 +178,20 @@ class MainWindow(QMainWindow):
         self.show_multicollinearity_dialog = MulticollinearityDialog(self)
         self.action_multicollinearity.triggered.connect(self.open_multicollinearity_dialog)
 
+        self.action_variable_selection = QAction("Variable Selection", self)
+        self.show_variable_selection_dialog = VariableSelectionDialog(self)
+        self.action_variable_selection.triggered.connect(self.open_variable_selection_dialog)
+
         self.menu_exploration.addAction(self.action_summary_data)
         self.menu_exploration.addAction(self.action_normality_test)
         self.menu_exploration.addAction(self.action_correlation)
-        self.menu_exploration.addAction(self.action_multicollinearity)  # Menambahkan Multicollinearity ke menu Exploration
+        self.menu_exploration.addAction(self.action_multicollinearity)
+        self.menu_exploration.addAction(self.action_variable_selection)
 
         # Menu "Graph"
         self.menu_graph = self.menu_bar.addMenu("Graph")
 
-        self.action_scatter_plot = QAction("Scatterplot", self)
+        self.action_scatter_plot = QAction("Scatter Plot", self)
         self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
 
@@ -199,6 +208,8 @@ class MainWindow(QMainWindow):
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
 
         self.action_histogram = QAction("Histogram", self)
+        self.show_histogram_dialog = HistogramDialog(self)
+        self.action_histogram.triggered.connect(self.open_histogram_dialog)
 
         # Menambahkan plot-plot ke menu Graph
         self.menu_graph.addAction(self.action_scatter_plot)
@@ -248,6 +259,8 @@ class MainWindow(QMainWindow):
         menu_model.addMenu(menu_pseudo)
         menu_model.addMenu(menu_projection)
 
+
+
          # Menu 'Compute'
         menu_compute = self.menu_bar.addMenu("Compute")
         compute_new_var = QAction("Compute New Variable", self)
@@ -257,7 +270,7 @@ class MainWindow(QMainWindow):
         # Menu "About"
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
-        action_about_info.triggered.connect(lambda: print("About -> About This App selected"))
+        action_about_info.triggered.connect(self.open_about_dialog)
         menu_about.addAction(action_about_info)
         
 
@@ -266,7 +279,6 @@ class MainWindow(QMainWindow):
         self.toolBar.setIconSize(QSize(45, 35))
         self.toolBar.setObjectName("toolBar")
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolBar)  # Perbaikan dilakukan di sini
-
         # Actions for Toolbar
         self.actionLoad_file = QAction(self)  # Menggunakan self untuk referensi instance
         icon_load = QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg'))
@@ -341,7 +353,6 @@ class MainWindow(QMainWindow):
         action_change_font_size.triggered.connect(self.change_font_size)
         menu_settings.addAction(action_change_font_size)
 
-
         # Menetapkan ukuran default
         self.resize(800, 600)
 
@@ -397,6 +408,14 @@ class MainWindow(QMainWindow):
     def open_multicollinearity_dialog(self):
         self.show_multicollinearity_dialog.set_model(self.model1, self.model2)
         self.show_multicollinearity_dialog.show()
+    
+    def open_histogram_dialog(self):
+        self.show_histogram_dialog.set_model(self.model1, self.model2)
+        self.show_histogram_dialog.show()
+
+    def open_variable_selection_dialog(self):
+        self.show_variable_selection_dialog.set_model(self.model1, self.model2)
+        self.show_variable_selection_dialog.show()
 
     def show_modeling_sae_dialog_lazy(self):
         if self.show_modeling_sae_dialog is None:
@@ -440,6 +459,10 @@ class MainWindow(QMainWindow):
         self.show_projection_variabel_dialog.set_model(self.model1)
         if self.show_projection_variabel_dialog.show_prerequisites():
             self.show_projection_variabel_dialog.show()
+
+    def open_about_dialog(self):
+        about_dialog = AboutDialog(self)
+        about_dialog.exec()
 
     def add_row(self, sheet_number):
         """Sinkronisasi data ketika baris baru ditambahkan di SpreadsheetWidget."""
