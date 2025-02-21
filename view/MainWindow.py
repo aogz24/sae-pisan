@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame,
+    QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame, QSpacerItem,
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit, QFontDialog 
 )
 from PyQt6.QtCore import Qt, QSize 
@@ -626,7 +626,8 @@ class MainWindow(QMainWindow):
         self.path=path
     
     def add_output(self, script_text, result_text=None, plot_paths=None):
-        """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
+        """Menambahkan output ke layout dalam bentuk card"""
+
         # Membuat frame sebagai card
         card_frame = QFrame()
         card_frame.setStyleSheet("""
@@ -659,7 +660,6 @@ class MainWindow(QMainWindow):
         """)
         script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
 
-        # Tambahkan elemen teks ke layout card
         card_layout.addWidget(label_script)
         card_layout.addWidget(script_box)
 
@@ -682,10 +682,7 @@ class MainWindow(QMainWindow):
             max_height = 400
             calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
             result_box.setFixedHeight(min(calculated_height, max_height))
-            if calculated_height > max_height:
-                result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-            else:
-                result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
             card_layout.addWidget(label_output)
             card_layout.addWidget(result_box)
@@ -702,14 +699,28 @@ class MainWindow(QMainWindow):
                     pixmap = QPixmap(plot_path)
                     label = QLabel()
                     label.setPixmap(pixmap)
-                    label.setFixedSize(700, 500)  # Ukuran tetap untuk gambar
+                    label.setFixedSize(500, 350)  # Ukuran yang lebih fleksibel
                     label.setScaledContents(True)
                     label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                     card_layout.addWidget(label)
 
+        # Tambahkan context menu untuk menghapus output
+        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
+
+        # Hapus spacer di bawah jika masih ada
+        if self.output_layout.count() > 0:
+            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
+            if isinstance(last_item.spacerItem(), QSpacerItem):
+                self.output_layout.removeItem(last_item)
+
         # Tambahkan card ke layout utama
         self.output_layout.addWidget(card_frame)
-        self.output_layout.addStretch()
+
+        # Tambahkan stretch hanya jika ini satu-satunya widget di layout
+        if self.output_layout.count() == 1:
+            self.output_layout.addStretch()
+
         self.tab_widget.setCurrentWidget(self.tab3)
 
         # Hapus file sementara setelah ditampilkan
@@ -717,3 +728,30 @@ class MainWindow(QMainWindow):
             for plot_path in plot_paths:
                 if os.path.exists(plot_path):
                     os.remove(plot_path)
+
+
+    def remove_output(self, card_frame):
+        """Menghapus output dari layout"""
+        self.output_layout.removeWidget(card_frame)
+        card_frame.deleteLater()
+
+        # Hapus spacer jika masih ada widget lain
+        if self.output_layout.count() > 0:
+            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
+            if isinstance(last_item.spacerItem(), QSpacerItem):
+                self.output_layout.removeItem(last_item)
+
+        # Tambahkan stretch hanya jika tidak ada output tersisa
+        if self.output_layout.count() == 0:
+            self.output_layout.addStretch()
+
+
+    def show_context_menu(self, pos, card_frame):
+        """Menampilkan menu klik kanan di setiap output"""
+        menu = QMenu(self)
+        delete_action = menu.addAction("Hapus Output")
+        action = menu.exec(card_frame.mapToGlobal(pos))
+
+        if action == delete_action:
+            self.remove_output(card_frame)
+
