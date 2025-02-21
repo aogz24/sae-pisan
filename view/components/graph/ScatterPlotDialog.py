@@ -137,14 +137,6 @@ class ScatterPlotDialog(QDialog):
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
-    def set_model(self, model1, model2):
-        self.model1 = model1
-        self.model2 = model2
-        self.data_editor_model.setStringList(self.get_column_with_dtype(model1))
-        self.data_output_model.setStringList(self.get_column_with_dtype(model2))
-        self.all_columns_model1 = self.get_column_with_dtype(model1)
-        self.all_columns_model2 = self.get_column_with_dtype(model2)
-
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -188,6 +180,7 @@ class ScatterPlotDialog(QDialog):
                 selected_list.append(item)
 
         self.selected_model.setStringList(selected_list)
+        print("masuk add variable")
         self.generate_r_script()
 
     def remove_variable(self):
@@ -255,29 +248,25 @@ class ScatterPlotDialog(QDialog):
 
     def generate_r_script(self):
         selected_columns = self.get_selected_columns()
-
+        print("masuk generate r script")
         # Get checkbox status
         show_regression = self.regression_line_checkbox.isChecked()
         show_correlation = self.correlation_checkbox.isChecked()
         show_density = self.density_plot_checkbox.isChecked()
-
         # Check the number of selected variables
         if len(selected_columns) < 2:
-            self.script_box.setPlainText("Please select at least 2 variables.")
+            self.script_box.setPlainText("")
             return
 
         # Start creating R script for scatterplot matrix
-        # r_script = (
-        #     f"data_plot <- data[, c({', '.join(f'\"{col}\"' for col in selected_columns)})]\n\n"
-        #     f"scatterplot_ <- ggpairs(\n"
-        #     f"    data_plot,\n"
-        #     f"    lower = list(continuous = {'wrap(\"smooth\", method=\"lm\")' if show_regression else '\"points\"'}),\n"
-        #     f"    upper = list(continuous = {'\"cor\"' if show_correlation else '\"blank\"'}),\n"
-        #     f"    diag = list(continuous = {'\"densityDiag\"' if show_density else '\"blankDiag\"'})\n"
-        #     f")\n"
-        # )
+        r_script = (
+            f"data_plot <- data[, c({', '.join(f'\"{col}\"' for col in selected_columns)})]\n\n"
+            f"scatterplot_ <- ggpairs(\n"
+            f"    data_plot,\n"
+            f"    lower = list(continuous = {'wrap(\"smooth\", method=\"lm\")' if show_regression else '\"points\"'}),\n"
+            f"    upper = list(continuous = {'\"cor\"' if show_correlation else '\"blank\"'}),\n"
+            f"    diag = list(continuous = {'\"densityDiag\"' if show_density else '\"blankDiag\"'})\n"
+            f")\n"
+        )
         
-        r_script = f''
-
-        # Display the R script in the text box
         self.script_box.setPlainText(r_script)
