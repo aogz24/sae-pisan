@@ -180,7 +180,6 @@ class ScatterPlotDialog(QDialog):
                 selected_list.append(item)
 
         self.selected_model.setStringList(selected_list)
-        print("masuk add variable")
         self.generate_r_script()
 
     def remove_variable(self):
@@ -248,7 +247,6 @@ class ScatterPlotDialog(QDialog):
 
     def generate_r_script(self):
         selected_columns = self.get_selected_columns()
-        print("masuk generate r script")
         # Get checkbox status
         show_regression = self.regression_line_checkbox.isChecked()
         show_correlation = self.correlation_checkbox.isChecked()
@@ -268,5 +266,5 @@ class ScatterPlotDialog(QDialog):
             f"    diag = list(continuous = {'\"densityDiag\"' if show_density else '\"blankDiag\"'})\n"
             f")\n"
         )
-        
+
         self.script_box.setPlainText(r_script)
