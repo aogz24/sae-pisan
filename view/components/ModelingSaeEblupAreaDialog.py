@@ -163,6 +163,12 @@ class ModelingSaeDialog(QDialog):
         self.auxilary_model.setStringList([])
         self.as_factor_model.setStringList([])
         self.of_interest_model.setStringList([])
+        self.of_interest_var = []
+        self.auxilary_vars = []
+        self.vardir_var = []
+        self.as_factor_var = []
+        self.selection_method = "None"
+        self.method = "REML"
     
     def accept(self):
         if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
