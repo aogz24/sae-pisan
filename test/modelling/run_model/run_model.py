@@ -30,9 +30,9 @@ from unittest.mock import MagicMock, patch
 
 class TestRunModelEblupArea(unittest.TestCase):
 
-    @patch('sae_eblup_area.convert_df')
-    @patch('sae_eblup_area.pl.DataFrame')
-    @patch('sae_eblup_area.QMessageBox')
+    @patch('run_model.convert_df')
+    @patch('run_model.pl.DataFrame')
+    @patch('run_model.QMessageBox')
     def test_run_model_eblup_area_success(self, mock_QMessageBox, mock_DataFrame, mock_convert_df):
         mock_QMessageBox.return_value = MagicMock()
         parent = MagicMock()
