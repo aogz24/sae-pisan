@@ -162,7 +162,7 @@ QDialog QListView::item {
 }
 
 QDialog QListView::item:selected {
-    background-color:rgb(243, 161, 240); /* soft blue */
+    background-color: #A1D9F3; /* soft blue */
     color: #FFFFFF; /* white */
 }
 
