@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QLabel, QFrame
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 from PyQt6.QtCore import Qt

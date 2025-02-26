@@ -26,8 +26,6 @@ class MulticollinearityController:
     def run_model(self, r_script):
         self.MulticollinearityModel.run_model(r_script)
 
-
-
 class VariableSelectionController:
     def __init__(self, VariableSelectionModel):
         self.VariableSelectionModel = VariableSelectionModel
