@@ -294,6 +294,21 @@ class ProjectionDialog(QDialog):
         self.index_model.setStringList([])
         self.weight_model.setStringList([])
         self.strata_model.setStringList([])
+        self.of_interest_var = []
+        self.auxilary_vars = []
+        self.index_var = []
+        self.as_factor_var = []
+        self.domain_var = []
+        self.weight_var = []
+        self.strata_var = []
+        self.selection_method = "None"
+        self.projection_method= "Linear"
+        self.metric = "NULL"
+        self.k_fold = "3"
+        self.grid="10"
+        self.epoch="10"
+        self.hidden_unit = "5"
+        self.learning_rate = "0.01"
         
     
     def accept(self):
