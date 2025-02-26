@@ -21,7 +21,7 @@ class SplashScreen(QSplashScreen):
         self.layout.addWidget(self.progress)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
-        self.messages = ["Checking environment...", "Loading R an R Package...", "Loading complete!"]
+        self.messages = ["Checking environment...", "Loading R an R Package...", "Setup Environment...", "Loading Completed!"]
         self.current_message_index = 0
 
     def update_message(self):

@@ -39,6 +39,7 @@ def main():
     loadR(splash)
     
     from view.MainWindow import MainWindow
+    splash.update_message()
 
     # Inisialisasi view dan controller
     view = MainWindow()  # Tampilan utama aplikasi

@@ -7,20 +7,17 @@ def loadR(splash):
     r_script = """
             suppressPackageStartupMessages({
                 r_home <- Sys.getenv("R_HOME")
-                if (!require("sae", quietly = TRUE)) install.packages("sae", lib=r_home); library(sae, lib.loc=r_home);
-                if (!require("polars", quietly = TRUE)) install.packages("sae", lib=r_home); library(sae, lib.loc=r_home);
-                if (!require("arrow", quietly = TRUE)) install.packages("arrow", lib=r_home);
-                if (!require("sae.projection", quietly = TRUE)) install.packages("sae.projection", lib=r_home); library(sae.projection, lib.loc=r_home);
-                if (!require("emdi", quietly = TRUE)) install.packages("emdi", lib=r_home); library(emdi, lib.loc=r_home);
-                if (!require("xgboost", quietly = TRUE)) install.packages("xgboost", lib=r_home);
-                if (!require("LiblineaR", quietly = TRUE)) install.packages("LiblineaR", lib=r_home);
-                if (!require("kernlab", quietly = TRUE)) install.packages("kernlab", lib=r_home);
-                if (!require("GGally", quietly = TRUE)) install.packages("GGally", lib=r_home);
-                if (!require("ggplot2", quietly = TRUE)) install.packages("ggplot2", lib=r_home);
-                if (!require("ggcorrplot", quietly = TRUE)) install.packages("ggcorrplot", lib=r_home);
-                if (!require("car", quietly = TRUE)) install.packages("car", lib=r_home);
+                packages <- c("sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car")
+                installed <- rownames(installed.packages())
+                for (pkg in packages) {
+                    if (!(pkg %in% installed)) {
+                        install.packages(pkg, lib=r_home)
+                    }
+                }
+                if (!("polars" %in% installed)) {
+                    install.packages("polars", repos = "https://community.r-multiverse.org", lib=r_home)
+                }
             })
             """
     ro.r(r_script)
     splash.update_message()
-    
