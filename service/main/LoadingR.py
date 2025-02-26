@@ -2,6 +2,7 @@ import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 
 def loadR(splash):
+    splash.update_message()
     pandas2ri.activate()
     r_script = """
             suppressPackageStartupMessages({
@@ -17,5 +18,5 @@ def loadR(splash):
             })
             """
     ro.r(r_script)
-    splash.showMessage("R is ready", 1)
+    splash.update_message()
     

@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QApplication, QSplashScreen
+from PyQt6.QtWidgets import QApplication
+from view.components.SplashScreen import SplashScreen
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtCore import Qt
 import sys
@@ -25,7 +26,7 @@ def main():
 
     # Buat dan tampilkan splash screen
     splash_pix = QPixmap(os.path.join(os.path.dirname(__file__), 'assets', 'splash.png'))
-    splash = QSplashScreen(splash_pix, Qt.WindowType.WindowStaysOnTopHint)
+    splash = SplashScreen(splash_pix)
     splash.show()
     
     # Cek dan siapkan lingkungan R
@@ -35,7 +36,6 @@ def main():
 
     from service.main.LoadingR import loadR  # Load modul R setelah check_environment
 
-    # Load R environment dengan splash screen
     loadR(splash)
     
     from view.MainWindow import MainWindow
