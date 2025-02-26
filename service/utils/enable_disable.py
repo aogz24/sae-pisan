@@ -4,6 +4,7 @@ def enable_service(parent):
     parent.ok_button.setEnabled(True)
     parent.option_button.setEnabled(True)
     parent.icon_label.setVisible(False)
+    parent.r_script_edit.clear()
     parent.r_script_edit.setReadOnly(False)
     QMessageBox.information(parent, "Success", "Modelling successfully!")
     parent.ok_button.setText("Run Model")
