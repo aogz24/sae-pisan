@@ -56,7 +56,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('R', 'R')],
+    datas=[('assets', 'assets'), ('R', 'R'), ('file-data', 'file-data')],
     hiddenimports=['rpy2.robjects', "openpyxl"],
     hookspath=[],
     hooksconfig={},
