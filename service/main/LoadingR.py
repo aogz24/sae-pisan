@@ -15,6 +15,10 @@ def loadR(splash):
                 if (!require("xgboost", quietly = TRUE)) install.packages("xgboost", lib=r_home);
                 if (!require("LiblineaR", quietly = TRUE)) install.packages("LiblineaR", lib=r_home);
                 if (!require("kernlab", quietly = TRUE)) install.packages("kernlab", lib=r_home);
+                if (!require("GGally", quietly = TRUE)) install.packages("GGally", lib=r_home);
+                if (!require("ggplot2", quietly = TRUE)) install.packages("ggplot2", lib=r_home);
+                if (!require("ggcorrplot", quietly = TRUE)) install.packages("ggcorrplot", lib=r_home);
+                if (!require("car", quietly = TRUE)) install.packages("car", lib=r_home);
             })
             """
     ro.r(r_script)

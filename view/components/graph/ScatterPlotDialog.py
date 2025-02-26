@@ -257,14 +257,12 @@ class ScatterPlotDialog(QDialog):
             return
 
         # Start creating R script for scatterplot matrix
-        r_script = (
-            f"data_plot <- data[, c({', '.join(f'\"{col}\"' for col in selected_columns)})]\n\n"
-            f"scatterplot_ <- ggpairs(\n"
-            f"    data_plot,\n"
-            f"    lower = list(continuous = {'wrap(\"smooth\", method=\"lm\")' if show_regression else '\"points\"'}),\n"
-            f"    upper = list(continuous = {'\"cor\"' if show_correlation else '\"blank\"'}),\n"
-            f"    diag = list(continuous = {'\"densityDiag\"' if show_density else '\"blankDiag\"'})\n"
-            f")\n"
-        )
+        r_script = "data_plot <- data[, c(" + ", ".join(f'"{col}"' for col in selected_columns) + ")]\n\n"
+        r_script += "scatterplot_ <- ggpairs(\n"
+        r_script += "    data_plot,\n"
+        r_script += "    lower = list(continuous = " + ('wrap("smooth", method="lm")' if show_regression else '"points"') + "),\n"
+        r_script += "    upper = list(continuous = " + ('"cor"' if show_correlation else '"blank"') + "),\n"
+        r_script += "    diag = list(continuous = " + ('"densityDiag"' if show_density else '"blankDiag"') + ")\n"
+        r_script += ")\n"
 
         self.script_box.setPlainText(r_script)
