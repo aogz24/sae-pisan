@@ -30,6 +30,7 @@ class AboutDialog(QDialog):
         info_frame.setFrameShadow(QFrame.Shadow.Sunken)
         info_layout = QVBoxLayout()
         
+        
         version_label = QLabel("<b>Version:</b> SAE Pisan 1.0.0")
         version_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(version_label)
@@ -50,6 +51,23 @@ class AboutDialog(QDialog):
         desc_label.setWordWrap(True)
         desc_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(desc_label)
+        
+        institution_label = QLabel("""<b>Sae Pisan is suported by Politeknik Statistika STIS</b>""")
+        institution_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        info_layout.addWidget(institution_label)
+        
+        support_label = QLabel(
+            """<b>Support:</b> For more information, please contact <a href='mailto: '></a>""")
+        support_label.setOpenExternalLinks(True)
+        support_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        info_layout.addWidget(support_label)
+        
+        copyright_label = QLabel(
+            """<b>© 2024 SAE Pisan. All rights reserved.</b>
+            """
+        )
+        copyright_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        info_layout.addWidget(copyright_label)
 
         info_frame.setLayout(info_layout)
         layout.addWidget(info_frame)
