@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame, QSpacerItem,
-    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, QTextEdit, QFontDialog 
+    QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, 
+    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout
 )
 from PyQt6.QtCore import Qt, QSize 
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
+        self.font_size = 14
 
         # Inisialisasi UI
         self.init_ui()
@@ -358,10 +360,48 @@ class MainWindow(QMainWindow):
 
     
     def change_font_size(self):
-        current_font = self.font()
-        font, ok = QFontDialog.getFont(current_font, self, "Select Font Size")
-        if ok:
-            self.set_font_size(font.pointSize())
+        sizes = {"Small": 10, "Medium": 14, "Big": 22}
+        items = list(sizes.keys())
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select Font Size")
+        dialog.setMinimumWidth(200)
+
+        layout = QVBoxLayout(dialog)
+
+        combo_box = QComboBox()
+        combo_box.addItems(items)
+        default_size = next(key for key, value in sizes.items() if value == self.font_size)
+        combo_box.setCurrentText(default_size)
+        layout.addWidget(combo_box)
+        
+        display = QLabel("AaBbCc")
+        display.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        display.setStyleSheet(f"font-size: {self.font_size}px;")
+        layout.addWidget(display)
+    
+        def update_display_font_size():
+            size = combo_box.currentText()
+            display.setStyleSheet(f"font-size: {sizes[size]}px;")
+
+        combo_box.currentTextChanged.connect(update_display_font_size)
+
+        button_box = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("Cancel")
+        button_box.addWidget(ok_button)
+        button_box.addWidget(cancel_button)
+        layout.addLayout(button_box)
+
+        ok_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+
+        dialog.setLayout(layout)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            selected_size = combo_box.currentText()
+            self.set_font_size(sizes[selected_size])
+            self.font_size = sizes[selected_size]
 
     def set_font_size(self, size):
         stylesheet = self.load_stylesheet_with_font_size(size)
