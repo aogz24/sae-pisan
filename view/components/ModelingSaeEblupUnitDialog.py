@@ -44,7 +44,7 @@ class ModelingSaeUnitDialog(QDialog):
         left_layout.addWidget(self.variables_list)
         
         middle_layout1 = QVBoxLayout()
-        self.unassign_button = QPushButton("←")
+        self.unassign_button = QPushButton("🡄")
         self.unassign_button.setObjectName("arrow_button")
         middle_layout1.addWidget(self.unassign_button)
 
