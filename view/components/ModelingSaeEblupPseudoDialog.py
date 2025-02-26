@@ -183,6 +183,12 @@ class ModelingSaePseudoDialog(QDialog):
         self.as_factor_model.setStringList([])
         self.domain_model.setStringList([])
         self.of_interest_model.setStringList([])
+        self.of_interest_var = []
+        self.auxilary_vars = []
+        self.vardir_var = []
+        self.as_factor_var = []
+        self.domain_var = []
+        self.selection_method = "None"
     
     def accept(self):
         if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
