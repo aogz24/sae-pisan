@@ -1,5 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit, QComboBox, QLineEdit
-from PyQt6.QtGui import QDoubleValidator, QIntValidator
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox
 from PyQt6.QtWidgets import QMessageBox
 
 def assign_of_interest(parent):
