@@ -49,15 +49,15 @@ class ModelingSaePseudoDialog(QDialog):
 
         # Layout tengah untuk tombol panah
         middle_layout = QVBoxLayout()
-        self.assign_of_interest_button = QPushButton("→")
+        self.assign_of_interest_button = QPushButton("🡆")
         self.assign_of_interest_button.setObjectName("arrow_button")
-        self.assign_aux_button = QPushButton("→")
+        self.assign_aux_button = QPushButton("🡆")
         self.assign_aux_button.setObjectName("arrow_button")
-        self.assign_as_factor_button = QPushButton("→")
+        self.assign_as_factor_button = QPushButton("🡆")
         self.assign_as_factor_button.setObjectName("arrow_button")
-        self.assign_vardir_button = QPushButton("→")
+        self.assign_vardir_button = QPushButton("🡆")
         self.assign_vardir_button.setObjectName("arrow_button")
-        self.assign_domain_button = QPushButton("→")
+        self.assign_domain_button = QPushButton("🡆")
         self.assign_domain_button.setObjectName("arrow_button")
 
         self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
