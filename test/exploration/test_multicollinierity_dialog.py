@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt
 from unittest.mock import MagicMock
 import polars as pl
 
-# Pastikan aplikasi Qt berjalan saat dijalankan langsung
 app = QApplication.instance()
 if not app:
     app = QApplication(sys.argv)
@@ -27,6 +26,22 @@ def test_ui_initialization(multicollinearity_dialog):
     assert multicollinearity_dialog.independent_variable_list is not None
     assert multicollinearity_dialog.dependent_variable_list is not None
     assert multicollinearity_dialog.script_box.toPlainText() == ""
+
+def test_set_model(multicollinearity_dialog):
+    model1_mock = MagicMock()
+    model2_mock = MagicMock()
+    model1_mock.get_data.return_value.columns = ['var1', 'var2']
+    model1_mock.get_data.return_value.dtypes = [pl.Int64, pl.Utf8]  
+    model2_mock.get_data.return_value.columns = ['var3']
+    model2_mock.get_data.return_value.dtypes = [pl.Int64]
+    
+    multicollinearity_dialog.set_model(model1_mock, model2_mock)
+    
+    expected_list_1 = ['var1 [Numeric]', 'var2 [String]']
+    expected_list_2 = ['var3 [Numeric]']
+    
+    assert multicollinearity_dialog.data_editor_model.stringList() == expected_list_1
+    assert multicollinearity_dialog.data_output_model.stringList() == expected_list_2
 
 def test_get_column_with_dtype(multicollinearity_dialog):
     """Test apakah get_column_with_dtype mengembalikan format yang benar"""
