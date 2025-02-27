@@ -12,13 +12,10 @@ class SplashScreen(QSplashScreen):
         self.label = QLabel("Checking environment...", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("color: black; font-size: 14px;")
-        
-        self.progress = QProgressBar(self)
-        self.progress.setRange(0, 0)
+
         
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.label)
-        self.layout.addWidget(self.progress)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
         self.messages = ["Checking environment...", "Loading R an R Package...", "Setup Environment...", "Loading Completed!"]

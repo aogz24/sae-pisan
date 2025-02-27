@@ -165,24 +165,19 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
-        self.show_summary_data_dialog = SummaryDataDialog(self)
-        self.action_summary_data.triggered.connect(self.open_summary_data_dialog)
+        self.action_summary_data.triggered.connect(self.open_summary_data_dialog_lazy)
 
         self.action_normality_test = QAction("Normality Test", self)
-        self.show_normality_test_dialog = NormalityTestDialog(self)
-        self.action_normality_test.triggered.connect(self.open_normality_test_dialog)
+        self.action_normality_test.triggered.connect(self.open_normality_test_dialog_lazy)
 
-        self.action_correlation = QAction("Correlation", self)  # Mengubah nama menjadi Correlation
-        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
-        self.action_correlation.triggered.connect(self.open_correlation_matrix_dialog)
+        self.action_correlation = QAction("Correlation", self)
+        self.action_correlation.triggered.connect(self.open_correlation_matrix_dialog_lazy)
 
-        self.action_multicollinearity = QAction("Multicollinearity", self)  # Menambahkan Multicollinearity
-        self.show_multicollinearity_dialog = MulticollinearityDialog(self)
-        self.action_multicollinearity.triggered.connect(self.open_multicollinearity_dialog)
+        self.action_multicollinearity = QAction("Multicollinearity", self)
+        self.action_multicollinearity.triggered.connect(self.open_multicollinearity_dialog_lazy)
 
         self.action_variable_selection = QAction("Variable Selection", self)
-        self.show_variable_selection_dialog = VariableSelectionDialog(self)
-        self.action_variable_selection.triggered.connect(self.open_variable_selection_dialog)
+        self.action_variable_selection.triggered.connect(self.open_variable_selection_dialog_lazy)
 
         self.menu_exploration.addAction(self.action_summary_data)
         self.menu_exploration.addAction(self.action_normality_test)
@@ -194,24 +189,19 @@ class MainWindow(QMainWindow):
         self.menu_graph = self.menu_bar.addMenu("Graph")
 
         self.action_scatter_plot = QAction("Scatter Plot", self)
-        self.show_scatter_plot_dialog = ScatterPlotDialog(self)
-        self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog)
+        self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog_lazy)
 
         self.action_correlation_matrix = QAction("Correlation Matrix", self)
-        self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
-        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog)
+        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog_lazy)
 
         self.action_box_plot = QAction("Box Plot", self)
-        self.show_box_plot_dialog = BoxPlotDialog(self)
-        self.action_box_plot.triggered.connect(self.open_box_plot_dialog)
+        self.action_box_plot.triggered.connect(self.open_box_plot_dialog_lazy)
 
         self.action_line_plot = QAction("Line Plot", self)
-        self.show_line_plot_dialog = LinePlotDialog(self)
-        self.action_line_plot.triggered.connect(self.open_line_plot_dialog)
+        self.action_line_plot.triggered.connect(self.open_line_plot_dialog_lazy)
 
         self.action_histogram = QAction("Histogram", self)
-        self.show_histogram_dialog = HistogramDialog(self)
-        self.action_histogram.triggered.connect(self.open_histogram_dialog)
+        self.action_histogram.triggered.connect(self.open_histogram_dialog_lazy)
 
         # Menambahkan plot-plot ke menu Graph
         self.menu_graph.addAction(self.action_scatter_plot)
@@ -420,6 +410,51 @@ class MainWindow(QMainWindow):
         else:
             print(f"Stylesheet tidak ditemukan di {stylesheet_path}")
             return ""
+    
+    def open_summary_data_dialog_lazy(self):
+        if not hasattr(self, 'show_summary_data_dialog'):
+            self.show_summary_data_dialog = SummaryDataDialog(self)
+        self.open_summary_data_dialog()
+
+    def open_normality_test_dialog_lazy(self):
+        if not hasattr(self, 'show_normality_test_dialog'):
+            self.show_normality_test_dialog = NormalityTestDialog(self)
+        self.open_normality_test_dialog()
+
+    def open_multicollinearity_dialog_lazy(self):
+        if not hasattr(self, 'show_multicollinearity_dialog'):
+            self.show_multicollinearity_dialog = MulticollinearityDialog(self)
+        self.open_multicollinearity_dialog()
+
+    def open_variable_selection_dialog_lazy(self):
+        if not hasattr(self, 'show_variable_selection_dialog'):
+            self.show_variable_selection_dialog = VariableSelectionDialog(self)
+        self.open_variable_selection_dialog()
+    
+    def open_scatter_plot_dialog_lazy(self):
+        if not hasattr(self, 'show_scatter_plot_dialog'):
+            self.show_scatter_plot_dialog = ScatterPlotDialog(self)
+        self.open_scatter_plot_dialog()
+
+    def open_correlation_matrix_dialog_lazy(self):
+        if not hasattr(self, 'show_correlation_matrix_dialog'):
+            self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
+        self.open_correlation_matrix_dialog()
+
+    def open_box_plot_dialog_lazy(self):
+        if not hasattr(self, 'show_box_plot_dialog'):
+            self.show_box_plot_dialog = BoxPlotDialog(self)
+        self.open_box_plot_dialog()
+
+    def open_line_plot_dialog_lazy(self):
+        if not hasattr(self, 'show_line_plot_dialog'):
+            self.show_line_plot_dialog = LinePlotDialog(self)
+        self.open_line_plot_dialog()
+
+    def open_histogram_dialog_lazy(self):
+        if not hasattr(self, 'show_histogram_dialog'):
+            self.show_histogram_dialog = HistogramDialog(self)
+        self.open_histogram_dialog()
     
     def open_summary_data_dialog(self):
         self.show_summary_data_dialog.set_model(self.model1, self.model2)

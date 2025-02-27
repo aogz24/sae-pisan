@@ -4,7 +4,6 @@ from service.modelling.running_model.convert_df import convert_df
 
 def run_model_eblup_unit(parent):
     import rpy2.robjects as ro
-    import rpy2_arrow.polars as rpy2polars
     parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
