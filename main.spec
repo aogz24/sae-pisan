@@ -61,7 +61,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PySide6', 'torch', 'cuda'],
+    excludes=['PySide6', 'torch', 'cuda', 'cv', 'cv2'],
     noarchive=False,
     optimize=0,
 )
