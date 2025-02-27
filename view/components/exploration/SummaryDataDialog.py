@@ -129,15 +129,8 @@ class SummaryDataDialog(QDialog):
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
-        print(selected_indexes)
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
-        
-        contains_string = any("[String]" in item for item in selected_items)   
-        selected_items = [item for item in selected_items if "[String]" not in item] 
-
-        if contains_string:
-            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -183,7 +176,6 @@ class SummaryDataDialog(QDialog):
 
     def generate_r_script(self):
         selected_columns = self.get_selected_columns()
-        print(selected_columns)
         if not selected_columns:
             self.script_box.setPlainText("")
             return
@@ -197,7 +189,7 @@ class SummaryDataDialog(QDialog):
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
-        
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         summary_data = SummaryData(self.model1, self.model2, self.parent)
@@ -208,6 +200,7 @@ class SummaryDataDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Summary Completed", "Summary completed successfully.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
