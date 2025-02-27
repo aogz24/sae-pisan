@@ -224,6 +224,7 @@ class ScatterPlotDialog(QDialog):
         r_script = self.script_box.toPlainText()
         if not r_script:
             return
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         
@@ -237,6 +238,7 @@ class ScatterPlotDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Scatter Plot", "Scatter plot executed successfully.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
