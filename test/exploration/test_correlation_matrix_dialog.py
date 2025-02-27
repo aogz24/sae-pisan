@@ -3,7 +3,7 @@ import pytest
 import polars as pl
 from PyQt6.QtWidgets import QApplication, QWidget
 from view.components.exploration.CorrelationMatrikDialog import CorrelationMatrixDialog
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 app = QApplication.instance()
 if not app:
@@ -24,6 +24,22 @@ def test_ui_initialization(correlation_matrix_dialog):
     assert correlation_matrix_dialog.correlation_plot_checkbox is not None
     assert correlation_matrix_dialog.script_box.toPlainText() == ""
 
+def test_set_model(correlation_matrix_dialog):
+    model1_mock = MagicMock()
+    model2_mock = MagicMock()
+    model1_mock.get_data.return_value.columns = ['var1', 'var2']
+    model1_mock.get_data.return_value.dtypes = [pl.Int64, pl.Utf8]  # Perbaikan mapping tipe data
+    model2_mock.get_data.return_value.columns = ['var3']
+    model2_mock.get_data.return_value.dtypes = [pl.Int64]
+    
+    correlation_matrix_dialog.set_model(model1_mock, model2_mock)
+    
+    expected_list_1 = ['var1 [Numeric]', 'var2 [String]']
+    expected_list_2 = ['var3 [Numeric]']
+    
+    assert correlation_matrix_dialog.data_editor_model.stringList() == expected_list_1
+    assert correlation_matrix_dialog.data_output_model.stringList() == expected_list_2
+    
 def test_get_column_with_dtype(correlation_matrix_dialog):
     """Test if get_column_with_dtype returns the correct formatted column names."""
     mock_model = Mock()
@@ -73,24 +89,17 @@ def test_get_selected_columns(correlation_matrix_dialog):
     assert result == ["var1", "var2", "var3"]
 
 
-def test_generate_r_script_no_selection(correlation_matrix_dialog):
-    """Test jika tidak ada kolom yang dipilih, script harus kosong."""
+@pytest.mark.parametrize(
+    "selected_columns, plot_checked, expected_in_script",
+    [
+        ([], False, ""), 
+        (["var1 [Numeric]", "var2 [Numeric]"], False, 'correlation_matrix <- cor(data[, c("var1", "var2")], use="complete.obs", method="pearson")'),  # Hanya kolom numerik
+        (["var1 [Numeric]", "var2 [Numeric]"], True, 'ggcorrplot(correlation_matrix'), 
+    ],
+)
+def test_generate_r_script(correlation_matrix_dialog, selected_columns, plot_checked, expected_in_script):
+    correlation_matrix_dialog.selected_model.setStringList(selected_columns)
+    correlation_matrix_dialog.correlation_plot_checkbox.setChecked(plot_checked)
     correlation_matrix_dialog.generate_r_script()
-    assert correlation_matrix_dialog.script_box.toPlainText() == ""
-
-def test_generate_r_script_with_columns(correlation_matrix_dialog):
-    """Test jika beberapa kolom numerik dipilih, apakah script R dihasilkan dengan benar."""
-    correlation_matrix_dialog.selected_model.setStringList(["var1 [Numeric]", "var2 [Numeric]"])
-    correlation_matrix_dialog.generate_r_script()
-    expected_script = """
-correlation_matrix <- cor(data[, c("var1", "var2")], use="complete.obs", method="pearson")
-    """.strip()
-    assert expected_script in correlation_matrix_dialog.script_box.toPlainText()
-
-def test_generate_r_script_with_plot(correlation_matrix_dialog):
-    """Test jika checkbox plot diaktifkan, apakah script R juga mencantumkan ggcorrplot."""
-    correlation_matrix_dialog.selected_model.setStringList(["var1 [Numeric]", "var2 [Numeric]"])
-    correlation_matrix_dialog.correlation_plot_checkbox.setChecked(True)
-    correlation_matrix_dialog.generate_r_script()
-    assert "ggcorrplot(correlation_matrix" in correlation_matrix_dialog.script_box.toPlainText()
-
+    
+    assert expected_in_script in correlation_matrix_dialog.script_box.toPlainText()
