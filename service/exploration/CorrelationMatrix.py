@@ -28,9 +28,6 @@ def run_correlation_matrix(parent):
 
         ro.r('rm(list=ls()[ls() != "r_df"])')
 
-        # # Menghapus objek korelasi sebelumnya dari lingkungan R
-        # ro.r('rm(list=ls(pattern="^correlation_matrix"))')
-
         # Menyiapkan data di R
         ro.r('data <- as.data.frame(r_df)')
 
@@ -38,18 +35,12 @@ def run_correlation_matrix(parent):
         script = parent.r_script  # Script R yang dihasilkan di dialog
         ro.r(script)
 
-        # Mendapatkan hasil matriks korelasi sebagai teks
-        # correlation_result = ro.r('capture.output(write.table(correlation_matrix, sep="\t", quote=FALSE, row.names=TRUE, col.names=NA))')
-        # correlation_text = "  ".join(correlation_result)
-
         correlation_result = ro.r('capture.output(print(correlation_matrix))')
         correlation_text = "\n".join(correlation_result)  # Gabungkan menjadi teks
-        print("Correlation result as text:\n", correlation_text)
         parent.result = correlation_text  # Simpan sebagai string
 
         # Mengecek apakah ada plot korelasi yang dihasilkan
         correlation_plot_exists = ro.r('exists("correlation_plot")')
-        print("Checked if correlation plot exists:", correlation_plot_exists[0])
 
         if correlation_plot_exists[0]:
             print("corplot exists!")

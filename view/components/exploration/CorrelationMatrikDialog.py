@@ -187,7 +187,6 @@ class CorrelationMatrixDialog(QDialog):
         return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
 
 
-
     def generate_r_script(self):
         """Function to generate R script for Correlation Matrix using ggcorrplot"""
         selected_columns = self.get_selected_columns()
@@ -202,14 +201,10 @@ class CorrelationMatrixDialog(QDialog):
         r_script += f"""
 correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")
         """
-
-        # Step 2: Check if the correlation plot is requested
         if self.correlation_plot_checkbox.isChecked():
             r_script += """
 correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "upper", lab = TRUE)
             """
-
-        # Step 3: Display the final R script
         self.script_box.setPlainText(r_script)
 
 
@@ -218,6 +213,7 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         correlation_matrix = CorrelationMatrix(self.model1, self.model2, self.parent)
@@ -230,6 +226,7 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Correlation Matrix", "Correlation Matrix has been generated successfully.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
