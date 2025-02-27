@@ -16,6 +16,7 @@ def run_model_eblup_unit(parent):
         ro.r('domain <- model$est$eblup$domain\n estimated_value <- model$est$eblup$eblup\n n_size <- model$est$eblup$sampsize \n mse <- model$mse$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
+        parent.result = str(result)
         domain = ro.r('domain')
         estimated_value = ro.r('estimated_value')
         n_size = ro.r('n_size')
@@ -26,7 +27,6 @@ def run_model_eblup_unit(parent):
             'Sample size': n_size,
             'MSE': mse})
         parent.model2.set_data(df)
-        parent.result = str(result)
         
     except Exception as e:
         error_dialog = QMessageBox()
