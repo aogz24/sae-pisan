@@ -154,7 +154,7 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.method = "REML"
-        self.error = ""
+        
 
     def set_model(self, model):
         self.model = model

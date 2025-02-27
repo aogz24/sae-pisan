@@ -208,7 +208,7 @@ class ProjectionDialog(QDialog):
         self.epoch="10"
         self.hidden_unit = "5"
         self.learning_rate = "0.01"
-        self.error = ""
+        
 
     
     def show_prerequisites(self):

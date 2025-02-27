@@ -154,7 +154,7 @@ class ModelingSaeHBDialog(QDialog):
         self.selection_method = "None"
         self.iter_update="3"
         self.iter_mcmc="2000"
-        self.error = ""
+        
         self.burn_in="1000"
 
     def set_model(self, model):

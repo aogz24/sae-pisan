@@ -171,8 +171,7 @@ class ModelingSaePseudoDialog(QDialog):
         self.auxilary_vars = []
         self.vardir_var = []
         self.as_factor_var = []
-        self.domain_var = []
-        self.error = ""
+        self.domain_var = [] 
         self.selection_method = "None"
 
     def set_model(self, model):
