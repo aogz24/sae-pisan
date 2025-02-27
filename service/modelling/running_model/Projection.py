@@ -14,12 +14,12 @@ def run_model_projection(parent):
         ro.r(parent.r_script)
         ro.r("print(model)")
         result_str = ro.r('capture.output(print(model))')
+        parent.result = str(result)
         ro.r('projection <- model$projection')
         proj = ro.conversion.rpy2py(ro.r("projection"))
         result = "\n".join(result_str)
         df = pl.from_pandas(proj)
         parent.model2.set_data(df)
-        parent.result = str(result)
         
     except Exception as e:
         error_dialog = QMessageBox()

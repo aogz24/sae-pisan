@@ -15,6 +15,7 @@ def run_model_eblup_area(parent):
         ro.r('estimated_value <- model$est$eblup\n mse <- model$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
+        parent.result = str(result)
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         mse = ro.conversion.rpy2py(ro.globalenv['mse'])
         vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
@@ -26,7 +27,6 @@ def run_model_eblup_area(parent):
             'MSE': mse,
             'RSE (%)': rse})
         parent.model2.set_data(df)
-        parent.result = str(result)
         
     except Exception as e:
         error_dialog = QMessageBox()
