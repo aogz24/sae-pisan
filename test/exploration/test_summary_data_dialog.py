@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt
 from unittest.mock import MagicMock
 import polars as pl
 
-# Pastikan aplikasi Qt berjalan saat dijalankan langsung
 app = QApplication.instance()
 if not app:
     app = QApplication(sys.argv)
@@ -26,7 +25,21 @@ def test_ui_initialization(summary_dialog):
     assert summary_dialog.selected_list is not None
     assert summary_dialog.script_box.toPlainText() == ""
 
-from unittest.mock import MagicMock
+def test_set_model(summary_dialog):
+    model1_mock = MagicMock()
+    model2_mock = MagicMock()
+    model1_mock.get_data.return_value.columns = ['var1', 'var2']
+    model1_mock.get_data.return_value.dtypes = [pl.Int64, pl.Utf8]  # Perbaikan mapping tipe data
+    model2_mock.get_data.return_value.columns = ['var3']
+    model2_mock.get_data.return_value.dtypes = [pl.Int64]
+    
+    summary_dialog.set_model(model1_mock, model2_mock)
+    
+    expected_list_1 = ['var1 [Numeric]', 'var2 [String]']
+    expected_list_2 = ['var3 [Numeric]']
+    
+    assert summary_dialog.data_editor_model.stringList() == expected_list_1
+    assert summary_dialog.data_output_model.stringList() == expected_list_2
 
 def test_get_column_with_dtype(summary_dialog):
     """Test apakah get_column_with_dtype mengembalikan format yang benar"""
