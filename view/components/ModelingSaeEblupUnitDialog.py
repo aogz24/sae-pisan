@@ -200,6 +200,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.selection_method = "None"
         self.method = "REML"
         self.bootstrap = "50"
+        self.error = ""
 
     def set_model(self, model):
         self.model = model
