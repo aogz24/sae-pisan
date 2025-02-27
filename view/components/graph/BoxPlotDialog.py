@@ -195,7 +195,7 @@ class BoxPlotDialog(QDialog):
         # Get selected columns
         selected_columns = self.get_selected_columns()
         if not selected_columns:
-            self.script_box.setPlainText("Tidak ada kolom yang dipilih.")
+            self.script_box.setPlainText("")
             return
 
         # Get selected method
@@ -244,6 +244,7 @@ class BoxPlotDialog(QDialog):
         if self.is_selected_empty():
             QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
             return
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         box_plot = BoxPlot(self.model1, self.model2, self.parent)
@@ -256,6 +257,7 @@ class BoxPlotDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Success", "Box plot has been generated successfully.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):

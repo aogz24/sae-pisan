@@ -273,6 +273,7 @@ class HistogramDialog(QDialog):
         if self.is_selected_empty():
             QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
             return
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         histogram = Histogram(self.model1, self.model2, self.parent)
@@ -285,6 +286,7 @@ class HistogramDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Success", "Histogram has been generated successfully.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):

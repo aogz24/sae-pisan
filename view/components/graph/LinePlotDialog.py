@@ -314,6 +314,7 @@ class LinePlotDialog(QDialog):
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
         
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
 
@@ -327,6 +328,7 @@ class LinePlotDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Line Plot", "Line Plot has been successfully generated.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
