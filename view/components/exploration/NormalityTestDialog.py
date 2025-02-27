@@ -265,6 +265,7 @@ class NormalityTestDialog(QDialog):
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
@@ -276,6 +277,7 @@ class NormalityTestDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
