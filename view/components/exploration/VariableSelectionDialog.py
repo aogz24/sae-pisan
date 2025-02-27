@@ -333,9 +333,9 @@ class VariableSelectionDialog(QDialog):
             QMessageBox.warning(self, "Invalid Selection Methods", "Please select at least one selection method.")
             return
         
+        self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
-
 
         variable_selection = VariableSelection(self.model1, self.model2, self.parent)
 
@@ -346,6 +346,7 @@ class VariableSelectionDialog(QDialog):
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         QMessageBox.information(self, "Variable Selection", "VariableSelection analysis has been completed.")
+        self.run_button.setEnabled(True)
         self.close()
 
     def closeEvent(self, event):
