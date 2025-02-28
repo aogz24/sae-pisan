@@ -226,23 +226,26 @@ class NormalityTestDialog(QDialog):
         if not selected_methods:
             self.script_box.setPlainText("")
             return
+
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
-        
+
         r_script = ''
-        
+
         for var in selected_vars:
+            safe_var = var.replace(" ", "_")  # Ganti spasi jadi underscore untuk nama variabel
+
             for method in selected_methods:
                 if method == "shapiro":
-                    r_script += f"normality_results_{var}_shapiro <- shapiro.test(data${var})\n"
+                    r_script += f"normality_results_{safe_var}_shapiro <- shapiro.test(data$`{var}`)\n"
                 elif method == "jarque_bera":
-                    r_script += f"normality_results_{var}_jarque <- tseries::jarque.bera.test(data${var})\n"
+                    r_script += f"normality_results_{safe_var}_jarque <- tseries::jarque.bera.test(data$`{var}`)\n"
                 elif method == "lilliefors":
-                    r_script += f"normality_results_{var}_lilliefors <- nortest::lillie.test(data${var})\n"
-            
+                    r_script += f"normality_results_{safe_var}_lilliefors <- nortest::lillie.test(data$`{var}`)\n"
+
             if show_histogram:
                 r_script += (
-                    f"histogram_{var} <- ggplot(data, aes(x = {var})) +\n"
+                    f"histogram_{safe_var} <- ggplot(data, aes(x = `{var}`)) +\n"
                     f"    geom_histogram(binwidth = 30, color = 'black', fill = 'blue') +\n"
                     f"    ggtitle('Histogram of {var}') +\n"
                     f"    xlab('{var}') +\n"
@@ -251,13 +254,14 @@ class NormalityTestDialog(QDialog):
 
             if show_qqplot:
                 r_script += (
-                    f"qqplot_{var} <- ggplot(data, aes(sample = {var})) +\n"
+                    f"qqplot_{safe_var} <- ggplot(data, aes(sample = `{var}`)) +\n"
                     f"    stat_qq() +\n"
                     f"    stat_qq_line(color = 'red') +\n"
                     f"    ggtitle('Q-Q Plot of {var}') +\n"
                     f"    xlab('Theoretical Quantiles') +\n"
                     f"    ylab('Sample Quantiles')\n"
                 )
+
         self.script_box.setPlainText(r_script)
 
     def accept(self):
