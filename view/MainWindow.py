@@ -820,13 +820,36 @@ class MainWindow(QMainWindow):
         if self.output_layout.count() == 0:
             self.output_layout.addStretch()
 
+    def copy_output_image(self, card_frame):
+        """Menyalin gambar output ke clipboard"""
+        for child in card_frame.findChildren(QLabel):
+            pixmap = child.pixmap()
+            
+            if pixmap and not pixmap.isNull():
+                temp_folder = os.path.join(self.path, 'temp')
+                temp_path = os.path.join(temp_folder, 'temp_image.png')
+
+                os.makedirs(temp_folder, exist_ok=True)
+
+                if pixmap.save(temp_path):
+                    print(f"Gambar disimpan di: {temp_path}")
+                    
+                    clipboard = QApplication.clipboard()
+                    clipboard.setPixmap(QPixmap(temp_path))
+
+                    if os.path.exists(temp_path):  
+                        os.remove(temp_path)
+                break
 
     def show_context_menu(self, pos, card_frame):
         """Menampilkan menu klik kanan di setiap output"""
         menu = QMenu(self)
         delete_action = menu.addAction("Hapus Output")
+        copy_image_action = menu.addAction("Copy Output Image")
         action = menu.exec(card_frame.mapToGlobal(pos))
 
         if action == delete_action:
             self.remove_output(card_frame)
+        elif action == copy_image_action:
+            self.copy_output_image(card_frame)
 
