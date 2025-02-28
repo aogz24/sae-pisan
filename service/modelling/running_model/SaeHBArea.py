@@ -1,5 +1,6 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+from rpy2.rinterface_lib.embedded import RRuntimeError
 from service.modelling.running_model.convert_df import convert_df
 
 def run_model_hb_area(parent):
@@ -12,7 +13,16 @@ def run_model_hb_area(parent):
         ro.r('suppressMessages(library(saeHB))')
         ro.r('data <- as.data.frame(r_df)')
         ro.r('attach(data)')
-        ro.r(parent.r_script)
+        try:
+            ro.r(parent.r_script)  # Menjalankan skrip R
+            ro.r("print(model)")   # Mencetak model di R
+        except RRuntimeError as e:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Icon.Critical)
+            error_dialog.setText("Error when run R")
+            error_dialog.setInformativeText(str(e))
+            error_dialog.exec()
+            parent.result = str(e)
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
         ro.r('refVar <- model$refVar')

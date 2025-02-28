@@ -6,8 +6,7 @@ def enable_service(parent):
     parent.icon_label.setVisible(False)
     parent.r_script_edit.clear()
     parent.r_script_edit.setReadOnly(False)
-    if parent.error != '':
-        QMessageBox.information(parent, "Success", "Modelling successfully!")
+    QMessageBox.information(parent, "Success", "Modelling finnish!")
     parent.ok_button.setText("Run Model")
     
 def disable_service(parent):
