@@ -205,10 +205,7 @@ class ScatterPlotDialog(QDialog):
         self.generate_r_script()
 
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
+        return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
     
 
     def accept(self):

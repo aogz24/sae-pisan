@@ -166,8 +166,6 @@ class HistogramDialog(QDialog):
         if contains_string:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
-        print(selected_items) 
-
         for item in selected_items:
             if item in self.data_editor_model.stringList():
                 editor_list = self.data_editor_model.stringList()
@@ -207,10 +205,9 @@ class HistogramDialog(QDialog):
         self.generate_r_script()
 
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
+        return [f"`{item.rsplit(' [String]', 1)[0].rsplit(' [Numeric]', 1)[0]}`" 
+                for item in self.selected_model.stringList()]
+
    
     def generate_r_script(self):
         # Get selected columns
@@ -224,34 +221,36 @@ class HistogramDialog(QDialog):
         graph_option = self.graph_option_combo.currentText()  # Bins atau Binwidth
         bin_value = self.graph_option_spinbox.value()  # Nilai dari spinbox
 
-        formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
-        r_script = ""
+        # Pastikan bin_value valid
+        if bin_value <= 0:
+            self.script_box.setPlainText("Nilai bin harus lebih besar dari 0.")
+            return
 
+        r_script = ""
 
         if method == "Single Histogram":
             for col in selected_columns:
+                col_safe = col.strip("`")  # Bersihkan backticks agar tidak dobel
                 r_script += (
-                    f"# Histogram for {col}\n"
-                    f"histogram_{col} <- ggplot(data, aes(x = {col})) +\n"
+                    f"histogram_{col_safe.replace(' ', '_')} <- ggplot(data, aes(x = `{col_safe}`)) +\n"  
                     f"    geom_histogram("
                     f"{'bins = ' + str(bin_value) if graph_option == 'Bins' else 'binwidth = ' + str(bin_value)}, "
-                    f"fill = sample(colors(), 1)[[1]], color = 'black') +\n"
-                    f"    ggtitle('Histogram: {col}') +\n"
-                    f"    xlab('{col}') +\n"
+                    f"fill = sample(colors(), 1), color = 'black') +\n"
+                    f"    ggtitle('Histogram: {col_safe}') +\n"  # Tidak pakai backticks
+                    f"    xlab('{col_safe}') +\n"  # Tidak pakai backticks
                     f"    ylab('Frequency') +\n"
                     f"    theme_minimal()\n\n"
                 )
 
         elif method == "Multiple Histogram":
+            formatted_columns = ', '.join(f'`{col.strip("`")}`' for col in selected_columns)  # Hapus backticks dobel
             r_script += (
-                f"# Convert to long format for ggplot compatibility\n"
                 f"data_long <- pivot_longer(data, cols = c({formatted_columns}), \n"
                 f"    names_to = 'variable', values_to = 'value')\n\n"
-                f"# Create multiple histogram\n"
                 f"histogram_multiple <- ggplot(data_long, aes(x = value, fill = variable)) +\n"
                 f"    geom_histogram("
                 f"{'bins = ' + str(bin_value) if graph_option == 'Bins' else 'binwidth = ' + str(bin_value)}, "
-                f"alpha = 0.6, position = 'identity') +\n"
+                f"alpha = 0.6, position = 'identity', color = 'black') +\n"
                 f"    ggtitle('Multiple Histogram') +\n"
                 f"    xlab('Value') +\n"
                 f"    ylab('Frequency') +\n"
@@ -260,6 +259,7 @@ class HistogramDialog(QDialog):
 
         # Tampilkan script di text box
         self.script_box.setPlainText(r_script)
+
 
 
     def is_selected_empty(self):

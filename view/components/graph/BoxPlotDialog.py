@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
+import re
 from model.BoxPlot import BoxPlot
 from controller.Graph.GraphController import BoxPlotController
 
@@ -186,11 +187,9 @@ class BoxPlotDialog(QDialog):
         self.generate_r_script()
 
     def get_selected_columns(self):
-        return [
-            item.split(" [")[0].replace(" ", "_")
-            for item in self.selected_model.stringList()
-        ]
-   
+        return [f"`{item.rsplit(' [String]', 1)[0].rsplit(' [Numeric]', 1)[0]}`" 
+                for item in self.selected_model.stringList()]
+
     def generate_r_script(self):
         # Get selected columns
         selected_columns = self.get_selected_columns()
@@ -200,22 +199,23 @@ class BoxPlotDialog(QDialog):
 
         # Get selected method
         method = self.method_combo.currentText()
-        formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
+        formatted_columns = ', '.join(selected_columns)  # Tetap gunakan backticks di sini
         r_script = ""
 
-        # Single Box Plot: If there are multiple variables, create separate plots
+        # Single Box Plot: Jika ada banyak variabel, buat plot terpisah
         if method == "Single Box plot":
             for col in selected_columns:
+                clean_name = re.sub(r"\W+", "_", col.strip("`"))  # Bersihkan nama untuk penamaan objek
                 r_script += (
                     f"# Box plot for {col}\n"
-                    f"boxplot_{col} <- ggplot(data, aes(y = {col})) +\n"
+                    f"boxplot_{clean_name} <- ggplot(data, aes(y = {col})) +\n"
                     f"    geom_boxplot(fill = sample(colors(), 1)) +\n"
-                    f"    ggtitle('Box Plot: {col}') +\n"
-                    f"    ylab('{col}') +\n"
+                    f"    ggtitle('Box Plot: {col.strip('`')}') +\n"
+                    f"    ylab('{col.strip('`')}') +\n"
                     f"    theme_minimal()\n\n"
                 )
 
-        # Multiple Box Plot: Combine all selected variables into a single plot
+        # Multiple Box Plot: Gabungkan semua variabel dalam satu plot
         elif method == "Multiple Box Plot":
             r_script += (
                 f"# Convert to long format for ggplot compatibility\n"
@@ -229,9 +229,9 @@ class BoxPlotDialog(QDialog):
                 f"    ylab('Value') +\n"
                 f"    theme_minimal()\n"
             )
+
         # Show script in text box
         self.script_box.setPlainText(r_script)
-
 
     def is_selected_empty(self):
         return len(self.selected_model.stringList()) == 0

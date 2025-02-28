@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
+import re
 from model.LinePlot import Lineplot
 from controller.Graph.GraphController import LinePlotController
 
@@ -350,32 +351,35 @@ class LinePlotDialog(QDialog):
 
         # Pastikan hanya mengambil elemen pertama untuk horizontal
         selected_var_horizontal = selected_var_horizontal[0] if selected_var_horizontal else None
+        if not selected_var_horizontal or not selected_var_vertical:
+            self.script_box.setPlainText("")
+            return
 
-        # Single Line Plot: Buat line plot untuk setiap variabel vertikal
+        # Bersihkan nama horizontal untuk objek (hilangkan spasi & karakter tak valid)
+        clean_horizontal = re.sub(r"\W+", "_", selected_var_horizontal.strip("`"))
+
+        # Single Line Plot
         if method == "Single Lineplot":
-            r_script = ""
             for var in selected_var_vertical:
+                clean_var = re.sub(r"\W+", "_", var.strip("`"))  # Bersihkan nama untuk objek
                 r_script += (
-                    f"# Line plot for {selected_var_horizontal} vs. {var}\n"
-                    f"lineplot_{var} <- ggplot(data, aes(x = {selected_var_horizontal}, y = {var})) +\n"
+                    f"lineplot_{clean_var} <- ggplot(data, aes(x = `{selected_var_horizontal}`, y = `{var}`)) +\n"
                     f"    geom_line(color = sample(colors(), 1)) +\n"
-                    f"    ggtitle(\"Line Plot: {selected_var_horizontal} vs. {var}\") +\n"
+                    f"    ggtitle(\"Line Plot: {selected_var_horizontal} vs. {var.strip('`')}\") +\n"
                     f"    xlab(\"{selected_var_horizontal}\") +\n"
-                    f"    ylab(\"{var}\") +\n"
+                    f"    ylab(\"{var.strip('`')}\") +\n"
                     f"    theme_minimal()\n\n"
                 )
 
+        # Multiple Line Plot
         elif method == "Multiple Lineplot":
-            vertical_vars = ", ".join(f'"{var}"' for var in selected_var_vertical)
-            formatted_var_list = ", ".join(selected_var_vertical)
+            vertical_vars = ", ".join(f"`{var}`" for var in selected_var_vertical)  # Pakai backticks
+            formatted_var_list = ", ".join(var.strip("`") for var in selected_var_vertical)
 
             r_script = (
-                f"# Multiple line plot for {selected_var_horizontal} vs. multiple y variables\n\n"
-                f"# Convert to long format for ggplot\n"
                 f"data_long <- pivot_longer(data, cols = c({vertical_vars}),\n"
                 f"                        names_to = \"variable\", values_to = \"value\")\n\n"
-                f"# Create line plot\n"
-                f"lineplot_multiple <- ggplot(data_long, aes(x = {selected_var_horizontal}, y = value, color = variable)) +\n"
+                f"lineplot_{clean_horizontal}_multiple <- ggplot(data_long, aes(x = `{selected_var_horizontal}`, y = value, color = variable)) +\n"
                 f"    geom_line() +\n"
                 f"    ggtitle(\"Multiple Line Plot: {selected_var_horizontal} vs. {formatted_var_list}\") +\n"
                 f"    xlab(\"{selected_var_horizontal}\") +\n"
