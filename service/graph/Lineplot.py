@@ -21,6 +21,7 @@ def run_lineplot(parent):
     try:
         # Load required R libraries
         ro.r('suppressMessages(library(ggplot2))')
+        ro.r('suppressMessages(library(tidyr))')
 
         ro.r('rm(list=ls()[ls() != "r_df"])')
 
