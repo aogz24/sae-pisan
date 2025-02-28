@@ -43,7 +43,6 @@ def run_correlation_matrix(parent):
         correlation_plot_exists = ro.r('exists("correlation_plot")')
 
         if correlation_plot_exists[0]:
-            print("corplot exists!")
             plot_path =[]
             plot_path.append("correlation_plot.png")
             grdevices.png(file=plot_path, width=800, height=600)
