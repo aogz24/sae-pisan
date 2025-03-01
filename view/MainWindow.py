@@ -564,6 +564,7 @@ class MainWindow(QMainWindow):
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
+            self.tab_widget.setCurrentWidget(self.tab1)
             if self.show_modeling_sae_dialog:
                 self.show_modeling_sae_dialog.set_model(model)
             if self.show_modeling_saeHB_dialog:
