@@ -22,6 +22,8 @@ def run_model_eblup_area(parent):
             error_dialog.setInformativeText(str(e))
             error_dialog.exec()
             parent.result = str(e)
+            parent.error = True
+            return
         ro.r('estimated_value <- model$est$eblup\n mse <- model$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
