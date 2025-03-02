@@ -31,6 +31,7 @@ def run_model_projection(parent):
         result = "\n".join(result_str)
         df = pl.from_pandas(proj)
         parent.model2.set_data(df)
+        parent.error = False
         
     except Exception as e:
         error_dialog = QMessageBox()

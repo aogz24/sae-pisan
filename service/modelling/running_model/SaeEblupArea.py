@@ -38,6 +38,7 @@ def run_model_eblup_area(parent):
             'Eblup': estimated_value,
             'MSE': mse,
             'RSE (%)': rse})
+        parent.error = False
         parent.model2.set_data(df)
         
     except Exception as e:

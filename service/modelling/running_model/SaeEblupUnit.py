@@ -37,6 +37,7 @@ def run_model_eblup_unit(parent):
             'Eblup': estimated_value,
             'Sample size': n_size,
             'MSE': mse})
+        parent.error = False
         parent.model2.set_data(df)
         
     except Exception as e:
