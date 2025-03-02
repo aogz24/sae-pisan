@@ -22,6 +22,8 @@ def run_model_eblup_unit(parent):
             error_dialog.setInformativeText(str(e))
             error_dialog.exec()
             parent.result = str(e)
+            parent.error = True
+            return
         ro.r('domain <- model$est$eblup$domain\n estimated_value <- model$est$eblup$eblup\n n_size <- model$est$eblup$sampsize \n mse <- model$mse$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)

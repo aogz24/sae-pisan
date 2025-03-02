@@ -22,6 +22,8 @@ def run_model_eblup_pseudo(parent):
             error_dialog.setInformativeText(str(e))
             error_dialog.exec()
             parent.result = str(e)
+            parent.error = True
+            return
         ro.r('estimated_value <- getResponse(model)\n mse <- model$MSE$FH \n domain<-model$MSE$Domain')
         domain = ro.conversion.rpy2py(ro.globalenv['domain'])
         result_str = ro.r('capture.output(print(model))')

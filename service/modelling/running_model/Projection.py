@@ -22,6 +22,8 @@ def run_model_projection(parent):
             error_dialog.setInformativeText(str(e))
             error_dialog.exec()
             parent.result = str(e)
+            parent.error = True
+            return
         result_str = ro.r('capture.output(print(model))')
         parent.result = str(result)
         ro.r('projection <- model$projection')

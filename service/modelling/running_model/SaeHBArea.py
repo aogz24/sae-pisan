@@ -23,6 +23,8 @@ def run_model_hb_area(parent):
             error_dialog.setInformativeText(str(e))
             error_dialog.exec()
             parent.result = str(e)
+            parent.error = True
+            return
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
         ro.r('refVar <- model$refVar')
