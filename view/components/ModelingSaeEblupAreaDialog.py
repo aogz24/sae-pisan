@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QTextEdit, QSizePolicy
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QIcon
 from service.modelling.SaeEblupArea import *
 from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
