@@ -280,7 +280,6 @@ class NormalityTestDialog(QDialog):
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
         self.run_button.setEnabled(True)
         self.close()
 
