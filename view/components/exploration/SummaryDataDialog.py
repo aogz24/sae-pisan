@@ -195,13 +195,8 @@ class SummaryDataDialog(QDialog):
         summary_data = SummaryData(self.model1, self.model2, self.parent)
         controller = SummaryDataController(summary_data)
         controller.run_model(r_script)
-
-        if summary_data.error: 
-            self.parent.add_output(r_script, error_text=summary_data.error)
-        else:
-            self.parent.add_output(r_script, summary_data.result)
-            QMessageBox.information(self, "Summary Completed", "Summary completed successfully.")
-
+        self.parent.add_output(r_script, summary_data.result)
+        self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         self.run_button.setEnabled(True)

@@ -34,6 +34,9 @@ def run_summary_data(parent):
 
         # Simpan hasil summary ke dalam parent.result
         parent.result = str(summary_output)
+        
+        # Tampilkan pesan informasi
+        QMessageBox.information(parent, "Summary Completed", "Summary completed successfully.")
 
     except Exception as e:
         # Menampilkan dialog error jika terjadi masalah
@@ -42,4 +45,4 @@ def run_summary_data(parent):
         error_dialog.setText("Error")
         error_dialog.setInformativeText(str(e))
         error_dialog.exec()
-        parent.error = str(e)
+        parent.result = str(e)

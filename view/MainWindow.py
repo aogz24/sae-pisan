@@ -701,8 +701,8 @@ class MainWindow(QMainWindow):
     def set_path(self, path):
         self.path=path
     
-    def add_output(self, script_text, result_text=None, plot_paths=None, error_text=None):
-        """Add output to the layout in the form of a card"""
+    def add_output(self, script_text, result_text=None, plot_paths=None):
+        """Menambahkan output ke layout dalam bentuk card"""
 
         card_frame = QFrame()
         card_frame.setStyleSheet("""
@@ -713,6 +713,101 @@ class MainWindow(QMainWindow):
                 padding: 10px;
             }
         """)
+
+        card_layout = QVBoxLayout(card_frame)
+        card_layout.setSpacing(8)
+
+        label_script = QLabel("<b>Script R:</b>")
+        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
+        script_box = QTextEdit()
+        script_box.setPlainText(script_text)
+        script_box.setReadOnly(True)
+        script_box.setStyleSheet("""
+            QTextEdit {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 5px;
+                font-family: Consolas, Courier New, monospace;
+            }
+        """)
+        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
+
+        card_layout.addWidget(label_script)
+        card_layout.addWidget(script_box)
+
+        if result_text:
+            label_output = QLabel("<b>Output:</b>")
+            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+            result_box = QTextEdit()
+            result_box.setPlainText(result_text)
+            result_box.setReadOnly(True)
+            result_box.setStyleSheet("""
+                QTextEdit {
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    padding: 5px;
+                    font-family: Consolas, Courier New, monospace;
+                }
+            """)
+            max_height = 400
+            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
+            result_box.setFixedHeight(min(calculated_height, max_height))
+            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+            card_layout.addWidget(label_output)
+            card_layout.addWidget(result_box)
+
+        if plot_paths:
+            label_plot = QLabel("<b>Plot:</b>")
+            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+            card_layout.addWidget(label_plot)
+
+            for plot_path in plot_paths:
+                if os.path.exists(plot_path):
+                    pixmap = QPixmap(plot_path)
+                    label = QLabel()
+                    label.setPixmap(pixmap)
+                    label.setFixedSize(500, 350) 
+                    label.setScaledContents(True)
+                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
+                    card_layout.addWidget(label)
+        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
+
+        if self.output_layout.count() > 0:
+            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
+            if isinstance(last_item.spacerItem(), QSpacerItem):
+                self.output_layout.removeItem(last_item)
+
+        self.output_layout.addWidget(card_frame)
+
+        if self.output_layout.count() == 1:
+            self.output_layout.addStretch()
+
+        self.tab_widget.setCurrentWidget(self.tab3)
+
+        if plot_paths:
+            for plot_path in plot_paths:
+                if os.path.exists(plot_path):
+                    os.remove(plot_path)
+
+
+    def add_output(self, script_text, result_text=None, plot_paths=None, error_text=None):
+        """Add output to the layout in the form of a card"""
+
+        # Create a frame as a card
+        card_frame = QFrame()
+        card_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 10px;
+            }
+        """)
+
 
         card_layout = QVBoxLayout(card_frame)
         card_layout.setSpacing(8)
@@ -819,11 +914,13 @@ class MainWindow(QMainWindow):
         self.output_layout.removeWidget(card_frame)
         card_frame.deleteLater()
 
+        # Hapus spacer jika masih ada widget lain
         if self.output_layout.count() > 0:
             last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
             if isinstance(last_item.spacerItem(), QSpacerItem):
                 self.output_layout.removeItem(last_item)
-                
+
+        # Tambahkan stretch hanya jika tidak ada output tersisa
         if self.output_layout.count() == 0:
             self.output_layout.addStretch()
 
