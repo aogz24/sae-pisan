@@ -701,10 +701,9 @@ class MainWindow(QMainWindow):
     def set_path(self, path):
         self.path=path
     
-    def add_output(self, script_text, result_text=None, plot_paths=None):
-        """Menambahkan output ke layout dalam bentuk card"""
+    def add_output(self, script_text, result_text=None, plot_paths=None, error_text=None):
+        """Add output to the layout in the form of a card"""
 
-        # Membuat frame sebagai card
         card_frame = QFrame()
         card_frame.setStyleSheet("""
             QFrame {
@@ -715,12 +714,10 @@ class MainWindow(QMainWindow):
             }
         """)
 
-        # Layout vertikal untuk card
         card_layout = QVBoxLayout(card_frame)
         card_layout.setSpacing(8)
 
-        # Bagian Script R
-        label_script = QLabel("<b>Script R:</b>")
+        label_script = QLabel("<b>R Script:</b>")
         label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
         script_box = QTextEdit()
         script_box.setPlainText(script_text)
@@ -739,7 +736,6 @@ class MainWindow(QMainWindow):
         card_layout.addWidget(label_script)
         card_layout.addWidget(script_box)
 
-        # Bagian Output (jika ada)
         if result_text:
             label_output = QLabel("<b>Output:</b>")
             label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -763,61 +759,71 @@ class MainWindow(QMainWindow):
             card_layout.addWidget(label_output)
             card_layout.addWidget(result_box)
 
-        # Bagian Plot (jika ada)
         if plot_paths:
             label_plot = QLabel("<b>Plot:</b>")
             label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
             card_layout.addWidget(label_plot)
 
-            # Tambahkan semua plot ke dalam layout
             for plot_path in plot_paths:
                 if os.path.exists(plot_path):
                     pixmap = QPixmap(plot_path)
                     label = QLabel()
                     label.setPixmap(pixmap)
-                    label.setFixedSize(500, 350)  # Ukuran yang lebih fleksibel
+                    label.setFixedSize(500, 350)
                     label.setScaledContents(True)
                     label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                     card_layout.addWidget(label)
 
-        # Tambahkan context menu untuk menghapus output
+        if error_text:
+            label_error = QLabel("<b>Error:</b>")
+            label_error.setStyleSheet("color: #a94442; margin-top: 10px; margin-bottom: 5px;")
+            error_box = QTextEdit()
+            error_box.setPlainText(error_text)
+            error_box.setReadOnly(True)
+            error_box.setStyleSheet("""
+                QTextEdit {
+                    background-color: #f8d7da;
+                    border: 1px solid #f5c6cb;
+                    border-radius: 4px;
+                    padding: 5px;
+                    font-family: Consolas, Courier New, monospace;
+                    color: #721c24;
+                }
+            """)
+            error_box.setFixedHeight(error_box.fontMetrics().lineSpacing() * (error_text.count('\n') + 3))
+
+            card_layout.addWidget(label_error)
+            card_layout.addWidget(error_box)
+
         card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
 
-        # Hapus spacer di bawah jika masih ada
         if self.output_layout.count() > 0:
             last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
             if isinstance(last_item.spacerItem(), QSpacerItem):
                 self.output_layout.removeItem(last_item)
 
-        # Tambahkan card ke layout utama
         self.output_layout.addWidget(card_frame)
-
-        # Tambahkan stretch hanya jika ini satu-satunya widget di layout
         if self.output_layout.count() == 1:
             self.output_layout.addStretch()
 
         self.tab_widget.setCurrentWidget(self.tab3)
 
-        # Hapus file sementara setelah ditampilkan
         if plot_paths:
             for plot_path in plot_paths:
                 if os.path.exists(plot_path):
                     os.remove(plot_path)
-
 
     def remove_output(self, card_frame):
         """Menghapus output dari layout"""
         self.output_layout.removeWidget(card_frame)
         card_frame.deleteLater()
 
-        # Hapus spacer jika masih ada widget lain
         if self.output_layout.count() > 0:
             last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
             if isinstance(last_item.spacerItem(), QSpacerItem):
                 self.output_layout.removeItem(last_item)
-
-        # Tambahkan stretch hanya jika tidak ada output tersisa
+                
         if self.output_layout.count() == 0:
             self.output_layout.addStretch()
 
