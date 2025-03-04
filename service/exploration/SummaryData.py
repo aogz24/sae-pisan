@@ -42,3 +42,4 @@ def run_summary_data(parent):
         error_dialog.setText("Error")
         error_dialog.setInformativeText(str(e))
         error_dialog.exec()
+        parent.error = str(e)
