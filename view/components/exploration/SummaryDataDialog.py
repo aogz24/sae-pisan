@@ -197,7 +197,7 @@ class SummaryDataDialog(QDialog):
         controller.run_model(r_script)
 
         if not summary_data.error:
-            QMessageBox.information(self, "Summary Completed", "Summary completed successfully.")
+            QMessageBox.information(self, "Summary Data", "Summary data has been completed.")
         else:
             QMessageBox.critical(self, "Summary Error", summary_data.result)
             

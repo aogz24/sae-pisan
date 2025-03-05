@@ -8,6 +8,7 @@ class NormalityTest:
         self.selected_columns = selected_columns
         self.result =""
         self.plot = None
+        self.error = False
 
     def run_model(self, r_script):
         self.r_script = r_script

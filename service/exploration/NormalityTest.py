@@ -55,12 +55,7 @@ def run_normality_test(parent):
 
         parent.result = result_str
         parent.plot = plot_paths 
-        QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
-
+        
     except Exception as e:
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
         parent.result = str(e)
-        error_dialog.exec()
+        parent.error = True

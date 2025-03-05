@@ -164,7 +164,7 @@ class NormalityTestDialog(QDialog):
         selected_items = [item for item in selected_items if "[String]" not in item] 
 
         if contains_string:
-            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -273,9 +273,14 @@ class NormalityTestDialog(QDialog):
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
         normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
-        # normality_test = NormalityTest(self.model1, self.model2,  self.parent)
         controller = NormalityTestController(normality_test)
         controller.run_model(r_script)
+
+        if not normality_test.error:
+            QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
+        else:
+            QMessageBox.critical(self, "Normality Test Error", normality_test.result) 
+
         self.parent.add_output(r_script, normality_test.result, normality_test.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
