@@ -333,10 +333,13 @@ class MulticollinearityDialog(QDialog):
         controller = MulticollinearityController(multicollinearity)
         controller.run_model(r_script)
 
+        if multicollinearity.error:
+            QMessageBox.critical(self, "Multicollinearity", multicollinearity.result)
+        else:
+            QMessageBox.information(self, "Multicollinearity", "Exploration has been completed.")
         self.parent.add_output(script_text=r_script, result_text=multicollinearity.result)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Multicollinearity", "Multicollinearity analysis has been completed.")
         self.close()
 
     def closeEvent(self, event):

@@ -7,6 +7,7 @@ class Multicollinearity:
         self.view = view
         self.result =""
         self.reg_model = False
+        self.error = False
 
     def run_model(self, r_script):
         self.r_script = r_script

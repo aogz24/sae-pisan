@@ -50,9 +50,6 @@ def run_multicollinearity(parent):
         parent.result = final_result
 
     except Exception as e:
-        # Tampilkan error dalam dialog
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
+        parent.error = True
+        parent.result = str(e)
+        return
