@@ -6,6 +6,7 @@ class SummaryData:
         self.model2 = model2
         self.view = view
         self.result =""
+        self.error = False
 
     def run_model(self, r_script):
         self.r_script = r_script

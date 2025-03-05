@@ -1,48 +1,41 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
+
 import rpy2.robjects as ro
 import rpy2_arrow.polars as rpy2polars
 
 def run_summary_data(parent):
     """
-    Menjalankan ringkasan data menggunakan Python (Polars) dan R.
+    Run data summary using Python (Polars) and R.
     """
-    parent.activate_R()  # Aktifkan R jika diperlukan
+    parent.activate_R()  
 
-    # Ambil data dari model
+    # Get data from model
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
 
-    # Gabungkan data menggunakan Polars
+    # Combine data using Polars
     df = pl.concat([df1, df2], how="horizontal")
-    df = df.drop_nulls()  # Menghapus data null
+    df = df.drop_nulls()  # Remove null data
 
-    # Konversi Polars DataFrame ke R DataFrame
+    # Convert Polars DataFrame to R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
         r_df = rpy2polars.converter.py2rpy(df)
         ro.globalenv['r_df'] = r_df
 
     try:
-        # Mengatur data di R
+        # Set data in R
         ro.r('data <- as.data.frame(r_df)')
-        # Menjalankan script R dari parent
+        # Run R script from parent
         ro.r(parent.r_script)
 
-        # Mengambil hasil summary
+        # Get summary results
         summary_str = ro.r('capture.output(print(summary_results))')
         summary_output = "\n".join(summary_str)
 
-        # Simpan hasil summary ke dalam parent.result
+        # Save summary results to parent.result
         parent.result = str(summary_output)
-        
-        # Tampilkan pesan informasi
-        QMessageBox.information(parent, "Summary Completed", "Summary completed successfully.")
 
     except Exception as e:
-        # Menampilkan dialog error jika terjadi masalah
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
         parent.result = str(e)
+        parent.error = True

@@ -195,6 +195,12 @@ class SummaryDataDialog(QDialog):
         summary_data = SummaryData(self.model1, self.model2, self.parent)
         controller = SummaryDataController(summary_data)
         controller.run_model(r_script)
+
+        if not summary_data.error:
+            QMessageBox.information(self, "Summary Completed", "Summary completed successfully.")
+        else:
+            QMessageBox.critical(self, "Summary Error", summary_data.result)
+            
         self.parent.add_output(r_script, summary_data.result)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
