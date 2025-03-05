@@ -279,13 +279,15 @@ class HistogramDialog(QDialog):
         histogram = Histogram(self.model1, self.model2, self.parent)
         controller = HistogramController(histogram)
         controller.run_model(r_script)
+        if histogram.error:
+            QMessageBox.critical(self, "Error", histogram.result)
+        else:
+            QMessageBox.information(self, "Success", "Graph has been generated.")
 
         self.parent.add_output(script_text = r_script, plot_paths = histogram.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
-
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Success", "Histogram has been generated successfully.")
         self.run_button.setEnabled(True)
         self.close()
 

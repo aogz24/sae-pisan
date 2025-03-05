@@ -47,8 +47,6 @@ def run_histogram(parent):
         parent.plot = plot_paths  
 
     except Exception as e:
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
+        parent.error = e
+        parent.result = None
+        return
