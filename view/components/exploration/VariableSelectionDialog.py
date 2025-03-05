@@ -342,10 +342,14 @@ class VariableSelectionDialog(QDialog):
         controller =  VariableSelectionController(variable_selection)
         controller.run_model(r_script)
 
+        if variable_selection.error:
+            QMessageBox.critical(self, "Variable Selection", variable_selection.result)
+        else:
+            QMessageBox.information(self, "Variable Selection", "Exploration has been completed.")
+            
         self.parent.add_output(script_text=r_script, result_text=variable_selection.result)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Variable Selection", "VariableSelection analysis has been completed.")
         self.run_button.setEnabled(True)
         self.close()
 

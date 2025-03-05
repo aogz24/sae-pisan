@@ -55,14 +55,10 @@ def run_variable_selection(parent):
                     result_output = ro.r(f'capture.output(print({result_var}))')
                     result_strings.append(f"{method.capitalize()} Result:\n" + "\n".join(result_output) + "\n")
 
-
         # Save the result to parent.result
         parent.result = "\n\n".join(result_strings)
 
     except Exception as e:
-
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
+        parent.error = True
+        parent.result = str(e)
+        return
