@@ -197,9 +197,9 @@ class SummaryDataDialog(QDialog):
         controller.run_model(r_script)
 
         if not summary_data.error:
-            QMessageBox.information(self, "Summary Data", "Summary data has been completed.")
+            QMessageBox.information(self, "Summary Data", "Exploration has been completed.")
         else:
-            QMessageBox.critical(self, "Summary Error", summary_data.result)
+            QMessageBox.critical(self, "Summary Data", summary_data.result)
             
         self.parent.add_output(r_script, summary_data.result)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)

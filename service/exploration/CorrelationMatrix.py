@@ -51,10 +51,6 @@ def run_correlation_matrix(parent):
             parent.plot = plot_path
 
     except Exception as e:
-        # Menampilkan dialog error jika terjadi masalah
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
-        print("Error occurred: ", str(e))
+        parent.error = True
+        parent.result = str(e)
+        return

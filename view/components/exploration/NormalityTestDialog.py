@@ -277,9 +277,9 @@ class NormalityTestDialog(QDialog):
         controller.run_model(r_script)
 
         if not normality_test.error:
-            QMessageBox.information(self, "Normality Test", "Normality test has been completed.")
+            QMessageBox.information(self, "Normality Test", "Exploration has been completed.")
         else:
-            QMessageBox.critical(self, "Normality Test Error", normality_test.result) 
+            QMessageBox.critical(self, "Normality Test", normality_test.result) 
 
         self.parent.add_output(r_script, normality_test.result, normality_test.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)

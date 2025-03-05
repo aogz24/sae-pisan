@@ -143,7 +143,7 @@ class CorrelationMatrixDialog(QDialog):
         selected_items = [item for item in selected_items if "[String]" not in item] 
 
         if contains_string:
-            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -198,9 +198,7 @@ class CorrelationMatrixDialog(QDialog):
         r_script = ""
 
         # Step 1: Generate the correlation matrix
-        r_script += f"""
-correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")
-        """
+        r_script += f"""correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")"""
         if self.correlation_plot_checkbox.isChecked():
             r_script += """
 correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "upper", lab = TRUE)
@@ -220,12 +218,16 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         controller = CorrelationMatrixController(correlation_matrix)
         controller.run_model(r_script)
 
+        if not correlation_matrix.error:
+            QMessageBox.information(self, "Correlation Matrix", "Exploration has been completed.")
+        else:
+            QMessageBox.warning(self, "Correlation Matrix", correlation_matrix.result)
+
         self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Correlation Matrix", "Correlation Matrix has been generated successfully.")
         self.run_button.setEnabled(True)
         self.close()
 
