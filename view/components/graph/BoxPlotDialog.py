@@ -250,13 +250,16 @@ class BoxPlotDialog(QDialog):
         box_plot = BoxPlot(self.model1, self.model2, self.parent)
         controller = BoxPlotController(box_plot)
         controller.run_model(r_script)
+        if box_plot.error:
+            QMessageBox.critical(self, "Box Plot", box_plot.result)
+        else:
+            QMessageBox.information(self, "Box Plot", "Graph has been generated")
 
-        self.parent.add_output(script_text = r_script, plot_paths = box_plot.plot)
+        self.parent.add_output(script_text = r_script,result_text= box_plot.result, plot_paths = box_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Success", "Box plot has been generated successfully.")
         self.run_button.setEnabled(True)
         self.close()
 
