@@ -323,12 +323,16 @@ class LinePlotDialog(QDialog):
         controller = LinePlotController(line_plot)
         controller.run_model(r_script)
 
-        self.parent.add_output(script_text = r_script, plot_paths = line_plot.plot)
+        if line_plot.error:
+            QMessageBox.critical(self, "Error", line_plot.result)
+        else:
+            QMessageBox.information(self, "Line Plot", "Graph has been generated.")
+
+        self.parent.add_output(script_text = r_script, result_text = line_plot.result, plot_paths = line_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Line Plot", "Line Plot has been successfully generated.")
         self.run_button.setEnabled(True)
         self.close()
 
