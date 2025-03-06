@@ -222,7 +222,7 @@ def generate_r_script(parent):
         "Logistic": "logistic_reg()",
         "SVM Linear": "svm_linear(mode='classification')",
         "SVM RBF": "svm_rbf(mode='classification')",
-        "Neural Network": f"mlp(mode='classification', engine='nnet', epochs={parent.epoch}, hidden_units={parent.hidden_unit}, learn_rate={parent.learning_rate})"
+        "Neural Network": f"mlp(mode='classification', engine='nnet', epochs={parent.epoch}, learn_rate={parent.learning_rate})"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
@@ -421,15 +421,6 @@ def show_options(parent):
     parent.epoch_edit.setVisible(False)
     layout.addWidget(parent.epoch_edit)
     
-    hidden_unit_label = QLabel("Hidden Unit (Separate by comma)")
-    hidden_unit_label.setVisible(False)
-    layout.addWidget(hidden_unit_label)
-    
-    parent.hidden_edit = QLineEdit()
-    parent.hidden_edit.setVisible(False)
-    parent.hidden_edit.setText("5,5,3")
-    layout.addWidget(parent.hidden_edit)
-    
     learning_label = QLabel("Learning Rate")
     learning_label.setVisible(False)
     layout.addWidget(learning_label)
@@ -470,7 +461,6 @@ def set_selection_method(parent, dialog):
     parent.k_fold = parent.kfold_edit.text()
     parent.grid = parent.grid_edit.text()
     parent.epoch = parent.epoch_edit.text()
-    parent.hidden_unit = parent.hidden_edit.text()
     parent.learning_rate = parent.learning_edit.text()
     dialog.accept()
     show_r_script(parent)
