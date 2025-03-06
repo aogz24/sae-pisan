@@ -18,7 +18,7 @@ class ProjectionDialog(QDialog):
         self.parent = parent
         self.model2 = parent.model2
         self.setWindowTitle("Projection SAE")
-        self.setFixedHeight(700)
+        self.setMinimumHeight(700)
 
         self.columns = []
 
@@ -86,8 +86,10 @@ class ProjectionDialog(QDialog):
         
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
+        right_layout.minimumSize(0, 650)
         self.of_interest_label = QLabel("Variable of interest:")
         self.of_interest_list = QListView()
+        self.of_interest_list.setMinimumHeight(100)
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -97,6 +99,7 @@ class ProjectionDialog(QDialog):
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
         self.auxilary_list = QListView()
+        self.auxilary_list.setMinimumHeight(200)
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -106,6 +109,7 @@ class ProjectionDialog(QDialog):
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
+        self.as_factor_list.setMinimumHeight(200)
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -114,6 +118,7 @@ class ProjectionDialog(QDialog):
         
         self.domain_label = QLabel("Domain:")
         self.domain_list = QListView()
+        self.domain_list.setMinimumHeight(100)
         self.domain_model = QStringListModel()
         self.domain_list.setModel(self.domain_model)
         self.domain_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -122,6 +127,7 @@ class ProjectionDialog(QDialog):
         
         self.index_label = QLabel("Index number of Area:")
         self.index_list = QListView()
+        self.index_list.setMinimumHeight(100)
         self.index_model = QStringListModel()
         self.index_list.setModel(self.index_model)
         self.index_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -131,6 +137,7 @@ class ProjectionDialog(QDialog):
 
         self.weight_label = QLabel("Weight:")
         self.weight_list = QListView()
+        self.weight_list.setMinimumHeight(100)
         self.weight_model = QStringListModel()
         self.weight_list.setModel(self.weight_model)
         self.weight_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -139,6 +146,7 @@ class ProjectionDialog(QDialog):
 
         self.strata_label = QLabel("Strata:")
         self.strata_list = QListView()
+        self.strata_list.setMinimumHeight(100)
         self.strata_model = QStringListModel()
         self.strata_list.setModel(self.strata_model)
         self.strata_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
