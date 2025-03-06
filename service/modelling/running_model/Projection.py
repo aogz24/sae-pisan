@@ -14,7 +14,7 @@ def run_model_projection(parent):
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
-            ro.r("print(model)")   # Mencetak model di R
+        
         except RRuntimeError as e:
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Icon.Critical)
@@ -25,10 +25,10 @@ def run_model_projection(parent):
             parent.error = True
             return
         result_str = ro.r('capture.output(print(model))')
+        result = "\n".join(result_str)
         parent.result = str(result)
         ro.r('projection <- model$projection')
-        proj = ro.conversion.rpy2py(ro.r("projection"))
-        result = "\n".join(result_str)
+        proj = ro.conversion.rpy2py(ro.globalenv['projection'])
         df = pl.from_pandas(proj)
         parent.model2.set_data(df)
         parent.error = False
