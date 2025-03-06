@@ -164,8 +164,6 @@ class ScatterPlotDialog(QDialog):
         if contains_string:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
-        print(selected_items) 
-
         for item in selected_items:
             if item in self.data_editor_model.stringList():
                 editor_list = self.data_editor_model.stringList()
