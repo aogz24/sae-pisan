@@ -9,7 +9,6 @@ from controller.modelling.SaeController import SaeController
 from model.SaeEblup import SaeEblup
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
-from model.RunModelThread import RunModelThread
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 

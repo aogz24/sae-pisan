@@ -8,7 +8,6 @@ from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, ass
 from controller.modelling.SaeHBcontroller import SaeHBController
 from model.SaeHB import SaeHB
 from PyQt6.QtWidgets import QMessageBox
-from model.RunModelThread import RunModelThread
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
