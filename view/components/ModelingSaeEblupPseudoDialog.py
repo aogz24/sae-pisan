@@ -222,5 +222,5 @@ class ModelingSaePseudoDialog(QDialog):
         controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, sae_model.result)
-        enable_service(self)
+        enable_service(self, sae_model.error)
         self.close()
