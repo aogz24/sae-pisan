@@ -206,7 +206,6 @@ class ProjectionDialog(QDialog):
         self.k_fold = "3"
         self.grid="10"
         self.epoch="10"
-        self.hidden_unit = "5"
         self.learning_rate = "0.01"
         
 
