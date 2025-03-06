@@ -324,7 +324,7 @@ class LinePlotDialog(QDialog):
         controller.run_model(r_script)
 
         if line_plot.error:
-            QMessageBox.critical(self, "Error", line_plot.result)
+            QMessageBox.critical(self, "Line Plot", line_plot.result)
         else:
             QMessageBox.information(self, "Line Plot", "Graph has been generated.")
 
