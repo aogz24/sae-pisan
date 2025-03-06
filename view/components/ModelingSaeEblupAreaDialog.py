@@ -202,11 +202,7 @@ class ModelingSaeDialog(QDialog):
         sae_model = SaeEblup(self.model, self.model2, view)
         controller = SaeController(sae_model)
         
-        self.thread = RunModelThread(controller, r_script, self.parent)
-        self.thread.finished.connect(self.on_model_run_finished)
-        self.thread.start()
-    
-    def on_model_run_finished(self, parent, r_script, sae_model):
+        controller.run_model(r_script)
         self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, sae_model.result)
         enable_service(self, sae_model.error)
