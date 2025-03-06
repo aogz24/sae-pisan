@@ -222,7 +222,7 @@ def generate_r_script(parent):
         "Logistic": "logistic_reg()",
         "SVM Linear": "svm_linear(mode='classification')",
         "SVM RBF": "svm_rbf(mode='classification')",
-        "Neural Network": f"mlp(mode='classification', engine='brulee', epochs={parent.epoch}, hidden_units=c({parent.hidden_unit}), learn_rate={parent.learning_rate})"
+        "Neural Network": f"mlp(mode='classification', engine='nnet', epochs={parent.epoch}, hidden_units={parent.hidden_unit}, learn_rate={parent.learning_rate})"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
