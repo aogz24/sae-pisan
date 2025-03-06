@@ -164,7 +164,7 @@ class HistogramDialog(QDialog):
         selected_items = [item for item in selected_items if "[String]" not in item] 
 
         if contains_string:
-            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
             if item in self.data_editor_model.stringList():
@@ -280,11 +280,11 @@ class HistogramDialog(QDialog):
         controller = HistogramController(histogram)
         controller.run_model(r_script)
         if histogram.error:
-            QMessageBox.critical(self, "Error", histogram.result)
+            QMessageBox.critical(self, "Histogram", histogram.result)
         else:
-            QMessageBox.information(self, "Success", "Graph has been generated.")
+            QMessageBox.information(self, "Histogram", "Graph has been generated.")
 
-        self.parent.add_output(script_text = r_script, plot_paths = histogram.plot)
+        self.parent.add_output(script_text = r_script,result_text=histogram.result, plot_paths = histogram.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")

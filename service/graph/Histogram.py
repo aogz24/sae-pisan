@@ -47,6 +47,6 @@ def run_histogram(parent):
         parent.plot = plot_paths  
 
     except Exception as e:
-        parent.error = e
-        parent.result = None
+        parent.error = True
+        parent.result = str(e)
         return
