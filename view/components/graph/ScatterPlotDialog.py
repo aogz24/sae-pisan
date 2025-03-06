@@ -162,7 +162,7 @@ class ScatterPlotDialog(QDialog):
         selected_items = [item for item in selected_items if "[String]" not in item] 
 
         if contains_string:
-            QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         print(selected_items) 
 
@@ -229,12 +229,16 @@ class ScatterPlotDialog(QDialog):
         controller = ScatterPlotController(scatter_plot)
         controller.run_model(r_script)
 
-        self.parent.add_output(script_text=r_script, plot_paths=scatter_plot.plot)
+        if scatter_plot.error:
+            QMessageBox.critical(self, "Scatter Plot", scatter_plot.result)
+        else:
+            QMessageBox.information(self, "Scatter Plot", "Graph has been generated")
+
+        self.parent.add_output(script_text=r_script, result_text=scatter_plot.result, plot_paths=scatter_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
-        QMessageBox.information(self, "Scatter Plot", "Scatter plot executed successfully.")
         self.run_button.setEnabled(True)
         self.close()
 

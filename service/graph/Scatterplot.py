@@ -66,11 +66,7 @@ def run_scatterplot(parent):
         parent.plot = plot_paths  # All plots are stored in a list
 
     except Exception as e:
-        # Display an error dialog if there is a problem
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
-        error_dialog.exec()
-        # Debug: print the error that occurred
-        print("Error occurred:", str(e))
+        parent.error = True
+        parent.result = str(e)
+        print(str(e))
+        return

@@ -6,6 +6,8 @@ class Scatterplot:
         self.model2 = model2
         self.view = view
         self.plot = None
+        self.error = None
+        self.result = None
 
     def run_model(self, r_script):
         self.r_script = r_script
