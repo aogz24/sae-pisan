@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayo
 from PyQt6.QtGui import QDoubleValidator, QIntValidator
 from PyQt6.QtWidgets import QMessageBox
 
+
 def assign_of_interest(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
@@ -221,7 +222,7 @@ def generate_r_script(parent):
         "Logistic": "logistic_reg()",
         "SVM Linear": "svm_linear(mode='classification')",
         "SVM RBF": "svm_rbf(mode='classification')",
-        "Neural Network": f"mlp(mode='classification', engine='nnet', epochs={parent.epoch}, hidden_units={parent.hidden_unit}, learn_rate={parent.learning_rate})"
+        "Neural Network": f"mlp(mode='classification', engine='brulee', epochs={parent.epoch}, hidden_units=c({parent.hidden_unit}), learn_rate={parent.learning_rate})"
     }.get(parent.projection_method, 'gb_model')
 
     if auxilary_vars or as_factor_var:
@@ -420,14 +421,13 @@ def show_options(parent):
     parent.epoch_edit.setVisible(False)
     layout.addWidget(parent.epoch_edit)
     
-    hidden_unit_label = QLabel("Hidden Unit")
+    hidden_unit_label = QLabel("Hidden Unit (Separate by comma)")
     hidden_unit_label.setVisible(False)
     layout.addWidget(hidden_unit_label)
     
     parent.hidden_edit = QLineEdit()
     parent.hidden_edit.setVisible(False)
-    parent.hidden_edit.setValidator(QIntValidator())
-    parent.hidden_edit.setText("5")
+    parent.hidden_edit.setText("5,5,3")
     layout.addWidget(parent.hidden_edit)
     
     learning_label = QLabel("Learning Rate")

@@ -8,6 +8,7 @@ from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, ass
 from controller.modelling.SaeHBcontroller import SaeHBController
 from model.SaeHB import SaeHB
 from PyQt6.QtWidgets import QMessageBox
+from model.RunModelThread import RunModelThread
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
@@ -204,8 +205,12 @@ class ModelingSaeHBDialog(QDialog):
         sae_model = SaeHB(self.model, self.model2, view)
         controller = SaeHBController(sae_model)
         
-        controller.run_model(r_script)
+        self.thread = RunModelThread(controller, r_script, self.parent)
+        self.thread.finished.connect(self.on_model_run_finished)
+        self.thread.start()
+    
+    def on_model_run_finished(self, parent, r_script, sae_model):
         self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, sae_model.result)
-        enable_service(self)
+        enable_service(self, sae_model.error)
         self.close()
