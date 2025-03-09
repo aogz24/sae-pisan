@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
+import threading
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent):
@@ -200,8 +201,18 @@ class ModelingSaeDialog(QDialog):
         view = self.parent
         sae_model = SaeEblup(self.model, self.model2, view)
         controller = SaeController(sae_model)
+        import contextvars
+        rpy2_context = contextvars.ContextVar('rpy2_context')
         
-        controller.run_model(r_script)
+        def run_model_thread():
+            controller.run_model(r_script)
+            self.parent.update_table(2, sae_model.get_model2())
+            display_script_and_output(self.parent, r_script, sae_model.result)
+            enable_service(self, sae_model.error)
+            self.close()
+
+        thread = threading.Thread(target=run_model_thread)
+        thread.start()
         self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, sae_model.result)
         enable_service(self, sae_model.error)
