@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from service.modelling.SaeEblupPseudo import *
 from controller.modelling.SaePseudoController import SaePseudoController
@@ -11,8 +11,11 @@ from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
+import threading
+import contextvars
 
 class ModelingSaePseudoDialog(QDialog):
+    run_model_finished = pyqtSignal(object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -173,6 +176,14 @@ class ModelingSaePseudoDialog(QDialog):
         self.as_factor_var = []
         self.domain_var = [] 
         self.selection_method = "None"
+        
+        self.run_model_finished.connect(self.on_run_model_finished)
+        
+        self.stop_thread = threading.Event()
+        
+    def closeEvent(self, event):
+        self.stop_thread.set()
+        event.accept()
 
     def set_model(self, model):
         self.model = model
@@ -219,8 +230,26 @@ class ModelingSaePseudoDialog(QDialog):
         sae_model = SaeEblupPseudo(self.model, self.model2, view)
         controller = SaePseudoController(sae_model)
         
-        controller.run_model(r_script)
-        self.parent.update_table(2, sae_model.get_model2())
-        display_script_and_output(self.parent, r_script, sae_model.result)
-        enable_service(self, sae_model.error)
+        current_context = contextvars.copy_context()
+        
+        def run_model_thread():
+            result, error, df = None, None, None
+            try:
+                result, error, df = current_context.run(controller.run_model, r_script)
+                if not error:
+                    sae_model.model2.set_data(df)
+            except Exception as e:
+                error = e
+            finally:
+                if not self.stop_thread.is_set():
+                    self.run_model_finished.emit(result, error, sae_model, r_script)
+
+        thread = threading.Thread(target=run_model_thread)
+        thread.start()
+    
+    def on_run_model_finished(self, result, error, sae_model, r_script):
+        if not error:
+            self.parent.update_table(2, sae_model.get_model2())
+        display_script_and_output(self.parent, r_script, result)
+        enable_service(self, error, result)
         self.close()
