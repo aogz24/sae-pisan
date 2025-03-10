@@ -12,6 +12,7 @@ import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
+import contextvars
 
 class ModelingSaeDialog(QDialog):
     def __init__(self, parent):
@@ -155,6 +156,8 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.method = "REML"
+        self.result = None
+        self.error = None
         
 
     def set_model(self, model):
@@ -195,25 +198,23 @@ class ModelingSaeDialog(QDialog):
         r_script = get_script(self)
         if not check_script(r_script):
             return
-        
         disable_service(self)
 
         view = self.parent
         sae_model = SaeEblup(self.model, self.model2, view)
         controller = SaeController(sae_model)
-        import contextvars
-        rpy2_context = contextvars.ContextVar('rpy2_context')
+        
+        current_context = contextvars.copy_context()
         
         def run_model_thread():
-            controller.run_model(r_script)
-            self.parent.update_table(2, sae_model.get_model2())
-            display_script_and_output(self.parent, r_script, sae_model.result)
-            enable_service(self, sae_model.error)
-            self.close()
+            self.result, self.error, df = current_context.run(controller.run_model, r_script)
+            if not self.error:
+                sae_model.model2.set_data(df)
 
         thread = threading.Thread(target=run_model_thread)
         thread.start()
+        thread.join()
         self.parent.update_table(2, sae_model.get_model2())
-        display_script_and_output(self.parent, r_script, sae_model.result)
-        enable_service(self, sae_model.error)
+        display_script_and_output(self.parent, r_script, self.result)
+        enable_service(self, self.error, self.result)
         self.close()

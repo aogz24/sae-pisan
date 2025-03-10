@@ -8,26 +8,21 @@ def run_model_eblup_area(parent):
     parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
+    result = ""
+    error = False
     convert_df(df, parent)
     try:
         ro.r('suppressMessages(library(sae))')
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
-            ro.r("print(model)")   # Mencetak model di R
         except RRuntimeError as e:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Icon.Critical)
-            error_dialog.setText("Error when run R")
-            error_dialog.setInformativeText(str(e))
-            error_dialog.exec()
-            parent.result = str(e)
-            parent.error = True
-            return
+            result = str(e)
+            error = True
+            return result, error, None
         ro.r('estimated_value <- model$est$eblup\n mse <- model$mse')
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
-        parent.result = str(result)
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         mse = ro.conversion.rpy2py(ro.globalenv['mse'])
         vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
@@ -38,11 +33,9 @@ def run_model_eblup_area(parent):
             'Eblup': estimated_value,
             'MSE': mse,
             'RSE (%)': rse})
-        parent.error = False
-        parent.model2.set_data(df)
+        error = False
+        return result, error, df
         
     except Exception as e:
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
+        error = True
+        return str(e), error, None
