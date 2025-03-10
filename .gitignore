@@ -11,3 +11,4 @@ coba-sae*.py
 R
 main.build
 main.dist
+*.csv
