@@ -9,6 +9,8 @@ def run_model_hb_area(parent):
     df = parent.model1.get_data()
     df = df.drop_nulls()
     convert_df(df, parent)
+    result = ""
+    error = False
     try:
         ro.r('suppressMessages(library(saeHB))')
         ro.r('data <- as.data.frame(r_df)')
@@ -17,14 +19,9 @@ def run_model_hb_area(parent):
             ro.r(parent.r_script)  # Menjalankan skrip R
             ro.r("print(model)")   # Mencetak model di R
         except RRuntimeError as e:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Icon.Critical)
-            error_dialog.setText("Error when run R")
-            error_dialog.setInformativeText(str(e))
-            error_dialog.exec()
-            parent.result = str(e)
-            parent.error = True
-            return
+            result = str(e)
+            error = True
+            return result, error, None
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
         ro.r('refVar <- model$refVar')
@@ -34,7 +31,6 @@ def run_model_hb_area(parent):
         result_str += "Standard Deviation:\n" + "\n".join(ro.r('capture.output(print(sd))')) + "\n\n"
         result_str += "Reference Variance:\n" + "\n".join(ro.r('capture.output(print(refVar))')) + "\n\n"
         result_str += "Coefficient:\n" + "\n".join(ro.r('capture.output(print(coefficient))')) + "\n"
-        parent.result = result_str
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         hb_mean = estimated_value["MEAN"]
         hb_25 = estimated_value["25%"]
@@ -50,11 +46,9 @@ def run_model_hb_area(parent):
             'HB_97.5%': hb_97_5,
             'SD': hb_sd,})
         ro.r("detach(data)")
-        parent.error = False
-        parent.model2.set_data(df)
+        error = False
+        return result, error, df
         
     except Exception as e:
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
+        error = True
+        return str(e), error, None

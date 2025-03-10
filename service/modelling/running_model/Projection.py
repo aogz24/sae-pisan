@@ -9,32 +9,25 @@ def run_model_projection(parent):
     df = parent.model1.get_data()
     # df = df.drop_nulls()
     convert_df(df, parent)
+    result = ""
+    error = False
     try:
         ro.r('suppressMessages(library(sae.projection))')
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
-        
         except RRuntimeError as e:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Icon.Critical)
-            error_dialog.setText("Error when run R")
-            error_dialog.setInformativeText(str(e))
-            error_dialog.exec()
-            parent.result = str(e)
-            parent.error = True
-            return
+            result = str(e)
+            error = True
+            return result, error, None
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)
-        parent.result = str(result)
         ro.r('projection <- model$projection')
         proj = ro.conversion.rpy2py(ro.globalenv['projection'])
         df = pl.from_pandas(proj)
-        parent.model2.set_data(df)
-        parent.error = False
+        error = False
+        return result, error, df
         
     except Exception as e:
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setText("Error")
-        error_dialog.setInformativeText(str(e))
+        error = True
+        return str(e), error, None
