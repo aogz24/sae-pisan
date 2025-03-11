@@ -253,9 +253,6 @@ class ModelingSaeDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
-        threads = threading.enumerate()
-        for thread in threads:
-            print(thread.name)
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
