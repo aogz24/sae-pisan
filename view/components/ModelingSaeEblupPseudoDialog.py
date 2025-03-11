@@ -184,7 +184,7 @@ class ModelingSaePseudoDialog(QDialog):
     def closeEvent(self, event):
         threads = threading.enumerate()
         for thread in threads:
-            if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
+            if thread.name == "Pseudo" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
                 if reply != QMessageBox.StandardButton.Yes:
                     self.stop_thread.set()
@@ -259,7 +259,7 @@ class ModelingSaePseudoDialog(QDialog):
                     enable_service(self, False, "")
 
 
-        thread = threading.Thread(target=run_model_thread)
+        thread = threading.Thread(target=run_model_thread, name="Pseudo")
         thread.start()
 
         timer = QTimer(self)

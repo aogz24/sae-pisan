@@ -167,7 +167,7 @@ class ModelingSaeHBDialog(QDialog):
     def closeEvent(self, event):
         threads = threading.enumerate()
         for thread in threads:
-            if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
+            if thread.name == "SAE HB" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
                 if reply != QMessageBox.StandardButton.Yes:
                     self.stop_thread.set()
@@ -227,6 +227,7 @@ class ModelingSaeHBDialog(QDialog):
             result, error, df = None, None, None
             try:
                 result, error, df = current_context.run(controller.run_model, r_script)
+                print("Result: ", result)
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -244,7 +245,7 @@ class ModelingSaeHBDialog(QDialog):
                     enable_service(self, False, "")
 
 
-        thread = threading.Thread(target=run_model_thread)
+        thread = threading.Thread(target=run_model_thread, name="SAE HB")
         thread.start()
 
         timer = QTimer(self)

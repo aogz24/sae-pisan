@@ -47,7 +47,7 @@ def run_model_hb_area(parent):
             'SD': hb_sd,})
         ro.r("detach(data)")
         error = False
-        return result, error, df
+        return result_str, error, df
         
     except Exception as e:
         error = True
