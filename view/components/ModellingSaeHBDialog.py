@@ -165,7 +165,13 @@ class ModelingSaeHBDialog(QDialog):
         self.stop_thread = threading.Event()
         
     def closeEvent(self, event):
-        self.stop_thread.set()
+        threads = threading.enumerate()
+        for thread in threads:
+            if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
+                reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+                if reply != QMessageBox.StandardButton.Yes:
+                    self.stop_thread.set()
+                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         event.accept()
 
     def set_model(self, model):

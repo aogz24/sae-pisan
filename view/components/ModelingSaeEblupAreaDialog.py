@@ -158,13 +158,21 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.method = "REML"
+        
 
         self.run_model_finished.connect(self.on_run_model_finished)
         
         self.stop_thread = threading.Event()
         
+    
     def closeEvent(self, event):
-        self.stop_thread.set()
+        threads = threading.enumerate()
+        for thread in threads:
+            if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
+                reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+                if reply != QMessageBox.StandardButton.Yes:
+                    self.stop_thread.set()
+                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         event.accept()
         
     def set_model(self, model):
@@ -224,6 +232,8 @@ class ModelingSaeDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                else:
+                    return
 
         def check_run_time():
             if thread.is_alive():
@@ -234,7 +244,7 @@ class ModelingSaeDialog(QDialog):
                     enable_service(self, False, "")
 
 
-        thread = threading.Thread(target=run_model_thread)
+        thread = threading.Thread(target=run_model_thread, name="SAE EBLUP Area Level")
         thread.start()
 
         timer = QTimer(self)
@@ -243,6 +253,9 @@ class ModelingSaeDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
+        threads = threading.enumerate()
+        for thread in threads:
+            print(thread.name)
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
