@@ -16,7 +16,6 @@ def run_model_eblup_unit(parent):
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
-            ro.r("print(model)")   # Mencetak model di R
         except RRuntimeError as e:
             result = str(e)
             error = True

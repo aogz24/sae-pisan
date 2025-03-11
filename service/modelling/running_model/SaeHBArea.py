@@ -17,7 +17,6 @@ def run_model_hb_area(parent):
         ro.r('attach(data)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
-            ro.r("print(model)")   # Mencetak model di R
         except RRuntimeError as e:
             result = str(e)
             error = True
