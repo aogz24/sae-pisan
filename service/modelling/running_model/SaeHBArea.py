@@ -1,5 +1,4 @@
 import polars as pl
-from PyQt6.QtWidgets import QMessageBox
 from rpy2.rinterface_lib.embedded import RRuntimeError
 from service.modelling.running_model.convert_df import convert_df
 

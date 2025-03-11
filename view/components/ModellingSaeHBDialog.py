@@ -227,7 +227,6 @@ class ModelingSaeHBDialog(QDialog):
             result, error, df = None, None, None
             try:
                 result, error, df = current_context.run(controller.run_model, r_script)
-                print("Result: ", result)
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
