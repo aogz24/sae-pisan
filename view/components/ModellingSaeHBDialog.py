@@ -234,6 +234,7 @@ class ModelingSaeHBDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                    return
 
         def check_run_time():
             if thread.is_alive():
