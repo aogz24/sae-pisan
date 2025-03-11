@@ -233,15 +233,12 @@ class BoxPlotDialog(QDialog):
         # Show script in text box
         self.script_box.setPlainText(r_script)
 
-    def is_selected_empty(self):
-        return len(self.selected_model.stringList()) == 0
-    
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
-        if self.is_selected_empty():
+        if len(self.selected_model.stringList()) == 0:
             QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
             return
         self.run_button.setEnabled(False)
@@ -255,7 +252,7 @@ class BoxPlotDialog(QDialog):
         else:
             QMessageBox.information(self, "Box Plot", "Graph has been generated")
 
-        self.parent.add_output(script_text = r_script,result_text= box_plot.result, plot_paths = box_plot.plot)
+        self.parent.add_output(script_text=r_script, result_text=box_plot.result, plot_paths=box_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)

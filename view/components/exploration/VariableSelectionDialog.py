@@ -65,12 +65,12 @@ class VariableSelectionDialog(QDialog):
 
         button_layout2 = QVBoxLayout()
         self.add_dependent_variable_button = QPushButton("🡆", self)
-        self.add_dependent_variable_button.clicked.connect(self.add_variable_dependent_variable)
+        self.add_dependent_variable_button.clicked.connect(self.dependent_variable)
         self.add_dependent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_dependent_variable_button.setFixedSize(50,35)
 
         self.add_independent_variable_button = QPushButton("🡆", self)  
-        self.add_independent_variable_button.clicked.connect(self.add_variable_independent_variables)
+        self.add_independent_variable_button.clicked.connect(self.independent_variables)
         self.add_independent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_independent_variable_button.setFixedSize(50,35)
 
@@ -188,7 +188,7 @@ class VariableSelectionDialog(QDialog):
         return self.columns 
     
 
-    def add_variable_dependent_variable(self):
+    def dependent_variable(self):
         # Check if there is already a variable in the dependent_variable axis
         if len(self.dependent_variable_model.stringList()) >= 1:
             QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
@@ -231,7 +231,7 @@ class VariableSelectionDialog(QDialog):
 
 
     
-    def add_variable_independent_variables(self):
+    def independent_variables(self):
 
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
