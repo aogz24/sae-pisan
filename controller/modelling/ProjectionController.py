@@ -3,4 +3,5 @@ class ProjectionController:
         self.projectionModel = projectionModel
     
     def run_model(self, r_script):
-        self.projectionModel.run_model(r_script)
+        result, error, df = self.projectionModel.run_model(r_script)
+        return result, error, df

@@ -3,4 +3,5 @@ class SaeEblupUnitController:
         self.SAEmodel = SAEmodel
     
     def run_model(self, r_script):
-        self.SAEmodel.run_model(r_script)
+        result, error, df = self.SAEmodel.run_model(r_script)
+        return result, error, df
