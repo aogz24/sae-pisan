@@ -158,7 +158,7 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.method = "REML"
-        
+        self.finnish = False
 
         self.run_model_finished.connect(self.on_run_model_finished)
         
@@ -170,9 +170,10 @@ class ModelingSaeDialog(QDialog):
         for thread in threads:
             if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+        self.finnish=False
         event.accept()
         
     def set_model(self, model):
@@ -231,6 +232,7 @@ class ModelingSaeDialog(QDialog):
                 error = e
             finally:
                 if not self.stop_thread.is_set():
+                    self.finnish = True
                     self.run_model_finished.emit(result, error, sae_model, r_script)
                 else:
                     return

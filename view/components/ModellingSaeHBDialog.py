@@ -163,13 +163,14 @@ class ModelingSaeHBDialog(QDialog):
         self.run_model_finished.connect(self.on_run_model_finished)
         
         self.stop_thread = threading.Event()
+        self.finnish = False
         
     def closeEvent(self, event):
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "SAE HB" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         event.accept()
@@ -240,6 +241,7 @@ class ModelingSaeHBDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                    self.finnish = True
                     return
 
         def check_run_time():
@@ -264,4 +266,5 @@ class ModelingSaeHBDialog(QDialog):
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
         enable_service(self, error, result)
+        self.finnish = True
         self.close()

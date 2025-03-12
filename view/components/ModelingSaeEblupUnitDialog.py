@@ -203,6 +203,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.selection_method = "None"
         self.method = "REML"
         self.bootstrap = "50"
+        self.finnish = False
         
         self.run_model_finished.connect(self.on_run_model_finished)
         
@@ -213,7 +214,7 @@ class ModelingSaeUnitDialog(QDialog):
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         event.accept()
@@ -271,6 +272,7 @@ class ModelingSaeUnitDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                    self.finnish = True
 
         def check_run_time():
             if thread.is_alive():
@@ -294,4 +296,5 @@ class ModelingSaeUnitDialog(QDialog):
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
         enable_service(self, error, result)
+        self.finnish = True
         self.close()
