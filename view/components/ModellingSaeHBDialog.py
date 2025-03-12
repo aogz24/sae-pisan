@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, show_options, get_script
 from controller.modelling.SaeHBcontroller import SaeHBController
@@ -11,8 +11,11 @@ from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
+import threading
+import contextvars
 
 class ModelingSaeHBDialog(QDialog):
+    run_model_finished = pyqtSignal(object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -84,7 +87,7 @@ class ModelingSaeHBDialog(QDialog):
         right_layout.addWidget(self.auxilary_label)
         right_layout.addWidget(self.auxilary_list)
 
-        self.as_factor_label = QLabel("as Factor of pyAuxilary Variable(s):")
+        self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
@@ -156,6 +159,20 @@ class ModelingSaeHBDialog(QDialog):
         self.iter_mcmc="2000"
         
         self.burn_in="1000"
+        
+        self.run_model_finished.connect(self.on_run_model_finished)
+        
+        self.stop_thread = threading.Event()
+        
+    def closeEvent(self, event):
+        threads = threading.enumerate()
+        for thread in threads:
+            if thread.name == "SAE HB" and thread.is_alive():
+                reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+                if reply != QMessageBox.StandardButton.Yes:
+                    self.stop_thread.set()
+                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+        event.accept()
 
     def set_model(self, model):
         self.model = model
@@ -204,8 +221,41 @@ class ModelingSaeHBDialog(QDialog):
         sae_model = SaeHB(self.model, self.model2, view)
         controller = SaeHBController(sae_model)
         
-        controller.run_model(r_script)
-        self.parent.update_table(2, sae_model.get_model2())
-        display_script_and_output(self.parent, r_script, sae_model.result)
-        enable_service(self, sae_model.error)
+        current_context = contextvars.copy_context()
+        
+        def run_model_thread():
+            result, error, df = None, None, None
+            try:
+                result, error, df = current_context.run(controller.run_model, r_script)
+                if not error:
+                    sae_model.model2.set_data(df)
+            except Exception as e:
+                error = e
+            finally:
+                if not self.stop_thread.is_set():
+                    self.run_model_finished.emit(result, error, sae_model, r_script)
+                    return
+
+        def check_run_time():
+            if thread.is_alive():
+                reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 1 minute. Do you want to continue?')
+                if reply == QMessageBox.StandardButton.No:
+                    self.stop_thread.set()
+                    QMessageBox.information(self, 'Info', 'Run has been stopped.')
+                    enable_service(self, False, "")
+
+
+        thread = threading.Thread(target=run_model_thread, name="SAE HB")
+        thread.start()
+
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(check_run_time)
+        timer.start(60000)
+    
+    def on_run_model_finished(self, result, error, sae_model, r_script):
+        if not error:
+            self.parent.update_table(2, sae_model.get_model2())
+        display_script_and_output(self.parent, r_script, result)
+        enable_service(self, error, result)
         self.close()
