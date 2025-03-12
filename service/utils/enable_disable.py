@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox
 
-def enable_service(parent, error):
+def enable_service(parent, error, result):
     parent.ok_button.setEnabled(True)
     parent.option_button.setEnabled(True)
     parent.icon_label.setVisible(False)
@@ -8,6 +8,8 @@ def enable_service(parent, error):
     parent.r_script_edit.setReadOnly(False)
     if not error:
         QMessageBox.information(parent, "Success", "Modelling finished!")
+    else:
+        QMessageBox.critical(parent, "Error", result)
     parent.ok_button.setText("Run Model")
     
 def disable_service(parent):
