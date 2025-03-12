@@ -229,8 +229,14 @@ class ModelingSaeHBDialog(QDialog):
                 result, error, df = current_context.run(controller.run_model, r_script)
                 if not error:
                     sae_model.model2.set_data(df)
+                
+                import rpy2.robjects as ro
+                ro.r('detach("package:saeHB", unload=TRUE)')
+                ro.r("unloadNamespace('rjags')")  # Unlink JAGS 4.3.1
             except Exception as e:
-                error = e
+                error=True
+                if result is None:
+                    result = str(e)
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)

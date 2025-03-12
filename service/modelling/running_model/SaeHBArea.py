@@ -44,8 +44,7 @@ def run_model_hb_area(parent):
             'HB_97.5%': hb_97_5,
             'SD': hb_sd,})
         ro.r("detach(data)")
-        ro.r('detach("package:saeHB", unload=TRUE)')
-        ro.r("unloadNamespace('rjags')")  # Unlink JAGS 4.3.1
+        
         error = False
         return result_str, error, df
         
