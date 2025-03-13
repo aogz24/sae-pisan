@@ -1,6 +1,29 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox
 
 class EditColumnDialog(QDialog):
+    """
+    A dialog for editing the name and data type of a column.
+    Attributes:
+        column_name (str): The name of the column to be edited.
+        data_type (str): The data type of the column to be edited.
+        column_name_label (QLabel): Label displaying the column name.
+        data_type_label (QLabel): Label displaying the data type.
+        edit_name_input (QLineEdit): Input field for editing the column name.
+        edit_data_type_input (QLineEdit): Input field for editing the data type.
+        buttons (QDialogButtonBox): Dialog buttons for accepting or rejecting changes.
+    Methods:
+        __init__(column_name, data_type, parent=None):
+            Initializes the dialog with the given column name and data type.
+        init_ui():
+            Initializes the user interface of the dialog.
+        display():
+            Displays the dialog and sets the input fields with the current column name and data type.
+        edit_name(new_name):
+            Updates the column name with the given new name.
+        edit_data_type(new_data_type):
+            Updates the data type with the given new data type.
+    """
+    
     def __init__(self, column_name, data_type, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Edit Column Dialog")
