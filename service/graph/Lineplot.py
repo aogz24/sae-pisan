@@ -5,6 +5,31 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_lineplot(parent):
+    """
+    Executes an R script to generate line plots from data in a Polars DataFrame.
+    This function performs the following steps:
+    1. Activates the R environment in the parent object.
+    2. Retrieves data from two models in the parent object and concatenates them horizontally.
+    3. Removes null values from the concatenated DataFrame.
+    4. Converts the Polars DataFrame to an R DataFrame.
+    5. Loads required R libraries (ggplot2 and tidyr).
+    6. Sets up the data in the R environment.
+    7. Executes an R script provided by the parent object.
+    8. Retrieves the list of line plot variables created in the R environment.
+    9. Saves each line plot as a PNG file and stores the file paths in the parent object.
+    Args:
+        parent: An object that contains the following attributes and methods:
+            - activate_R(): Method to activate the R environment.
+            - model1: An object with a get_data() method that returns a Polars DataFrame.
+            - model2: An object with a get_data() method that returns a Polars DataFrame.
+            - r_script: A string containing the R script to be executed.
+            - plot: An attribute to store the list of plot file paths (optional).
+            - error: An attribute to indicate if an error occurred.
+            - result: An attribute to store the error message if an error occurred.
+    Raises:
+        Exception: If any error occurs during the execution of the R script or plot generation.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
 
     parent.activate_R()

@@ -5,6 +5,26 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_box_plot(parent):
+    """
+    Executes a box plot generation process using R and Polars DataFrame.
+    This function performs the following steps:
+    1. Activates the R environment through the parent object.
+    2. Retrieves data from two models in the parent object and concatenates them horizontally.
+    3. Removes null values from the concatenated DataFrame.
+    4. Converts the Polars DataFrame to an R DataFrame.
+    5. Loads required R libraries (ggplot2 and tidyr).
+    6. Sets up the data in the R environment.
+    7. Executes an R script provided by the parent object.
+    8. Retrieves the list of boxplot variables generated in the R environment.
+    9. Saves each boxplot as a PNG file and stores the file paths in a list.
+    10. Optionally stores the list of plot paths in the parent object.
+    Args:
+        parent: An object that provides the R environment activation method, data retrieval methods,
+                and the R script to be executed. It also stores the resulting plot paths and error information.
+    Raises:
+        Exception: If any error occurs during the execution, it sets the error flag and result message in the parent object.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
 
     parent.activate_R()

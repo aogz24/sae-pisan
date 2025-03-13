@@ -5,6 +5,29 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_normality_test(parent):
+    """
+    Runs a normality test on the combined data from two models in the parent object.
+    This function performs the following steps:
+    1. Activates the R environment.
+    2. Retrieves data from two models in the parent object and concatenates them horizontally.
+    3. Drops any rows with null values.
+    4. Converts the concatenated data to an R dataframe.
+    5. Executes an R script provided by the parent object to perform normality tests.
+    6. Collects the results of the normality tests and any generated plots.
+    Parameters:
+    parent (object): An object that contains the following attributes:
+        - activate_R(): A method to activate the R environment.
+        - model1: An object with a get_data() method that returns a dataframe.
+        - model2: An object with a get_data() method that returns a dataframe.
+        - r_script (str): An R script to be executed.
+        - selected_columns (list): A list of column names to be tested for normality.
+        - result (str): A string to store the results of the normality tests.
+        - plot (list): A list to store the paths of generated plots.
+        - error (bool): A boolean to indicate if an error occurred.
+    Raises:
+    Exception: If any error occurs during the execution of the R script or data processing.
+    """
+    
     import rpy2.robjects as ro
     import rpy2_arrow.polars as rpy2polars
     

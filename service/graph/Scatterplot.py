@@ -6,6 +6,26 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_scatterplot(parent):
+    """
+    Generates scatterplots using data from two models and saves them as images.
+    This function activates the R environment, retrieves data from two models,
+    merges the data, converts it to an R DataFrame, and executes an R script
+    to generate scatterplots. The scatterplots are then saved as PNG images.
+    Args:
+        parent: An object that contains the following attributes:
+            - activate_R(): A method to activate the R environment.
+            - model1: An object with a get_data() method that returns a Polars DataFrame.
+            - model2: An object with a get_data() method that returns a Polars DataFrame.
+            - r_script: A string containing the R script to be executed.
+            - plot: An attribute to store the list of generated plot image paths.
+            - error: An attribute to indicate if an error occurred.
+            - result: An attribute to store the error message if an error occurred.
+    Raises:
+        Exception: If any error occurs during the execution, it sets the parent's
+                   error attribute to True and stores the error message in the
+                   parent's result attribute.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
 
     try:
