@@ -5,6 +5,18 @@ from PyQt6.QtGui import QPixmap, QMovie
 from PyQt6.QtCore import Qt, QTimer
 
 class SplashScreen(QSplashScreen):
+    """
+    A custom splash screen class that displays a series of messages during application startup.
+    Attributes:
+        label (QLabel): A label to display the current message.
+        layout (QVBoxLayout): A vertical box layout to manage the label's position.
+        messages (list): A list of messages to be displayed sequentially.
+        current_message_index (int): The index of the current message being displayed.
+    Methods:
+        update_message():
+            Updates the label to display the next message in the sequence.
+    """
+    
     def __init__(self, pixmap):
         super().__init__(pixmap)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)

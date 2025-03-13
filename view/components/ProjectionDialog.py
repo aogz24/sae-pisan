@@ -15,6 +15,75 @@ import threading
 import contextvars
 
 class ProjectionDialog(QDialog):
+    """
+    A dialog for configuring and running a projection model in a PyQt application.
+    Attributes:
+        run_model_finished (pyqtSignal): Signal emitted when the model run is finished.
+        parent (QWidget): The parent widget.
+        model2 (object): The second model from the parent.
+        columns (list): List of column names.
+        variables_label (QLabel): Label for the variables list.
+        variables_list (QListView): List view for selecting variables.
+        variables_model (QStringListModel): Model for the variables list.
+        unassign_button (QPushButton): Button to unassign variables.
+        assign_of_interest_button (QPushButton): Button to assign variable of interest.
+        assign_aux_button (QPushButton): Button to assign auxiliary variables.
+        assign_as_factor_button (QPushButton): Button to assign variables as factors.
+        assign_domains_button (QPushButton): Button to assign domain variables.
+        assign_index_button (QPushButton): Button to assign index variables.
+        assign_aux_mean_button (QPushButton): Button to assign auxiliary mean variables.
+        assign_weight_button (QPushButton): Button to assign weight variables.
+        assign_strata_button (QPushButton): Button to assign strata variables.
+        of_interest_label (QLabel): Label for the variable of interest list.
+        of_interest_list (QListView): List view for the variable of interest.
+        of_interest_model (QStringListModel): Model for the variable of interest list.
+        auxilary_label (QLabel): Label for the auxiliary variables list.
+        auxilary_list (QListView): List view for the auxiliary variables.
+        auxilary_model (QStringListModel): Model for the auxiliary variables list.
+        as_factor_label (QLabel): Label for the as factor variables list.
+        as_factor_list (QListView): List view for the as factor variables.
+        as_factor_model (QStringListModel): Model for the as factor variables list.
+        domain_label (QLabel): Label for the domain variables list.
+        domain_list (QListView): List view for the domain variables.
+        domain_model (QStringListModel): Model for the domain variables list.
+        index_label (QLabel): Label for the index variables list.
+        index_list (QListView): List view for the index variables.
+        index_model (QStringListModel): Model for the index variables list.
+        weight_label (QLabel): Label for the weight variables list.
+        weight_list (QListView): List view for the weight variables.
+        weight_model (QStringListModel): Model for the weight variables list.
+        strata_label (QLabel): Label for the strata variables list.
+        strata_list (QListView): List view for the strata variables.
+        strata_model (QStringListModel): Model for the strata variables list.
+        option_button (QPushButton): Button to show options.
+        text_script (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        r_script_edit (QTextEdit): Text edit for the R script.
+        ok_button (QPushButton): Button to run the model.
+        of_interest_var (list): List of variables of interest.
+        auxilary_vars (list): List of auxiliary variables.
+        index_var (list): List of index variables.
+        as_factor_var (list): List of as factor variables.
+        domain_var (list): List of domain variables.
+        weight_var (list): List of weight variables.
+        strata_var (list): List of strata variables.
+        selection_method (str): Method of selection.
+        projection_method (str): Method of projection.
+        metric (str): Metric used.
+        k_fold (str): Number of folds for k-fold cross-validation.
+        grid (str): Grid size.
+        epoch (str): Number of epochs.
+        learning_rate (str): Learning rate.
+        finnish (bool): Flag indicating if the process is finished.
+        stop_thread (threading.Event): Event to stop the thread.
+    Methods:
+        closeEvent(event): Handles the close event of the dialog.
+        show_prerequisites(): Shows the prerequisites dialog.
+        set_model(model): Sets the model and updates the columns.
+        accept(): Accepts the dialog and runs the model.
+        on_run_model_finished(result, error, sae_model, r_script): Handles the completion of the model run.
+    """
+    
     run_model_finished = pyqtSignal(object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)

@@ -3,6 +3,25 @@ import polars as pl
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 class CSVOptionsDialog(QDialog):
+    """
+    A dialog for selecting CSV file options and previewing the CSV content.
+    Attributes:
+        file_path (str): The path to the selected CSV file.
+        separator (str): The separator used in the CSV file.
+        header (bool): Whether the first row is treated as a header.
+    Methods:
+        __init__(parent=None):
+            Initializes the dialog with default values and sets up the UI.
+        init_ui():
+            Sets up the user interface components of the dialog.
+        select_file():
+            Opens a file picker dialog to select a CSV file and updates the preview.
+        update_preview():
+            Updates the preview table based on the selected file, separator, and header options.
+        get_csv_options():
+            Returns the selected CSV options if the dialog is accepted.
+    """
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("CSV Options")

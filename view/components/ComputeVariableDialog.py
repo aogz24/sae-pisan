@@ -5,6 +5,32 @@ from PyQt6.QtCore import QSize, Qt
 import os
 
 class ComputeVariableDialog(QDialog):
+    """
+    A dialog for computing new variables based on user-defined templates and R scripts.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model (QAbstractTableModel): The data model from the parent.
+        column_names (list): List of column names from the model.
+        templates (dict): Dictionary of templates loaded from a file.
+    Methods:
+        __init__(parent=None):
+            Initializes the dialog with the given parent.
+        load_templates():
+            Loads templates from a file and returns them as a dictionary.
+        save_template():
+            Saves the current script as a new template.
+        init_ui():
+            Initializes the user interface components of the dialog.
+        update_script_input(index):
+            Updates the script input field based on the selected template and variables.
+        set_model(model):
+            Sets the data model and updates the column names.
+        get_script():
+            Returns the current script from the script input field.
+        accept():
+            Validates the input, computes the new variable, and updates the model.
+    """
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent

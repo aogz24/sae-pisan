@@ -6,6 +6,21 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenu
 
 def show_context_menu(parent, position):
+        """
+        Displays a context menu at the given position within the parent widget.
+        Parameters:
+        parent (QWidget): The parent widget where the context menu will be displayed.
+        position (QPoint): The position within the parent widget where the context menu will appear.
+        The context menu provides the following options:
+        - Add Row Before: Adds a new row before the selected row(s).
+        - Add Row After: Adds a new row after the selected row(s).
+        - Add Column Before: Adds a new column before the selected column(s).
+        - Add Column After: Adds a new column after the selected column(s).
+        - Delete Row: Deletes the selected row(s).
+        - Delete Column: Deletes the selected column(s).
+        The actions are enabled only if there is a selection in the spreadsheet.
+        """
+        
         context_menu = QMenu(parent)
 
         selection = parent.spreadsheet.selectionModel().selectedIndexes()
