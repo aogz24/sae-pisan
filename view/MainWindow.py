@@ -165,18 +165,23 @@ class MainWindow(QMainWindow):
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Summary Data", self)
+        self.action_summary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'summary.svg')))
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog_lazy)
 
         self.action_normality_test = QAction("Normality Test", self)
+        self.action_normality_test.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'normality.svg')))
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog_lazy)
 
         self.action_correlation = QAction("Correlation", self)
+        self.action_correlation.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'correlation.svg')))
         self.action_correlation.triggered.connect(self.open_correlation_matrix_dialog_lazy)
 
         self.action_multicollinearity = QAction("Multicollinearity", self)
+        self.action_multicollinearity.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'multicolinierity.svg')))
         self.action_multicollinearity.triggered.connect(self.open_multicollinearity_dialog_lazy)
 
         self.action_variable_selection = QAction("Variable Selection", self)
+        self.action_variable_selection.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'varselection.svg')))
         self.action_variable_selection.triggered.connect(self.open_variable_selection_dialog_lazy)
 
         self.menu_exploration.addAction(self.action_summary_data)
@@ -189,18 +194,19 @@ class MainWindow(QMainWindow):
         self.menu_graph = self.menu_bar.addMenu("Graph")
 
         self.action_scatter_plot = QAction("Scatter Plot", self)
+        self.action_scatter_plot.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'scatterplot.svg')))
         self.action_scatter_plot.triggered.connect(self.open_scatter_plot_dialog_lazy)
 
-        self.action_correlation_matrix = QAction("Correlation Matrix", self)
-        self.action_correlation_matrix.triggered.connect(self.open_correlation_matrix_dialog_lazy)
-
         self.action_box_plot = QAction("Box Plot", self)
+        self.action_box_plot.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'boxplot.svg')))
         self.action_box_plot.triggered.connect(self.open_box_plot_dialog_lazy)
 
         self.action_line_plot = QAction("Line Plot", self)
+        self.action_line_plot.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'lineplot.svg')))
         self.action_line_plot.triggered.connect(self.open_line_plot_dialog_lazy)
 
         self.action_histogram = QAction("Histogram", self)
+        self.action_histogram.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'histogram.svg')))
         self.action_histogram.triggered.connect(self.open_histogram_dialog_lazy)
 
         # Menambahkan plot-plot ke menu Graph
@@ -208,9 +214,6 @@ class MainWindow(QMainWindow):
         self.menu_graph.addAction(self.action_box_plot)
         self.menu_graph.addAction(self.action_line_plot)
         self.menu_graph.addAction(self.action_histogram)
-
-
-
         # Menu "Model"
         menu_model = self.menu_bar.addMenu("Model")
 
