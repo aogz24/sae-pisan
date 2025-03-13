@@ -265,18 +265,22 @@ class MainWindow(QMainWindow):
 
         self.load_action = QAction("Load File", self)
         self.load_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
+        self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
         self.save_action = QAction("Save Data", self)
         self.save_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
+        self.save_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedata.svg')))
         self.save_action.setStatusTip("Ctrl+S")
         
         self.save_data_output_action = QAction("Save Data Output", self)
         self.save_data_output_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Modifier.SHIFT | Qt.Key.Key_S))
+        self.save_data_output_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedataoutput.svg')))
         self.save_action.setStatusTip("Ctrl+Shift+S")
         
         self.save_output_pdf = QAction("Save Output to PDF", self)
         self.save_output_pdf.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P))
+        self.save_output_pdf.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savepdf.svg')))
         self.save_output_pdf.setStatusTip("Ctrl+P")
 
         self.file_menu.addAction(self.load_action)
@@ -342,6 +346,7 @@ class MainWindow(QMainWindow):
 
         # Submenu "Area Level"
         menu_area_level = QMenu("Area Level", self)
+        menu_area_level.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'arealevel.svg')))
         action_eblup_area = QAction("EBLUP", self)
         action_eblup_area.triggered.connect(self.show_modeling_sae_dialog_lazy)
         action_hb_beta = QAction("HB Beta", self)
@@ -351,6 +356,7 @@ class MainWindow(QMainWindow):
 
         # Submenu "Unit Level"
         menu_unit_level = QMenu("Unit Level", self)
+        menu_unit_level.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'unitlevel.svg')))
         action_eblup_unit = QAction("EBLUP", self)
         action_eblup_unit.triggered.connect(self.show_modeling_sae_unit_dialog_lazy)
         action_hb_normal = QAction("HB Normal", self)
@@ -382,6 +388,7 @@ class MainWindow(QMainWindow):
          # Menu 'Compute'
         menu_compute = self.menu_bar.addMenu("Compute")
         compute_new_var = QAction("Compute New Variable", self)
+        compute_new_var.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'compute.svg')))
         compute_new_var.triggered.connect(self.show_compute_variable_dialog_lazy)
         menu_compute.addAction(compute_new_var)
         
@@ -389,6 +396,7 @@ class MainWindow(QMainWindow):
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
         action_about_info.triggered.connect(self.open_about_dialog)
+        action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         menu_about.addAction(action_about_info)
         
 
@@ -468,6 +476,7 @@ class MainWindow(QMainWindow):
         # Menu "Settings"
         menu_settings = self.menu_bar.addMenu("Settings")
         action_change_font_size = QAction("Change Font Size", self)
+        action_change_font_size.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'setting.svg')))
         action_change_font_size.triggered.connect(self.change_font_size)
         menu_settings.addAction(action_change_font_size)
 
