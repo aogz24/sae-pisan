@@ -2,10 +2,11 @@ pyqt6
 polars
 matplotlib
 fastexcel
-openpyexcel
+openpyxl
 rpy2
 XlsxWriter
-pyintaller
+pyinstaller
 fastexcel
 pyspread
 Jinja2
+pandas
