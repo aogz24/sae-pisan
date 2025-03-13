@@ -11,6 +11,62 @@ from service.command.ChangeColumnTypeCommand import ChangeColumnTypeCommand
 from service.command.RenameColumnCommand import RenameColumnCommand
 
 class TableModel(QtCore.QAbstractTableModel):
+    """A custom table model for handling data in a Qt application with support for undo/redo operations.
+    Attributes:
+        _data (pl.DataFrame): The data to be displayed in the table.
+        undo_stack (QUndoStack): Stack to manage undo/redo operations.
+        batch_size (int): Number of rows to load initially.
+        loaded_rows (int): Number of rows currently loaded.
+    Methods:
+        __init__(data, batch_size=100):
+            Initializes the table model with data and batch size.
+        data(index, role):
+            Returns the data for the given index and role.
+        rowCount(_):
+            Returns the number of rows in the table.
+        columnCount(_):
+            Returns the number of columns in the table.
+        headerData(section, orientation, role):
+            Returns the header data for the given section, orientation, and role.
+        flags(_):
+            Returns the item flags for the table.
+        setData(index, value, role=Qt.ItemDataRole.EditRole):
+            Sets the data for the given index and role.
+        set_data(new_data):
+            Sets the entire data for the table.
+        get_data():
+            Returns the current data of the table.
+        copy(index):
+            Copies the data at the given index to the clipboard.
+        paste(index):
+            Pastes the data from the clipboard to the given index.
+        undo():
+            Undoes the last operation.
+        redo():
+            Redoes the last undone operation.
+        canFetchMore(_):
+            Checks if more rows can be fetched.
+        fetchMore(_):
+            Fetches more rows to be displayed in the table.
+        addRowsBefore(index, count):
+            Adds rows before the given index.
+        addRowsAfter(index, count):
+            Adds rows after the given index.
+        addColumnBefore(index, count):
+            Adds columns before the given index.
+        addColumnAfter(index, count):
+            Adds columns after the given index.
+        deleteRows(start_row, count):
+            Deletes rows starting from the given row index.
+        deleteColumns(start_column, count):
+            Deletes columns starting from the given column index.
+        rename_column(column_index, new_name):
+            Renames the column at the given index to the new name.
+        get_column_type(column_index):
+            Returns the data type of the column at the given index.
+        set_column_type(column_index, new_type):
+            Sets the data type of the column at the given index to the new type."""
+    
     def __init__(self, data, batch_size=100):
         super().__init__()
         self._data = data
