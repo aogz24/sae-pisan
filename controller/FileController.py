@@ -7,6 +7,33 @@ from PyQt6.QtGui import QPainter, QPdfWriter
 from PyQt6.QtCore import QRectF
 
 class FileController:
+    """
+    Controller class to handle file operations such as loading, saving, and exporting data.
+    Attributes:
+        model1: The first data model.
+        model2: The second data model.
+        view: The view component of the MVC architecture.
+    Methods:
+        __init__(model1, model2, view):
+            Initializes the FileController with the given models and view.
+        load_file():
+            Loads a CSV or Excel file into the first model.
+        save_data():
+            Saves data from the first model to a file in various formats (CSV, Excel, JSON, Text).
+        save_data_output():
+            Saves data from the second model to a file in various formats (CSV, Excel, JSON, Text).
+        save_as_csv(file_path, model):
+            Saves data from the given model as a CSV file.
+        save_as_excel(file_path, model):
+            Saves data from the given model as an Excel file.
+        save_as_json(file_path, model):
+            Saves data from the given model as a JSON file.
+        save_as_txt(file_path, model):
+            Saves data from the given model as a text file with tab-separated values.
+        export_output_to_pdf():
+            Exports the content of all widgets in the output layout to a PDF file.
+    """
+    
     def __init__(self, model1, model2, view):
         self.model1 = model1
         self.model2 = model2
