@@ -4,6 +4,18 @@ from PyQt6.QtWidgets import QMessageBox
 
 
 def assign_of_interest(parent):
+    """
+    Assigns the variable of interest from the selected indexes in the variables list.
+    This function checks the selected variables in the `variables_list` of the `parent` object.
+    If the selected variable is of type "String" and the projection method is "Linear", it shows a warning message.
+    Otherwise, it assigns the selected variable as the variable of interest, updates the `of_interest_model`,
+    removes the variable from the `variables_list`, and calls the `show_r_script` function.
+    Args:
+        parent: The parent object containing the variables list, projection method, and other related attributes.
+    Raises:
+        QMessageBox: Displays a warning message if all selected variables are of type "String" and the projection method is "Linear".
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         all_string = False
@@ -27,6 +39,20 @@ def assign_of_interest(parent):
             msg.exec()
 
 def assign_auxilary(parent):
+    """
+    Assigns selected auxiliary variables from the parent object's variables list to its auxiliary variables list.
+    Parameters:
+    parent (object): The parent object containing the variables list and auxiliary variables list.
+    Functionality:
+    - Retrieves the selected indexes from the parent's variables list.
+    - Filters out non-numeric variables from the selected indexes.
+    - If no valid numeric variables are selected, displays a warning message.
+    - Adds the new numeric variables to the parent's auxiliary variables list, ensuring no duplicates.
+    - Updates the parent's auxiliary model with the new list of auxiliary variables.
+    - Removes the selected variables from the parent's variables list.
+    - Calls the show_r_script function with the parent object.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         new_vars = []
@@ -48,6 +74,19 @@ def assign_auxilary(parent):
         show_r_script(parent)
 
 def assign_index(parent):
+    """
+    Assigns the selected index from the variables list to the index variable of the parent object,
+    updates the index model with the new index, removes the selected index from the variables list,
+    and calls the show_r_script function.
+    Args:
+        parent: An object that contains the following attributes:
+            - variables_list: A QListView or similar widget that holds the list of variables.
+            - index_var: A list to store the selected index data.
+            - index_model: A QStringListModel or similar model to update with the new index.
+    Returns:
+        None
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         for index in selected_indexes:
@@ -58,6 +97,19 @@ def assign_index(parent):
             break
 
 def assign_as_factor(parent):
+    """
+    Assigns selected variables as factors and updates the parent object's factor list and model.
+    Args:
+        parent: The parent object containing the variables list and factor list.
+    The function performs the following steps:
+    1. Retrieves the selected indexes from the parent's variables list.
+    2. Extracts the data from the selected indexes and adds them to a new list of variables.
+    3. Updates the parent's factor variable list by adding new variables if they are not already present.
+    4. Updates the parent's factor model with the new factor variable list.
+    5. Removes the selected variables from the parent's variables list.
+    6. Calls the `show_r_script` function to update the R script display.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         new_vars = []
@@ -70,6 +122,18 @@ def assign_as_factor(parent):
         show_r_script(parent)
         
 def assign_domains(parent):
+    """
+    Assigns the selected domain variable from the variables list to the domain model.
+    Parameters:
+    parent (object): The parent object containing the variables list and domain model.
+    The function performs the following steps:
+    1. Retrieves the selected indexes from the parent's variables list.
+    2. If there are selected indexes, assigns the first selected variable to the parent's domain variable.
+    3. Updates the parent's domain model with the selected domain variable.
+    4. Removes the selected variable from the parent's variables list.
+    5. Calls the show_r_script function with the parent object.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         parent.domain_var = [selected_indexes[0].data()]  # Only one variable
@@ -78,6 +142,19 @@ def assign_domains(parent):
         show_r_script(parent)
         
 def assign_weight(parent):
+    """
+    Assigns a weight variable from the selected indexes in the variables list.
+    Parameters:
+    parent (object): The parent object containing the variables list and weight model.
+    Behavior:
+    - Checks the selected indexes in the variables list.
+    - If any selected variable is not of type "String", assigns it as the weight variable.
+    - Updates the weight model with the selected weight variable.
+    - Removes the selected weight variable from the variables list.
+    - Calls the show_r_script function with the parent object.
+    - If all selected variables are of type "String", displays a warning message indicating that the weight variable must be of type Numeric.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         all_string = True
@@ -98,6 +175,18 @@ def assign_weight(parent):
             msg.exec()
 
 def assign_strata(parent):
+    """
+    Assigns a selected variable to the strata list and updates the UI components accordingly.
+    Args:
+        parent: The parent object that contains the UI components and variables list.
+    The function performs the following steps:
+    1. Retrieves the selected indexes from the variables list.
+    2. If there are selected indexes, it assigns the first selected variable to the strata list.
+    3. Updates the strata model with the new strata variable.
+    4. Removes the selected variable from the variables list.
+    5. Calls the show_r_script function to update the R script display.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         parent.strata_var = [selected_indexes[0].data()]  # Only one variable
@@ -106,6 +195,22 @@ def assign_strata(parent):
         show_r_script(parent)
 
 def unassign_variable(parent):
+    """
+    Unassigns selected variables from various lists in the parent object and adds them back to the variables list.
+    This function checks for selected indexes in the following lists in order:
+    - of_interest_list
+    - auxilary_list
+    - index_list
+    - as_factor_list
+    - domain_list
+    - strata_list
+    - weight_list
+    For each list, if there are selected items, it removes the selected items from the corresponding variable list in the parent object,
+    updates the model for that list, and adds the items back to the variables list. Finally, it calls the show_r_script function.
+    Args:
+        parent: The parent object containing the lists and models to be updated.
+    """
+    
     selected_indexes = parent.of_interest_list.selectedIndexes()
     if selected_indexes:
         selected_items = [index.data() for index in selected_indexes]
@@ -184,15 +289,64 @@ def unassign_variable(parent):
         return
 
 def get_selected_variables(parent):
+    """
+    Retrieve selected variables from the given parent object.
+    Args:
+        parent (object): An object containing the variables of interest.
+    Returns:
+        tuple: A tuple containing the following variables from the parent object:
+            - of_interest_var: The primary variable of interest.
+            - auxilary_vars: Auxiliary variables related to the primary variable.
+            - vardir_var: Directional variable.
+            - as_factor_var: Factor variable.
+    """
+    
     return parent.of_interest_var, parent.auxilary_vars, parent.vardir_var, parent.as_factor_var
 
 def process_vars(vars_list, prefix, suffix):
+    """
+    Processes a list of variable names by modifying them with a given prefix and suffix,
+    and generates R script lines to assign these modified variable names to data columns.
+    Args:
+        vars_list (list of str): List of variable names to be processed.
+        prefix (str): Prefix to be added to each variable name.
+        suffix (str): Suffix to be added to each variable name.
+    Returns:
+        None
+    """
+    
     for var in vars_list:
         var_name = var.split(" [")[0].replace(" ", "_")
         var_name_edit = f"{prefix}{var_name}{suffix}"
         r_script += f'{var_name} <- data["{var_name_edit}"];\n'
 
 def generate_r_script(parent):
+    """
+    Generates an R script based on the provided parent object.
+    Args:
+        parent: An object containing the following attributes:
+            - of_interest_var: List of variables of interest.
+            - auxilary_vars: List of auxiliary variables.
+            - as_factor_var: List of variables to be treated as factors.
+            - index_var: List of index variables.
+            - domain_var: List of domain variables.
+            - weight_var: List of weight variables.
+            - strata_var: List of strata variables.
+            - projection_method: String specifying the projection method (e.g., "Linear", "Logistic", "SVM Linear", "SVM RBF", "Neural Network", "Gradient Boost").
+            - epoch: Integer specifying the number of epochs (used for Neural Network).
+            - learning_rate: Float specifying the learning rate (used for Neural Network).
+            - var_position: String specifying the position of variables ("After" or "Before").
+            - model_name: String specifying the model name.
+            - separator: String specifying the separator to be used.
+            - projection_name: String specifying the projection name.
+            - selection_method: String specifying the selection method (e.g., "Stepwise", "None").
+            - metric: String specifying the model metric.
+            - k_fold: Integer specifying the number of folds for cross-validation.
+            - grid: Grid specification for tuning parameters.
+    Returns:
+        str: The generated R script as a string.
+    """
+    
     def format_var(var_list, as_factor=False):
         if not var_list:
             return ''
@@ -368,13 +522,42 @@ def generate_r_script(parent):
         return r_script
 
 def show_r_script(parent):
+    """
+    Generates an R script based on the given parent object and sets the text of the parent's R script editor.
+    Args:
+        parent: The parent object that contains the method to generate the R script and the R script editor.
+    """
+    
     r_script = generate_r_script(parent)
     parent.r_script_edit.setText(r_script)
 
 def get_script(parent):
+    """
+    Retrieves the text content from the 'r_script_edit' attribute of the given parent object.
+    Args:
+        parent: An object that contains an attribute 'r_script_edit' which is expected to be a QTextEdit or similar widget.
+    Returns:
+        str: The text content of the 'r_script_edit' widget as a string.
+    """
+    
     return parent.r_script_edit.toPlainText()  
 
 def show_options(parent):
+    """
+    Displays a dialog window with various options for configuring the projection method.
+    Parameters:
+    parent (QWidget): The parent widget to which this dialog belongs.
+    The dialog includes the following options:
+    - Model Metric: A combo box to select the model metric.
+    - The number of partitions: A line edit to input the number of partitions (k-fold).
+    - Grid: A line edit to input the grid size.
+    - Epoch (conditionally visible): A line edit to input the number of epochs, visible only if the projection method is "Neural Network".
+    - Learning Rate (conditionally visible): A line edit to input the learning rate, visible only if the projection method is "Neural Network".
+    The dialog also includes OK and Cancel buttons to confirm or reject the selections.
+    The OK button triggers the `set_selection_method` function with the parent and dialog as arguments.
+    The Cancel button closes the dialog without saving changes.
+    """
+    
     options_dialog = QDialog(parent)
     options_dialog.setWindowTitle("Options")
 
@@ -434,7 +617,7 @@ def show_options(parent):
     if(parent.projection_method=="Neural Network"):
         epoch_label.setVisible(True)
         parent.epoch_edit.setVisible(True)
-        hidden_unit_label.setVisible(True)
+        parent.hidden_unit_label.setVisible(True)
         parent.hidden_edit.setVisible(True)
         learning_label.setVisible(True)
         parent.learning_edit.setVisible(True)
@@ -456,6 +639,23 @@ def show_options(parent):
     options_dialog.exec()
 
 def set_selection_method(parent, dialog):
+    """
+    Sets various selection parameters for the parent object based on the current state of the UI elements,
+    and then accepts the dialog and shows the R script.
+    Parameters:
+    parent (object): The parent object that contains the UI elements and attributes to be set.
+    dialog (QDialog): The dialog that will be accepted after setting the parameters.
+    Attributes Set on Parent:
+    - metric (str): The selected model metric from the model_metric_combo UI element.
+    - k_fold (str): The k-fold value from the kfold_edit UI element.
+    - grid (str): The grid value from the grid_edit UI element.
+    - epoch (str): The epoch value from the epoch_edit UI element.
+    - learning_rate (str): The learning rate value from the learning_edit UI element.
+    Actions:
+    - Accepts the dialog.
+    - Calls the show_r_script function with the parent object.
+    """
+    
     # parent.selection_method = parent.method_combo.currentText()
     parent.metric = parent.model_metric_combo.currentText()
     parent.k_fold = parent.kfold_edit.text()

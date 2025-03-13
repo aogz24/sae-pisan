@@ -4,6 +4,25 @@ from rpy2.rinterface_lib.embedded import RRuntimeError
 from service.modelling.running_model.convert_df import convert_df
 
 def run_model_eblup_pseudo(parent):
+    """
+    Runs the EBLUP (Empirical Best Linear Unbiased Prediction) pseudo model using R scripts.
+    Parameters:
+    parent (object): The parent object that contains necessary methods and attributes for running the model.
+    Returns:
+    tuple: A tuple containing:
+        - result (str): The result of the R script execution or error message.
+        - error (bool): A boolean indicating if an error occurred.
+        - df (polars.DataFrame or None): A DataFrame containing the domain, EBLUP estimates, MSE, and RSE (%) if successful, otherwise None.
+    The function performs the following steps:
+    1. Activates the R environment.
+    2. Retrieves and preprocesses the data.
+    3. Executes the R script provided by the parent object.
+    4. Extracts the estimated values, MSE, and domain from the R environment.
+    5. Calculates the Relative Standard Error (RSE).
+    6. Constructs a DataFrame with the results.
+    7. Returns the results, error status, and DataFrame.
+    """
+    
     import rpy2.robjects as ro
     parent.activate_R()
     df = parent.model1.get_data()

@@ -4,6 +4,17 @@ from service.modelling.running_model.convert_df import convert_df
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 def run_model_projection(parent):
+    """
+    Runs the model projection using R scripts and returns the results.
+    Parameters:
+    parent (object): The parent object that contains the necessary methods and attributes for running the model projection.
+    Returns:
+    tuple: A tuple containing:
+        - result (str): The result of the model projection or error message.
+        - error (bool): A boolean indicating whether an error occurred.
+        - df (polars.DataFrame or None): The projected data as a Polars DataFrame if successful, otherwise None.
+    """
+    
     import rpy2.robjects as ro
     parent.activate_R()
     df = parent.model1.get_data()
