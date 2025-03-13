@@ -5,6 +5,28 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_correlation_matrix(parent):
+    """
+    Executes a correlation matrix analysis using R and returns the results.
+    Parameters:
+    parent (object): An object that contains the following attributes:
+        - activate_R(): Method to activate R environment.
+        - model1: An object with a method get_data() that returns a Polars DataFrame.
+        - model2: An object with a method get_data() that returns a Polars DataFrame.
+        - r_script: A string containing the R script to be executed.
+        - result: A string to store the correlation matrix result.
+        - plot: A list to store the path of the generated correlation plot.
+        - error: A boolean to indicate if an error occurred.
+    The function performs the following steps:
+    1. Activates the R environment.
+    2. Retrieves data from model1 and model2, concatenates them, and removes null values.
+    3. Converts the Polars DataFrame to an R DataFrame.
+    4. Loads necessary R libraries and prepares the data in R.
+    5. Executes the provided R script to generate the correlation matrix.
+    6. Captures the correlation matrix result and stores it in the parent.result attribute.
+    7. Checks if a correlation plot is generated and saves it to a file if it exists.
+    8. Handles any exceptions by setting the parent.error attribute and storing the error message in parent.result.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
 
     # Aktivasi R

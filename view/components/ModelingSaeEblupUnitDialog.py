@@ -15,6 +15,70 @@ import threading
 import contextvars
 
 class ModelingSaeUnitDialog(QDialog):
+    """
+    A dialog for modeling SAE Eblup Unit.
+    Signals:
+        run_model_finished (object, object, object, object): Emitted when the model run is finished.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model2 (object): The second model from the parent.
+        columns (list): List of column names.
+        variables_label (QLabel): Label for the variables list.
+        variables_list (QListView): List view for selecting variables.
+        variables_model (QStringListModel): Model for the variables list.
+        unassign_button (QPushButton): Button to unassign variables.
+        assign_of_interest_button (QPushButton): Button to assign variable of interest.
+        assign_aux_button (QPushButton): Button to assign auxiliary variables.
+        assign_as_factor_button (QPushButton): Button to assign as factor of auxiliary variables.
+        assign_domains_button (QPushButton): Button to assign domains.
+        assign_index_button (QPushButton): Button to assign index number of area.
+        assign_aux_mean_button (QPushButton): Button to assign auxiliary variable means.
+        assign_population_sample_size_button (QPushButton): Button to assign population sample size.
+        of_interest_label (QLabel): Label for the variable of interest list.
+        of_interest_list (QListView): List view for the variable of interest.
+        of_interest_model (QStringListModel): Model for the variable of interest list.
+        auxilary_label (QLabel): Label for the auxiliary variables list.
+        auxilary_list (QListView): List view for the auxiliary variables.
+        auxilary_model (QStringListModel): Model for the auxiliary variables list.
+        as_factor_label (QLabel): Label for the as factor of auxiliary variables list.
+        as_factor_list (QListView): List view for the as factor of auxiliary variables.
+        as_factor_model (QStringListModel): Model for the as factor of auxiliary variables list.
+        domain_label (QLabel): Label for the domain list.
+        domain_list (QListView): List view for the domain.
+        domain_model (QStringListModel): Model for the domain list.
+        index_label (QLabel): Label for the index number of area list.
+        index_list (QListView): List view for the index number of area.
+        index_model (QStringListModel): Model for the index number of area list.
+        auxilary_vars_mean (QLabel): Label for the auxiliary variable means list.
+        auxilary_vars_mean_list (QListView): List view for the auxiliary variable means.
+        aux_mean_model (QStringListModel): Model for the auxiliary variable means list.
+        population_sample_size (QLabel): Label for the population sample size list.
+        population_sample_size_list (QListView): List view for the population sample size.
+        population_sample_size_model (QStringListModel): Model for the population sample size list.
+        option_button (QPushButton): Button to show options.
+        text_script (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        r_script_edit (QTextEdit): Text edit for displaying and editing the R script.
+        ok_button (QPushButton): Button to run the model.
+        of_interest_var (list): List of variables of interest.
+        auxilary_vars (list): List of auxiliary variables.
+        index_var (list): List of index variables.
+        as_factor_var (list): List of as factor variables.
+        domain_var (list): List of domain variables.
+        aux_mean_vars (list): List of auxiliary mean variables.
+        population_sample_size_var (list): List of population sample size variables.
+        selection_method (str): Selection method.
+        method (str): Method used for modeling.
+        bootstrap (str): Number of bootstrap samples.
+        finnish (bool): Flag indicating if the model run is finished.
+        stop_thread (threading.Event): Event to stop the thread.
+    Methods:
+        closeEvent(event): Handles the close event of the dialog.
+        set_model(model): Sets the model and updates the variables list.
+        accept(): Validates the input and runs the model.
+        on_run_model_finished(result, error, sae_model, r_script): Handles the completion of the model run.
+    """
+    
     run_model_finished = pyqtSignal(object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)
@@ -203,6 +267,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.selection_method = "None"
         self.method = "REML"
         self.bootstrap = "50"
+        self.finnish = False
         
         self.run_model_finished.connect(self.on_run_model_finished)
         
@@ -213,7 +278,7 @@ class ModelingSaeUnitDialog(QDialog):
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         event.accept()
@@ -271,6 +336,7 @@ class ModelingSaeUnitDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                    self.finnish = True
 
         def check_run_time():
             if thread.is_alive():
@@ -294,4 +360,5 @@ class ModelingSaeUnitDialog(QDialog):
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
         enable_service(self, error, result)
+        self.finnish = True
         self.close()

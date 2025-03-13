@@ -2,6 +2,22 @@ import polars as pl
 import pandas as pd
 
 def get_data(parent):
+    """
+    Retrieves data from the parent model, processes it, and converts it to an R dataframe.
+    Args:
+        parent: An object that contains a model with a `get_data` method.
+    Returns:
+        None. The resulting R dataframe is stored in the R global environment as 'r_df'.
+    Process:
+        1. Imports necessary modules from `rpy2` and `rpy2_arrow.polars`.
+        2. Retrieves data from the parent model.
+        3. Replaces spaces in column names with underscores.
+        4. Drops columns with a high percentage of null values (threshold: 30%).
+        5. Converts the dataframe to a pandas dataframe if columns are dropped.
+        6. Converts the pandas dataframe to a polars dataframe.
+        7. Converts the polars dataframe to an R dataframe and assigns it to the R global environment.
+    """
+    
     import rpy2.robjects as ro
     import rpy2_arrow.polars as rpy2polars
     df = parent.model.get_data()

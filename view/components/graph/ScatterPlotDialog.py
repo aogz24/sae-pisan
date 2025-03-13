@@ -9,6 +9,45 @@ from PyQt6.QtWidgets import (
 )
 
 class ScatterPlotDialog(QDialog):
+    """
+    A dialog for creating scatter plots with various options.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns in the first model.
+        all_columns_model2 (list): List of all columns in the second model.
+        selected_status (dict): Dictionary to store selected variable status.
+        data_editor_label (QLabel): Label for the data editor.
+        data_editor_model (QStringListModel): Model for the data editor list view.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output.
+        data_output_model (QStringListModel): Model for the data output list view.
+        data_output_list (QListView): List view for the data output.
+        add_button (QPushButton): Button to add variables.
+        remove_button (QPushButton): Button to remove variables.
+        selected_label (QLabel): Label for the selected variables.
+        selected_model (QStringListModel): Model for the selected variables list view.
+        selected_list (QListView): List view for the selected variables.
+        regression_line_checkbox (QCheckBox): Checkbox to show regression line.
+        correlation_checkbox (QCheckBox): Checkbox to show correlation.
+        density_plot_checkbox (QCheckBox): Checkbox to show density plot.
+        script_label (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        script_box (QTextEdit): Text box to display the generated R script.
+        run_button (QPushButton): Button to run the script.
+    Methods:
+        __init__(self, parent): Initializes the dialog.
+        set_model(self, model1, model2): Sets the data models for the dialog.
+        get_column_with_dtype(self, model): Gets columns with their data types from the model.
+        add_variable(self): Adds selected variables to the selected list.
+        remove_variable(self): Removes selected variables from the selected list.
+        get_selected_columns(self): Gets the selected columns without data types.
+        accept(self): Runs the R script and generates the scatter plot.
+        closeEvent(self, event): Clears selected variables when the dialog is closed.
+        generate_r_script(self): Generates the R script based on selected options.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

@@ -10,6 +10,48 @@ from controller.Graph.GraphController import LinePlotController
 
 
 class LinePlotDialog(QDialog):
+    """
+    A dialog for creating line plots using selected data from two models.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns from model1.
+        all_columns_model2 (list): List of all columns from model2.
+        selected_status (dict): Dictionary to store the status of selected variables.
+        data_editor_label (QLabel): Label for the data editor section.
+        data_editor_model (QStringListModel): Model for the data editor list view.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output section.
+        data_output_model (QStringListModel): Model for the data output list view.
+        data_output_list (QListView): List view for the data output.
+        remove_button1 (QPushButton): Button to remove selected variables.
+        add_horizontal_button (QPushButton): Button to add selected variable to the horizontal axis.
+        add_vertical_button (QPushButton): Button to add selected variables to the vertical axis.
+        horizontal_label (QLabel): Label for the horizontal axis section.
+        horizontal_model (QStringListModel): Model for the horizontal axis list view.
+        horizontal_list (QListView): List view for the horizontal axis.
+        vertical_label (QLabel): Label for the vertical axis section.
+        vertical_model (QStringListModel): Model for the vertical axis list view.
+        vertical_list (QListView): List view for the vertical axis.
+        method_combo (QComboBox): Combo box to select the plotting method.
+        script_label (QLabel): Label for the R script section.
+        icon_label (QLabel): Label to display the running icon.
+        script_box (QTextEdit): Text edit box to display the generated R script.
+        run_button (QPushButton): Button to run the generated R script.
+    Methods:
+        set_model(model1, model2): Sets the data models and updates the data editor and output lists.
+        get_column_with_dtype(model): Returns a list of columns with their data types from the given model.
+        add_variable_horizontal(): Adds a selected variable to the horizontal axis.
+        add_variable_vertical(): Adds selected variables to the vertical axis.
+        remove_variable(): Removes selected variables from the horizontal and vertical axes.
+        get_selected_horizontal(): Returns a list of selected variables for the horizontal axis.
+        get_selected_vertical(): Returns a list of selected variables for the vertical axis.
+        accept(): Runs the generated R script and displays the result.
+        closeEvent(event): Clears selected variables and script when the dialog is closed.
+        generate_r_script(): Generates the R script based on selected variables and method.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

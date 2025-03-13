@@ -4,6 +4,22 @@ from service.modelling.running_model.convert_df import convert_df
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 def run_model_eblup_unit(parent):
+    """
+    Runs the EBLUP (Empirical Best Linear Unbiased Prediction) model using R through rpy2.
+    Parameters:
+    parent (object): An object that contains the necessary methods and attributes to run the model.
+                     It should have the following methods and attributes:
+                     - activate_R(): Method to activate the R environment.
+                     - model1.get_data(): Method to get the data for the model.
+                     - r_script: An R script to be executed.
+    Returns:
+    tuple: A tuple containing:
+           - result (str): The result of the model execution or error message.
+           - error (bool): A flag indicating whether an error occurred.
+           - df (polars.DataFrame or None): A DataFrame containing the model results with columns 'Domain', 'Eblup', 'Sample size', and 'MSE'.
+                                            None if an error occurred.
+    """
+    
     import rpy2.robjects as ro
     parent.activate_R()
     df = parent.model1.get_data()

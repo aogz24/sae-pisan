@@ -3,6 +3,21 @@ import polars as pl
 from PyQt6 import QtCore
 
 class AddRowsCommand(QUndoCommand):
+    """
+    A command class to add rows to a model, supporting undo and redo operations.
+    Attributes:
+        model (QAbstractItemModel): The model to which rows will be added.
+        row (int): The position at which new rows will be inserted.
+        new_rows (list): The new rows to be added to the model.
+        executed (bool): A flag to prevent re-execution during the initial push.
+    Methods:
+        undo():
+            Removes the previously added rows from the model.
+        redo():
+            Adds the new rows to the model. If the command has already been executed,
+            it will insert the rows again.
+    """
+    
     def __init__(self, model, row, new_rows):
         super().__init__()
         self.model = model

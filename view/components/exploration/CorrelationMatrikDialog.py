@@ -9,6 +9,42 @@ from PyQt6.QtWidgets import (
 )
 
 class CorrelationMatrixDialog(QDialog):
+    """A dialog for selecting variables and generating a correlation matrix using R script.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns in the first data model.
+        all_columns_model2 (list): List of all columns in the second data model.
+        selected_status (dict): Dictionary to store the selected variable status.
+        data_editor_label (QLabel): Label for the data editor section.
+        data_editor_model (QStringListModel): Model for the data editor list view.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output section.
+        data_output_model (QStringListModel): Model for the data output list view.
+        data_output_list (QListView): List view for the data output.
+        add_button (QPushButton): Button to add selected variables.
+        remove_button (QPushButton): Button to remove selected variables.
+        selected_label (QLabel): Label for the selected variables section.
+        selected_model (QStringListModel): Model for the selected variables list view.
+        selected_list (QListView): List view for the selected variables.
+        correlation_plot_checkbox (QCheckBox): Checkbox to show correlation plot.
+        script_layout (QHBoxLayout): Layout for the R script section.
+        script_label (QLabel): Label for the R script section.
+        icon_label (QLabel): Label to show running icon.
+        script_box (QTextEdit): Text box to display the generated R script.
+        run_button (QPushButton): Button to run the generated R script.
+    Methods:
+        __init__(self, parent): Initializes the dialog with the given parent.
+        set_model(self, model1, model2): Sets the data models for the dialog.
+        get_column_with_dtype(self, model): Returns the columns with their data types.
+        add_variable(self): Adds selected variables to the selected list.
+        remove_variable(self): Removes selected variables from the selected list.
+        get_selected_columns(self): Returns the selected columns without data types.
+        generate_r_script(self): Generates the R script for the correlation matrix.
+        accept(self): Runs the generated R script and handles the result.
+        closeEvent(self, event): Handles the close event of the dialog."""
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

@@ -3,6 +3,22 @@ from PyQt6.QtGui import QIntValidator
 from PyQt6.QtWidgets import QMessageBox
 
 def assign_of_interest(parent):
+    """
+    Assigns a variable of interest from the selected variables in the parent object's variables list.
+    This function checks the selected variables in the parent object's variables list. If any of the selected
+    variables are not of type "String", it assigns the first non-string variable as the variable of interest,
+    updates the parent object's of_interest_model with this variable, and removes the variable from the variables list.
+    If all selected variables are of type "String", it displays a warning message.
+    Args:
+        parent: The parent object containing the variables list and other related attributes.
+    Attributes:
+        parent.variables_list: The list of variables from which the variable of interest is selected.
+        parent.of_interest_var: The variable of interest to be assigned.
+        parent.of_interest_model: The model to be updated with the variable of interest.
+    Raises:
+        QMessageBox: Displays a warning message if all selected variables are of type "String".
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         all_string = True
@@ -23,6 +39,20 @@ def assign_of_interest(parent):
             msg.exec()
 
 def assign_auxilary(parent):
+    """
+    Assigns auxiliary variables from the selected indexes in the parent's variables list.
+    This function performs the following steps:
+    1. Retrieves the selected indexes from the parent's variables list.
+    2. Filters out non-numeric variables from the selected indexes.
+    3. If no valid numeric variables are selected, displays a warning message.
+    4. Adds the new numeric variables to the parent's auxiliary variables list.
+    5. Updates the parent's auxiliary model with the new list of auxiliary variables.
+    6. Removes the selected variables from the parent's variables list.
+    7. Calls the show_r_script function to update the R script.
+    Args:
+        parent: The parent object containing the variables list, auxiliary variables list, and auxiliary model.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         new_vars = []
@@ -44,6 +74,21 @@ def assign_auxilary(parent):
         show_r_script(parent)
 
 def assign_vardir(parent):
+    """
+    Assigns a variable directory (vardir) from the selected variables in the parent object's variables list.
+    This function checks the selected variables in the parent object's variables list. If any of the selected 
+    variables are not of type "String", it assigns the first non-string variable to the vardir_var attribute 
+    of the parent object, updates the vardir_model with this variable, removes the variable from the variables 
+    list, and calls the show_r_script function. If all selected variables are of type "String", it displays a 
+    warning message indicating that the vardir variable must be of type Numeric.
+    Args:
+        parent: The parent object containing the variables list, vardir_var, and vardir_model attributes.
+    Raises:
+        None
+    Displays:
+        QMessageBox: A warning message if all selected variables are of type "String".
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         all_string = True
@@ -64,6 +109,21 @@ def assign_vardir(parent):
             msg.exec()
 
 def assign_as_factor(parent):
+    """
+    Assigns selected variables as factors and updates the parent object's factor variable list and model.
+    Args:
+        parent: An object that contains the following attributes:
+            - variables_list: A QListView or similar widget that holds the list of variables.
+            - as_factor_var: A list that stores the variables to be treated as factors.
+            - as_factor_model: A QStringListModel or similar model that represents the factor variables.
+    The function performs the following steps:
+        1. Retrieves the selected indexes from the variables_list.
+        2. Extracts the data from the selected indexes and adds them to the as_factor_var list, ensuring no duplicates.
+        3. Updates the as_factor_model with the new list of factor variables.
+        4. Removes the selected variables from the variables_list.
+        5. Calls the show_r_script function to update the R script display.
+    """
+    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         new_vars = []
@@ -76,6 +136,19 @@ def assign_as_factor(parent):
         show_r_script(parent)
 
 def unassign_variable(parent):
+    """
+    Unassigns selected variables from the specified lists in the parent object and adds them back to the variables list.
+    This function checks for selected items in the following lists in order:
+    1. of_interest_list
+    2. auxilary_list
+    3. vardir_list
+    4. as_factor_list
+    For each list, if there are selected items, it removes these items from the corresponding variable list in the parent object,
+    updates the model for that list, and adds the items back to the variables list. It then calls the show_r_script function.
+    Args:
+        parent: The parent object containing the lists and models to be updated.
+    """
+    
     selected_indexes = parent.of_interest_list.selectedIndexes()
     if selected_indexes:
         selected_items = [index.data() for index in selected_indexes]
@@ -119,9 +192,38 @@ def unassign_variable(parent):
         show_r_script(parent)
 
 def get_selected_variables(parent):
+    """
+    Retrieve selected variables from the parent object.
+    Args:
+        parent (object): The parent object containing the variables of interest.
+    Returns:
+        tuple: A tuple containing the following variables from the parent object:
+            - of_interest_var: The variable of interest.
+            - auxilary_vars: Auxiliary variables.
+            - vardir_var: The variable direction.
+            - as_factor_var: The factor variable.
+    """
+    
     return parent.of_interest_var, parent.auxilary_vars, parent.vardir_var, parent.as_factor_var
 
 def generate_r_script(parent):
+    """
+    Generates an R script based on the provided parent object's attributes.
+    Args:
+        parent (object): An object containing the following attributes:
+            - of_interest_var (list): A list containing the variable of interest.
+            - auxilary_vars (list): A list of auxiliary variables.
+            - vardir_var (list): A list containing the variance directory variable.
+            - as_factor_var (list): A list of variables to be treated as factors.
+            - selection_method (str): The method for variable selection (e.g., "Stepwise", "None").
+            - model_method (str): The method for modeling (e.g., "lm", "glm").
+            - iter_update (int): The number of iterations for updating the model.
+            - iter_mcmc (int): The number of MCMC iterations.
+            - burn_in (int): The number of burn-in iterations.
+    Returns:
+        str: The generated R script as a string.
+    """
+    
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
@@ -149,13 +251,40 @@ def generate_r_script(parent):
     return r_script
 
 def show_r_script(parent):
+    """
+    Generates an R script using the given parent object and sets the text of the parent's R script editor.
+    Args:
+        parent: An object that contains the method `generate_r_script` and the attribute `r_script_edit`.
+                The `generate_r_script` method is used to generate the R script, and `r_script_edit` is
+                an editor widget where the generated R script will be displayed.
+    """
+    
     r_script = generate_r_script(parent)
     parent.r_script_edit.setText(r_script)
 
 def get_script(parent):
+    """
+    Retrieves the text content from the 'r_script_edit' attribute of the given parent object.
+    Args:
+        parent: An object that contains an attribute 'r_script_edit' which is expected to be a QTextEdit or similar widget.
+    Returns:
+        str: The text content of the 'r_script_edit' widget as a plain string.
+    """
+    
     return parent.r_script_edit.toPlainText()  
 
 def show_options(parent):
+    """
+    Displays a dialog window with options for configuring the stepwise selection method and iteration parameters.
+    Parameters:
+    parent (QWidget): The parent widget for the dialog.
+    The dialog includes the following options:
+    - Number of Iteration Update (minimum 2): A QLineEdit for specifying the number of iteration updates, with a default value of 3.
+    - Number of Total Iterations per Chain: A QLineEdit for specifying the total number of iterations per chain, with a default value of 2000.
+    - Number of iterations to discard at the beginning: A QLineEdit for specifying the number of iterations to discard at the beginning, with a default value of 1000.
+    The dialog also includes "OK" and "Cancel" buttons. Clicking "OK" will apply the settings and close the dialog, while clicking "Cancel" will close the dialog without applying any changes.
+    """
+    
     options_dialog = QDialog(parent)
     options_dialog.setWindowTitle("Options")
 
@@ -209,6 +338,20 @@ def show_options(parent):
     options_dialog.exec()
 
 def set_selection_method(parent, dialog):
+    """
+    Sets the selection method and updates iteration parameters for the parent object,
+    then accepts the dialog and shows the R script.
+    Args:
+        parent: The parent object containing the selection method and iteration parameters.
+        dialog: The dialog object to be accepted.
+    Side Effects:
+        Updates the following attributes of the parent object:
+        - iter_update: The updated iteration value.
+        - iter_mcmc: The updated MCMC iteration value.
+        - burn_in: The updated burn-in value.
+        Accepts the dialog and calls the show_r_script function with the parent object.
+    """
+    
     # parent.selection_method = parent.method_combo.currentText()
     parent.iter_update = parent.iter_update.text()
     parent.iter_mcmc = parent.iter_mcmc.text()

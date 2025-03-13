@@ -15,6 +15,53 @@ import threading
 import contextvars
 
 class ModelingSaeDialog(QDialog):
+    """
+    A dialog for modeling SAE EBLUP (Small Area Estimation Empirical Best Linear Unbiased Prediction) area level.
+    Attributes:
+        run_model_finished (pyqtSignal): Signal emitted when the model run is finished.
+        parent (QWidget): The parent widget.
+        model2 (object): The second model from the parent.
+        columns (list): List of column names.
+        variables_label (QLabel): Label for the variables list.
+        variables_list (QListView): List view for the variables.
+        variables_model (QStringListModel): Model for the variables list.
+        unassign_button (QPushButton): Button to unassign variables.
+        assign_of_interest_button (QPushButton): Button to assign variable of interest.
+        assign_aux_button (QPushButton): Button to assign auxiliary variables.
+        assign_as_factor_button (QPushButton): Button to assign variables as factors.
+        assign_vardir_button (QPushButton): Button to assign direct variance variables.
+        of_interest_label (QLabel): Label for the variable of interest list.
+        of_interest_list (QListView): List view for the variable of interest.
+        of_interest_model (QStringListModel): Model for the variable of interest list.
+        auxilary_label (QLabel): Label for the auxiliary variables list.
+        auxilary_list (QListView): List view for the auxiliary variables.
+        auxilary_model (QStringListModel): Model for the auxiliary variables list.
+        as_factor_label (QLabel): Label for the factors of auxiliary variables list.
+        as_factor_list (QListView): List view for the factors of auxiliary variables.
+        as_factor_model (QStringListModel): Model for the factors of auxiliary variables list.
+        vardir_label (QLabel): Label for the direct variance list.
+        vardir_list (QListView): List view for the direct variance variables.
+        vardir_model (QStringListModel): Model for the direct variance variables list.
+        option_button (QPushButton): Button to show options.
+        text_script (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        r_script_edit (QTextEdit): Text edit area for the R script.
+        ok_button (QPushButton): Button to run the model.
+        of_interest_var (list): List of variables of interest.
+        auxilary_vars (list): List of auxiliary variables.
+        vardir_var (list): List of direct variance variables.
+        as_factor_var (list): List of factors of auxiliary variables.
+        selection_method (str): Method of selection.
+        method (str): Method for the model.
+        finnish (bool): Flag to indicate if the model run is finished.
+        stop_thread (threading.Event): Event to stop the thread.
+    Methods:
+        closeEvent(event): Handles the close event of the dialog.
+        set_model(model): Sets the model and updates the variables list.
+        accept(): Validates inputs and runs the model.
+        on_run_model_finished(result, error, sae_model, r_script): Handles the completion of the model run.
+    """
+    
     run_model_finished = pyqtSignal(object, object, object, object)
 
     def __init__(self, parent):
@@ -158,7 +205,7 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.method = "REML"
-        
+        self.finnish = False
 
         self.run_model_finished.connect(self.on_run_model_finished)
         
@@ -170,9 +217,10 @@ class ModelingSaeDialog(QDialog):
         for thread in threads:
             if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+        self.finnish=False
         event.accept()
         
     def set_model(self, model):
@@ -231,6 +279,7 @@ class ModelingSaeDialog(QDialog):
                 error = e
             finally:
                 if not self.stop_thread.is_set():
+                    self.finnish = True
                     self.run_model_finished.emit(result, error, sae_model, r_script)
                 else:
                     return

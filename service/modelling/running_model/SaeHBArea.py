@@ -3,6 +3,25 @@ from rpy2.rinterface_lib.embedded import RRuntimeError
 from service.modelling.running_model.convert_df import convert_df
 
 def run_model_hb_area(parent):
+    """
+    Runs the hierarchical Bayesian area model using the provided parent object.
+    This function activates the R environment, processes the data, and runs the specified R script
+    to perform hierarchical Bayesian modeling. It captures the results and returns them along with
+    any errors encountered during execution.
+    Parameters:
+    parent (object): An object that contains the necessary methods and attributes for running the model.
+                     It should have the following methods and attributes:
+                     - activate_R(): Method to activate the R environment.
+                     - model1.get_data(): Method to get the data for modeling.
+                     - r_script: A string containing the R script to be executed.
+    Returns:
+    tuple: A tuple containing:
+           - result_str (str): A string with the formatted results of the model.
+           - error (bool): A boolean indicating whether an error occurred.
+           - df (polars.DataFrame or None): A DataFrame containing the estimated values and standard deviations,
+                                            or None if an error occurred.
+    """
+    
     import rpy2.robjects as ro
     parent.activate_R()
     df = parent.model1.get_data()
@@ -44,8 +63,7 @@ def run_model_hb_area(parent):
             'HB_97.5%': hb_97_5,
             'SD': hb_sd,})
         ro.r("detach(data)")
-        ro.r('detach("package:saeHB", unload=TRUE)')
-        ro.r("unloadNamespace('rjags')")  # Unlink JAGS 4.3.1
+        
         error = False
         return result_str, error, df
         

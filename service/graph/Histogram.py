@@ -5,6 +5,29 @@ import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 
 def run_histogram(parent):
+    """
+    Executes an R script to generate histograms from data in a Polars DataFrame.
+    This function performs the following steps:
+    1. Activates the R environment using the parent object's `activate_R` method.
+    2. Retrieves data from two models in the parent object and concatenates them into a single Polars DataFrame.
+    3. Drops any null values from the DataFrame.
+    4. Converts the Polars DataFrame to an R DataFrame and assigns it to the R global environment.
+    5. Loads required R libraries (`ggplot2` and `tidyr`).
+    6. Sets up the data in R and executes a script provided by the parent object.
+    7. Identifies histogram variables created by the script in the R environment.
+    8. Generates PNG files for each histogram and stores their paths in the parent object's `plot` attribute.
+    9. Handles any exceptions by setting the parent object's `error` attribute to True and storing the error message in the `result` attribute.
+    Args:
+        parent (object): An object that contains methods and attributes required for the function, including:
+            - `activate_R()`: Method to activate the R environment.
+            - `model1.get_data()`: Method to retrieve data from the first model.
+            - `model2.get_data()`: Method to retrieve data from the second model.
+            - `r_script`: A string containing the R script to be executed.
+            - `plot`: Attribute to store the paths of generated histogram PNG files.
+            - `error`: Attribute to indicate if an error occurred.
+            - `result`: Attribute to store the error message if an exception is raised.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
 
     parent.activate_R()

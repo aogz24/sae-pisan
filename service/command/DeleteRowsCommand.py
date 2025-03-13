@@ -3,6 +3,31 @@ from PyQt6.QtGui import QUndoCommand
 import polars as pl
 
 class DeleteRowsCommand(QUndoCommand):
+    """
+    A command to delete rows from a model, supporting undo and redo operations.
+    Attributes:
+        model (QAbstractItemModel): The model from which rows will be deleted.
+        start_row (int): The starting row index for deletion.
+        rows_data (pl.DataFrame): The data of the rows to be deleted.
+        executed (bool): A flag to indicate if the command has been executed.
+    Methods:
+        undo(): Reverts the deletion of rows by inserting them back into the model.
+        redo(): Executes the deletion of rows from the model.
+    """
+    """
+    Initializes the DeleteRowsCommand with the model, starting row, and rows data.
+    Args:
+        model (QAbstractItemModel): The model from which rows will be deleted.
+        start_row (int): The starting row index for deletion.
+        rows_data (list or pl.DataFrame): The data of the rows to be deleted.
+    """
+    """
+    Reverts the deletion of rows by inserting them back into the model.
+    """
+    """
+    Executes the deletion of rows from the model.
+    """
+    
     def __init__(self, model, start_row, rows_data):
         super().__init__("Delete Rows")
         self.model = model

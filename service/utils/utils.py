@@ -3,6 +3,14 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 
 def check_script(r_script):
+    """
+    Checks if the provided R script string is not empty.
+    Parameters:
+    r_script (str): The R script string to check.
+    Returns:
+    bool: True if the R script string is not empty, False otherwise.
+    """
+    
     if r_script == "":
         QMessageBox.warning(None, "Warning", "R sript cannot empty")
         return False
@@ -10,6 +18,16 @@ def check_script(r_script):
         
 
 def display_script_and_output(parent, r_script, result):
+    """
+    Adds a new output card to the layout displaying the provided R script and its result.
+    Parameters:
+    parent (object): The parent widget containing the layout to which the card will be added.
+    r_script (str): The R script to be displayed in the card.
+    result (str): The output result of the R script to be displayed in the card. If empty or None, only the script will be displayed.
+    Returns:
+    None
+    """
+    
     """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
     # Membuat frame sebagai card
     card_frame = QFrame()

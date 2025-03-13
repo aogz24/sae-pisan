@@ -3,6 +3,13 @@ from PyQt6.QtGui import QPixmap
 from PyQt6 import QtCore
 
 class AboutDialog(QDialog):
+    """AboutDialog is a custom QDialog that provides information about the SAE Pisan application.
+    Attributes:
+        parent (QWidget): The parent widget of the dialog.
+    Methods:
+        __init__(parent):
+            Initializes the AboutDialog with the given parent widget."""
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("About SAE Pisan")

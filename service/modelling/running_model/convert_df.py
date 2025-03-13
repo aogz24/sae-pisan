@@ -1,5 +1,17 @@
 import polars as pl
 def convert_df(df, parent):
+    """
+    Converts a Polars DataFrame to an R DataFrame using rpy2 and handles columns with a high percentage of null values.
+    Parameters:
+    df (pl.DataFrame): The Polars DataFrame to be converted.
+    parent (object): An object that has a method `activate_R()` to activate the R environment.
+    Returns:
+    None: The function modifies the R global environment by adding the converted DataFrame as 'r_df'.
+    Notes:
+    - Columns with null values exceeding 30% of the DataFrame length are dropped before conversion.
+    - The function uses the rpy2_arrow.polars and rpy2.robjects libraries for conversion.
+    """
+    
     import rpy2_arrow.polars as rpy2polars
     import rpy2.robjects as ro
     parent.activate_R()

@@ -4,6 +4,20 @@ import time
 import errno
 
 def check_environment(path, original_path):
+    """
+    Checks if R version 4.4.2 is installed in the specified environment. If not, it downloads and installs R version 4.4.2.
+    Args:
+        path (str): The path where R should be installed.
+        original_path (str): The original working directory to return to after checking/installing R.
+    Raises:
+        RuntimeError: If R is not installed or not found in the PATH.
+        subprocess.CalledProcessError: If there is an error during the installation process.
+    Notes:
+        - For Windows, it downloads the R installer and installs it silently.
+        - For POSIX systems, it downloads the R source tarball, extracts it, and installs it using `configure`, `make`, and `make install`.
+        - Sets the `R_HOME` environment variable to the specified path.
+    """
+    
     r_path = os.path.join(path, "bin")
     try:
         os.chdir(r_path)

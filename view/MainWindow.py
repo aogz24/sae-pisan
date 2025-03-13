@@ -34,7 +34,94 @@ from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
 
 class MainWindow(QMainWindow):
+    """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
+    Attributes:
+        data1 (pl.DataFrame): DataFrame for the first sheet (Data Editor).
+        data2 (pl.DataFrame): DataFrame for the second sheet (Data Output).
+        model1 (TableModel): Table model for the first sheet.
+        model2 (TableModel): Table model for the second sheet.
+        path (str): Path to the application directory.
+        font_size (int): Default font size for the application.
+        show_modeling_sae_dialog (ModelingSaeDialog): Dialog for SAE modeling.
+        show_modeling_saeHB_dialog (ModelingSaeHBDialog): Dialog for SAE HB modeling.
+        show_modeling_sae_unit_dialog (ModelingSaeUnitDialog): Dialog for SAE unit modeling.
+        show_modeling_saeHB_normal_dialog (ModelingSaeHBNormalDialog): Dialog for SAE HB normal modeling.
+        show_modellig_sae_pseudo_dialog (ModelingSaePseudoDialog): Dialog for SAE pseudo modeling.
+        show_compute_variable_dialog (ComputeVariableDialog): Dialog for computing new variables.
+        show_projection_variabel_dialog (ProjectionDialog): Dialog for variable projection.
+        menu_bar (QMenuBar): Menu bar for the application.
+        toolBar (QToolBar): Tool bar for the application.
+        tab_widget (QTabWidget): Tab widget containing the different sheets.
+        spreadsheet (QTableView): Table view for the first sheet.
+        table_view2 (QTableView): Table view for the second sheet.
+        scroll_area (QScrollArea): Scroll area for the output tab.
+        output_layout (QVBoxLayout): Layout for displaying output in the output tab.
+    Methods:
+        init_ui(): Initializes the user interface.
+        change_font_size(): Opens a dialog to change the font size.
+        set_font_size(size): Sets the font size for the application.
+        load_stylesheet_with_font_size(size): Loads the stylesheet with the specified font size.
+        open_summary_data_dialog_lazy(): Lazily opens the summary data dialog.
+        open_normality_test_dialog_lazy(): Lazily opens the normality test dialog.
+        open_multicollinearity_dialog_lazy(): Lazily opens the multicollinearity dialog.
+        open_variable_selection_dialog_lazy(): Lazily opens the variable selection dialog.
+        open_scatter_plot_dialog_lazy(): Lazily opens the scatter plot dialog.
+        open_correlation_matrix_dialog_lazy(): Lazily opens the correlation matrix dialog.
+        open_box_plot_dialog_lazy(): Lazily opens the box plot dialog.
+        open_line_plot_dialog_lazy(): Lazily opens the line plot dialog.
+        open_histogram_dialog_lazy(): Lazily opens the histogram dialog.
+        open_summary_data_dialog(): Opens the summary data dialog.
+        open_normality_test_dialog(): Opens the normality test dialog.
+        open_scatter_plot_dialog(): Opens the scatter plot dialog.
+        open_line_plot_dialog(): Opens the line plot dialog.
+        open_box_plot_dialog(): Opens the box plot dialog.
+        open_correlation_matrix_dialog(): Opens the correlation matrix dialog.
+        open_multicollinearity_dialog(): Opens the multicollinearity dialog.
+        open_histogram_dialog(): Opens the histogram dialog.
+        open_variable_selection_dialog(): Opens the variable selection dialog.
+        show_modeling_sae_dialog_lazy(): Lazily shows the SAE modeling dialog.
+        show_modeling_saeHB_dialog_lazy(): Lazily shows the SAE HB modeling dialog.
+        show_modeling_sae_unit_dialog_lazy(): Lazily shows the SAE unit modeling dialog.
+        show_modeling_saeHB_normal_dialog_lazy(): Lazily shows the SAE HB normal modeling dialog.
+        show_modellig_sae_pseudo_dialog_lazy(): Lazily shows the SAE pseudo modeling dialog.
+        show_compute_variable_dialog_lazy(): Lazily shows the compute variable dialog.
+        show_projection_variabel_dialog_lazy(): Lazily shows the projection variable dialog.
+        open_about_dialog(): Opens the about dialog.
+        add_row(sheet_number): Adds a new row to the specified sheet.
+        add_column(sheet_number): Adds a new column to the specified sheet.
+        update_table(sheet_number, model): Updates the table for the specified sheet with a new model.
+        keyPressEvent(event): Handles keyboard shortcuts for copy, paste, undo, and redo.
+        copy_selection(): Copies the selected cells to the clipboard.
+        paste_selection(): Pastes the clipboard content to the selected cells.
+        undo_action(): Undoes the last action.
+        redo_action(): Redoes the last undone action.
+        group_by_row(selection): Groups selected indexes by row.
+        show_output(title, content): Displays output in the Output tab.
+        show_header_context_menu(pos): Shows the context menu for the header.
+        rename_column(column_index): Renames the column at the given index.
+        edit_data_type(column_index): Edits the data type of the column at the given index.
+        set_path(path): Sets the path for the application.
+        add_output(script_text, result_text=None, plot_paths=None, error_text=None): Adds output to the layout in the form of a card.
+        remove_output(card_frame): Removes output from the layout.
+        copy_output_image(card_frame): Copies the output image to the clipboard.
+        show_context_menu(pos, card_frame): Shows the context menu for each output."""
+    
     def __init__(self):
+        """
+        Initializes the MainWindow class.
+        This constructor sets up the main window for the SAE Pisan application, 
+        including setting the window title, initializing data frames, models, 
+        and UI components.
+        Attributes:
+            data1 (pl.DataFrame): A DataFrame with 100 columns and 100 empty rows.
+            data2 (pl.DataFrame): A DataFrame with columns "Estimated Value", 
+                                  "Standar Error", and "CV", each with 100 empty rows.
+            model1 (TableModel): The table model for the first data frame.
+            model2 (TableModel): The table model for the second data frame.
+            path (str): The path to the parent directory of the current file.
+            font_size (int): The font size used in the UI.
+        """
+        
         super().__init__()
 
         self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v1.0.0")
@@ -57,6 +144,42 @@ class MainWindow(QMainWindow):
         self.showMaximized()
 
     def init_ui(self):
+        """
+        Initialize the user interface of the main window.
+        This method sets up the main layout, including a splitter, tab widgets, 
+        and various tabs for data editing, data output, and other functionalities. 
+        It also configures the menu bar with different menus and actions, 
+        and sets up the toolbar with various actions and icons.
+        Tabs:
+            - Data Editor: Allows editing of data in a spreadsheet format.
+            - Data Output: Displays output data in a table view.
+            - Output: Displays output in a scrollable area.
+        Menus:
+            - File: Contains actions to load and save files.
+            - Exploration: Contains actions for data exploration such as summary data, normality test, correlation, etc.
+            - Graph: Contains actions to generate different types of plots.
+            - Model: Contains actions related to different modeling techniques.
+            - Compute: Contains actions to compute new variables.
+            - About: Contains information about the application.
+            - Settings: Contains actions to change application settings.
+        Toolbar:
+            - Load File: Action to load a file.
+            - Save Data: Action to save data.
+            - Undo: Action to undo the last operation.
+            - Redo: Action to redo the last undone operation.
+            - Compute New Variable: Action to compute a new variable.
+            - Setting: Action to open settings.
+        Shortcuts:
+            - Go to Start Row: Ctrl + Up
+            - Go to End Row: Ctrl + Down
+            - Go to Start Column: Ctrl + Left
+            - Go to End Column: Ctrl + Right
+        Layout:
+            - The main layout is a vertical box layout containing the tab widget.
+            - The central widget is set with this layout.
+            - The main window is resized to a default size of 800x600.
+        """
+        
         # Membuat splitter utama untuk membagi halaman menjadi dua bagian (kiri dan kanan)
         self.splitter_main = QSplitter(Qt.Orientation.Horizontal, self)
 
@@ -353,6 +476,27 @@ class MainWindow(QMainWindow):
 
     
     def change_font_size(self):
+        """
+        Opens a dialog to change the font size of the application.
+        The dialog presents three font size options: "Small", "Medium", and "Big".
+        The user can select a font size from a combo box, and the selected size
+        will be applied to the application if the user confirms the selection.
+        The dialog also displays a sample text ("AaBbCc") that updates in real-time
+        to reflect the selected font size.
+        Attributes:
+            sizes (dict): A dictionary mapping font size names to their corresponding pixel values.
+            items (list): A list of font size names.
+            dialog (QDialog): The dialog window for selecting the font size.
+            layout (QVBoxLayout): The main layout of the dialog.
+            combo_box (QComboBox): The combo box for selecting the font size.
+            display (QLabel): The label displaying the sample text with the selected font size.
+            button_box (QHBoxLayout): The layout containing the OK and Cancel buttons.
+            ok_button (QPushButton): The button to confirm the font size selection.
+            cancel_button (QPushButton): The button to cancel the font size selection.
+        Methods:
+            update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
+        """
+        
         sizes = {"Small": 10, "Medium": 14, "Big": 22}
         items = list(sizes.keys())
 
@@ -397,6 +541,13 @@ class MainWindow(QMainWindow):
             self.font_size = sizes[selected_size]
 
     def set_font_size(self, size):
+        """
+        Sets the font size for the main window.
+        Args:
+            size (int): The desired font size to be set.
+        This method updates the stylesheet of the main window with the specified font size.
+        """
+        
         stylesheet = self.load_stylesheet_with_font_size(size)
         self.setStyleSheet(stylesheet)
 
@@ -415,123 +566,326 @@ class MainWindow(QMainWindow):
             return ""
     
     def open_summary_data_dialog_lazy(self):
+        """
+        Lazily initializes and opens the summary data dialog.
+        This method checks if the 'show_summary_data_dialog' attribute exists.
+        If it does not exist, it initializes it with an instance of SummaryDataDialog.
+        Then, it calls the 'open_summary_data_dialog' method to open the dialog.
+        """
+        
         if not hasattr(self, 'show_summary_data_dialog'):
             self.show_summary_data_dialog = SummaryDataDialog(self)
         self.open_summary_data_dialog()
 
     def open_normality_test_dialog_lazy(self):
+        """
+        Lazily initializes and opens the normality test dialog.
+        This method checks if the normality test dialog has already been created.
+        If not, it initializes the dialog and then opens it. If the dialog has 
+        already been created, it simply opens the existing instance.
+        """
+        
         if not hasattr(self, 'show_normality_test_dialog'):
             self.show_normality_test_dialog = NormalityTestDialog(self)
         self.open_normality_test_dialog()
 
     def open_multicollinearity_dialog_lazy(self):
+        """
+        Lazily initializes and opens the multicollinearity dialog.
+        This method checks if the 'show_multicollinearity_dialog' attribute exists.
+        If it does not, it initializes it with an instance of MulticollinearityDialog.
+        Then, it opens the multicollinearity dialog.
+        Returns:
+            None
+        """
+        
         if not hasattr(self, 'show_multicollinearity_dialog'):
             self.show_multicollinearity_dialog = MulticollinearityDialog(self)
         self.open_multicollinearity_dialog()
 
     def open_variable_selection_dialog_lazy(self):
+        """
+        Lazily initializes and opens the variable selection dialog.
+        This method checks if the 'show_variable_selection_dialog' attribute
+        exists. If it does not, it initializes it with an instance of 
+        VariableSelectionDialog. Then, it calls the method to open the 
+        variable selection dialog.
+        """
+        
         if not hasattr(self, 'show_variable_selection_dialog'):
             self.show_variable_selection_dialog = VariableSelectionDialog(self)
         self.open_variable_selection_dialog()
     
     def open_scatter_plot_dialog_lazy(self):
+        """
+        Lazily initializes and opens the scatter plot dialog.
+        This method checks if the scatter plot dialog has already been created.
+        If not, it initializes the dialog and then opens it. This ensures that
+        the dialog is only created when needed, potentially saving resources.
+        Attributes:
+            show_scatter_plot_dialog (ScatterPlotDialog): The scatter plot dialog instance.
+        """
+        
         if not hasattr(self, 'show_scatter_plot_dialog'):
             self.show_scatter_plot_dialog = ScatterPlotDialog(self)
         self.open_scatter_plot_dialog()
 
     def open_correlation_matrix_dialog_lazy(self):
+        """
+        Lazily initializes and opens the correlation matrix dialog.
+        This method checks if the correlation matrix dialog has already been created.
+        If not, it initializes the dialog. Then, it opens the dialog.
+        Attributes:
+            show_correlation_matrix_dialog (CorrelationMatrixDialog): The correlation matrix dialog instance.
+        """
+        
         if not hasattr(self, 'show_correlation_matrix_dialog'):
             self.show_correlation_matrix_dialog = CorrelationMatrixDialog(self)
         self.open_correlation_matrix_dialog()
 
     def open_box_plot_dialog_lazy(self):
+        """
+        Lazily initializes and opens the box plot dialog.
+        This method checks if the 'show_box_plot_dialog' attribute exists.
+        If it does not, it initializes 'show_box_plot_dialog' with an instance
+        of BoxPlotDialog. Then, it calls the method to open the box plot dialog.
+        """
+        
         if not hasattr(self, 'show_box_plot_dialog'):
             self.show_box_plot_dialog = BoxPlotDialog(self)
         self.open_box_plot_dialog()
 
     def open_line_plot_dialog_lazy(self):
+        """
+        Lazily initializes and opens the line plot dialog.
+        This method checks if the 'show_line_plot_dialog' attribute exists.
+        If it does not, it initializes 'show_line_plot_dialog' with an instance
+        of LinePlotDialog. Then, it calls the method to open the line plot dialog.
+        """
+        
         if not hasattr(self, 'show_line_plot_dialog'):
             self.show_line_plot_dialog = LinePlotDialog(self)
         self.open_line_plot_dialog()
 
     def open_histogram_dialog_lazy(self):
+        """
+        Opens the histogram dialog lazily.
+        This method checks if the histogram dialog has already been created.
+        If not, it initializes the HistogramDialog and assigns it to the 
+        'show_histogram_dialog' attribute. Then, it opens the histogram dialog.
+        """
+        
         if not hasattr(self, 'show_histogram_dialog'):
             self.show_histogram_dialog = HistogramDialog(self)
         self.open_histogram_dialog()
     
     def open_summary_data_dialog(self):
+        """
+        Opens the summary data dialog.
+        This method sets the models for the summary data dialog and then displays the dialog.
+        It uses `self.model1` and `self.model2` as the models to be set in the dialog.
+        Returns:
+            None
+        """
+        
         self.show_summary_data_dialog.set_model(self.model1, self.model2)
         self.show_summary_data_dialog.show()
         
     def open_normality_test_dialog(self):
+        """
+        Opens the normality test dialog.
+        This method sets the models for the normality test dialog and then displays the dialog.
+        It uses `self.model1` and `self.model2` as the models to be set in the dialog.
+        Returns:
+            None
+        """
+        
         self.show_normality_test_dialog.set_model( self.model1, self.model2)
         self.show_normality_test_dialog.show()
 
     def open_scatter_plot_dialog(self):
+        """
+        Opens the scatter plot dialog and sets the models for the dialog.
+        This method sets the models for the scatter plot dialog using 
+        `self.model1` and `self.model2`, and then displays the dialog.
+        """
+        
         self.show_scatter_plot_dialog.set_model(self.model1, self.model2)
         self.show_scatter_plot_dialog.show()
 
     def open_line_plot_dialog(self):
+        """
+        Opens the line plot dialog and sets the models for the dialog.
+        This method sets the models for the line plot dialog using `self.model1` 
+        and `self.model2`, and then displays the dialog.
+        Returns:
+            None
+        """
+        
         self.show_line_plot_dialog.set_model(self.model1, self.model2)
         self.show_line_plot_dialog.show()
     
     def open_box_plot_dialog(self):
+        """
+        Opens the box plot dialog and sets the models for the dialog.
+        This method sets the models for the box plot dialog using `self.model1` and `self.model2`,
+        and then displays the dialog.
+        Returns:
+            None
+        """
+        
         self.show_box_plot_dialog.set_model(self.model1, self.model2)
         self.show_box_plot_dialog.show()
 
     def open_correlation_matrix_dialog(self):
+        """
+        Opens the correlation matrix dialog.
+        This method sets the model data for the correlation matrix dialog
+        and then displays the dialog to the user.
+        The models used are `self.model1` and `self.model2`.
+        """
+        
         self.show_correlation_matrix_dialog.set_model(self.model1, self.model2)
         self.show_correlation_matrix_dialog.show()
     
     def open_multicollinearity_dialog(self):
+        """
+        Opens the multicollinearity dialog and sets the models for it.
+        This method sets the models for the multicollinearity dialog using
+        `self.model1` and `self.model2`, and then displays the dialog.
+        """
+        
         self.show_multicollinearity_dialog.set_model(self.model1, self.model2)
         self.show_multicollinearity_dialog.show()
     
     def open_histogram_dialog(self):
+        """
+        Opens the histogram dialog and sets the models for it.
+        This method sets the models for the histogram dialog using `self.model1` and `self.model2`,
+        and then displays the histogram dialog.
+        """
+        
         self.show_histogram_dialog.set_model(self.model1, self.model2)
         self.show_histogram_dialog.show()
 
     def open_variable_selection_dialog(self):
+        """
+        Opens the variable selection dialog.
+        This method sets the model for the variable selection dialog using 
+        `self.model1` and `self.model2`, and then displays the dialog.
+        """
+        
         self.show_variable_selection_dialog.set_model(self.model1, self.model2)
         self.show_variable_selection_dialog.show()
 
     def show_modeling_sae_dialog_lazy(self):
+        """
+        Lazily initializes and displays the ModelingSaeDialog.
+        If the ModelingSaeDialog has not been created yet, this method will
+        instantiate it and set its model to `self.model1`. Then, it will
+        display the dialog.
+        Returns:
+            None
+        """
+        
         if self.show_modeling_sae_dialog is None:
             self.show_modeling_sae_dialog = ModelingSaeDialog(self)
         self.show_modeling_sae_dialog.set_model(self.model1)
         self.show_modeling_sae_dialog.show()
 
     def show_modeling_saeHB_dialog_lazy(self):
+        """
+        Displays the ModelingSaeHBDialog lazily.
+        This method initializes the ModelingSaeHBDialog if it has not been created yet,
+        sets its model to `self.model1`, and then shows the dialog.
+        Attributes:
+            show_modeling_saeHB_dialog (ModelingSaeHBDialog): The dialog instance to be shown.
+            model1: The model to be set in the dialog.
+        """
+        
         if self.show_modeling_saeHB_dialog is None:
             self.show_modeling_saeHB_dialog = ModelingSaeHBDialog(self)
         self.show_modeling_saeHB_dialog.set_model(self.model1)
         self.show_modeling_saeHB_dialog.show()
 
     def show_modeling_sae_unit_dialog_lazy(self):
+        """
+        Lazily initializes and displays the ModelingSaeUnitDialog.
+        If the dialog has not been created yet, it initializes it with the current instance.
+        Then, it sets the model for the dialog and shows it.
+        Attributes:
+            show_modeling_sae_unit_dialog (ModelingSaeUnitDialog): The dialog for modeling SAE units.
+            model1: The model to be set in the dialog.
+        """
+        
         if self.show_modeling_sae_unit_dialog is None:
             self.show_modeling_sae_unit_dialog = ModelingSaeUnitDialog(self)
         self.show_modeling_sae_unit_dialog.set_model(self.model1)
         self.show_modeling_sae_unit_dialog.show()
 
     def show_modeling_saeHB_normal_dialog_lazy(self):
+        """
+        Lazily initializes and displays the ModelingSaeHBNormalDialog.
+        If the dialog has not been created yet, it initializes a new instance
+        of ModelingSaeHBNormalDialog and sets its model to self.model1. 
+        Then, it shows the dialog.
+        Attributes:
+            show_modeling_saeHB_normal_dialog (ModelingSaeHBNormalDialog): 
+            The dialog instance to be displayed.
+            model1: The model to be set in the dialog.
+        """
+        
         if self.show_modeling_saeHB_normal_dialog is None:
             self.show_modeling_saeHB_normal_dialog = ModelingSaeHBNormalDialog(self)
         self.show_modeling_saeHB_normal_dialog.set_model(self.model1)
         self.show_modeling_saeHB_normal_dialog.show()
 
     def show_modellig_sae_pseudo_dialog_lazy(self):
+        """
+        Lazily initializes and displays the Modeling SAE Pseudo dialog.
+        This method checks if the `show_modellig_sae_pseudo_dialog` attribute is None.
+        If it is, it initializes a new instance of `ModelingSaePseudoDialog` with the current
+        instance (`self`) as the parent. It then sets the model for the dialog using `self.model1`
+        and displays the dialog.
+        Returns:
+            None
+        """
+        
         if self.show_modellig_sae_pseudo_dialog is None:
             self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
         self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
         self.show_modellig_sae_pseudo_dialog.show()
 
     def show_compute_variable_dialog_lazy(self):
+        """
+        Displays the Compute Variable dialog lazily.
+        This method initializes the Compute Variable dialog if it hasn't been created yet,
+        sets its model to `self.model1`, and then shows the dialog.
+        If `self.show_compute_variable_dialog` is already initialized, it simply updates
+        the model and shows the dialog.
+        Returns:
+            None
+        """
+        
         if self.show_compute_variable_dialog is None:
             self.show_compute_variable_dialog = ComputeVariableDialog(self)
         self.show_compute_variable_dialog.set_model(self.model1)
         self.show_compute_variable_dialog.show()
 
     def show_projection_variabel_dialog_lazy(self):
+        """
+        Lazily initializes and displays the ProjectionDialog.
+        This method checks if the `show_projection_variabel_dialog` attribute is None.
+        If it is, it initializes it with a new instance of `ProjectionDialog`.
+        It then sets the model for the dialog and checks if the prerequisites for
+        showing the dialog are met. If they are, it displays the dialog.
+        Attributes:
+            show_projection_variabel_dialog (ProjectionDialog): The dialog to be shown.
+            model1: The model to be set in the dialog.
+        Returns:
+            None
+        """
+        
         if self.show_projection_variabel_dialog is None:
             self.show_projection_variabel_dialog = ProjectionDialog(self)
         self.show_projection_variabel_dialog.set_model(self.model1)
@@ -539,6 +893,12 @@ class MainWindow(QMainWindow):
             self.show_projection_variabel_dialog.show()
 
     def open_about_dialog(self):
+        """
+        Opens the About dialog window.
+        This method creates an instance of the AboutDialog class, passing the
+        current instance as the parent, and then executes the dialog.
+        """
+        
         about_dialog = AboutDialog(self)
         about_dialog.exec()
 
@@ -702,6 +1062,12 @@ class MainWindow(QMainWindow):
             self.update_table(1, self.model1)
     
     def set_path(self, path):
+        """
+        Sets the path attribute for the MainWindow instance.
+        Args:
+            path (str): The path to be set.
+        """
+        
         self.path=path
     
     def add_output(self, script_text, result_text=None, plot_paths=None):

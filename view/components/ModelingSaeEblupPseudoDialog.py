@@ -15,6 +15,57 @@ import threading
 import contextvars
 
 class ModelingSaePseudoDialog(QDialog):
+    """
+    A dialog for configuring and running the SAE Pseudo Eblup model.
+    Attributes:
+        run_model_finished (pyqtSignal): Signal emitted when the model run is finished.
+        parent (QWidget): The parent widget.
+        model2 (object): The second model associated with the parent.
+        columns (list): List of column names.
+        variables_label (QLabel): Label for the variables list.
+        variables_list (QListView): List view for selecting variables.
+        variables_model (QStringListModel): Model for the variables list.
+        unassign_button (QPushButton): Button to unassign variables.
+        assign_of_interest_button (QPushButton): Button to assign variable of interest.
+        assign_aux_button (QPushButton): Button to assign auxiliary variables.
+        assign_as_factor_button (QPushButton): Button to assign variables as factors.
+        assign_vardir_button (QPushButton): Button to assign direct variance.
+        assign_domain_button (QPushButton): Button to assign domain.
+        of_interest_label (QLabel): Label for the variable of interest list.
+        of_interest_list (QListView): List view for the variable of interest.
+        of_interest_model (QStringListModel): Model for the variable of interest list.
+        auxilary_label (QLabel): Label for the auxiliary variables list.
+        auxilary_list (QListView): List view for the auxiliary variables.
+        auxilary_model (QStringListModel): Model for the auxiliary variables list.
+        as_factor_label (QLabel): Label for the factors of auxiliary variables list.
+        as_factor_list (QListView): List view for the factors of auxiliary variables.
+        as_factor_model (QStringListModel): Model for the factors of auxiliary variables list.
+        vardir_label (QLabel): Label for the direct variance list.
+        vardir_list (QListView): List view for the direct variance.
+        vardir_model (QStringListModel): Model for the direct variance list.
+        domain_label (QLabel): Label for the domain list.
+        domain_list (QListView): List view for the domain.
+        domain_model (QStringListModel): Model for the domain list.
+        option_button (QPushButton): Button to show options.
+        text_script (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        r_script_edit (QTextEdit): Text edit for displaying and editing the R script.
+        ok_button (QPushButton): Button to run the model.
+        of_interest_var (list): List of variables of interest.
+        auxilary_vars (list): List of auxiliary variables.
+        vardir_var (list): List of direct variance variables.
+        as_factor_var (list): List of factors of auxiliary variables.
+        domain_var (list): List of domain variables.
+        selection_method (str): Method of selection.
+        finnish (bool): Flag indicating if the process is finished.
+        stop_thread (threading.Event): Event to stop the thread.
+    Methods:
+        closeEvent(event): Handles the close event of the dialog.
+        set_model(model): Sets the model and updates the variables list.
+        accept(): Validates input and runs the model.
+        on_run_model_finished(result, error, sae_model, r_script): Handles the completion of the model run.
+    """
+    
     run_model_finished = pyqtSignal(object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)
@@ -176,6 +227,7 @@ class ModelingSaePseudoDialog(QDialog):
         self.as_factor_var = []
         self.domain_var = [] 
         self.selection_method = "None"
+        self.finnish = False
         
         self.run_model_finished.connect(self.on_run_model_finished)
         
@@ -186,9 +238,10 @@ class ModelingSaePseudoDialog(QDialog):
         for thread in threads:
             if thread.name == "Pseudo" and thread.is_alive():
                 reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes:
+                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+        self.finnish = False
         event.accept()
 
     def set_model(self, model):
@@ -249,6 +302,7 @@ class ModelingSaePseudoDialog(QDialog):
             finally:
                 if not self.stop_thread.is_set():
                     self.run_model_finished.emit(result, error, sae_model, r_script)
+                    self.finnish = True
 
         def check_run_time():
             if thread.is_alive():
@@ -272,4 +326,5 @@ class ModelingSaePseudoDialog(QDialog):
             self.parent.update_table(2, sae_model.get_model2())
         display_script_and_output(self.parent, r_script, result)
         enable_service(self, error, result)
+        self.finnish = True
         self.close()

@@ -4,6 +4,24 @@ import rpy2.robjects as ro
 import rpy2_arrow.polars as rpy2polars
 
 def run_multicollinearity(parent):
+    """
+    Run multicollinearity analysis using R from within a Python environment.
+    This function performs the following steps:
+    1. Activates R environment.
+    2. Retrieves data from two models in the parent object.
+    3. Combines the data using Polars and removes any null values.
+    4. Converts the Polars DataFrame to an R DataFrame.
+    5. Loads the 'car' library in R and prepares the data for analysis.
+    6. Executes a pre-generated R script stored in the parent object.
+    7. Captures and stores the output of the regression model and VIF (Variance Inflation Factor) analysis.
+    8. Combines the results and stores them in the parent object.
+    Parameters:
+    parent (object): An object that contains the models, R script, and attributes to store results and errors.
+    Raises:
+    ValueError: If no R script has been generated in the parent object.
+    Exception: If any other error occurs during the execution, it is caught and stored in the parent object.
+    """
+    
     parent.activate_R()  # Pastikan R aktif
 
     # Ambil data dari model
