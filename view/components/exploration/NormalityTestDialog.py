@@ -9,6 +9,48 @@ from controller.Eksploration.EksplorationController import NormalityTestControll
 
 
 class NormalityTestDialog(QDialog):
+    """
+    A dialog for performing normality tests on selected variables from two data models.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns in the first data model.
+        all_columns_model2 (list): List of all columns in the second data model.
+        selected_status (dict): Dictionary to store the status of selected variables.
+        data_editor_label (QLabel): Label for the data editor section.
+        data_editor_model (QStringListModel): Model for the data editor list view.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output section.
+        data_output_model (QStringListModel): Model for the data output list view.
+        data_output_list (QListView): List view for the data output.
+        add_button (QPushButton): Button to add selected variables.
+        remove_button (QPushButton): Button to remove selected variables.
+        selected_label (QLabel): Label for the selected variables section.
+        selected_model (QStringListModel): Model for the selected variables list view.
+        selected_list (QListView): List view for the selected variables.
+        shapiro_checkbox (QCheckBox): Checkbox for the Shapiro-Wilk test.
+        jarque_checkbox (QCheckBox): Checkbox for the Jarque-Bera test.
+        lilliefors_checkbox (QCheckBox): Checkbox for the Lilliefors test.
+        histogram_checkbox (QCheckBox): Checkbox for displaying histograms.
+        qqplot_checkbox (QCheckBox): Checkbox for displaying Q-Q plots.
+        script_layout (QHBoxLayout): Layout for the R script section.
+        script_label (QLabel): Label for the R script section.
+        icon_label (QLabel): Label for the running icon.
+        script_box (QTextEdit): Text box for displaying the generated R script.
+        run_button (QPushButton): Button to run the normality test.
+    Methods:
+        __init__(parent): Initializes the dialog and its components.
+        set_model(model1, model2): Sets the data models and updates the data editor and output lists.
+        get_column_with_dtype(model): Returns a list of columns with their data types from the given model.
+        add_variable(): Adds selected variables to the selected list and updates the R script.
+        remove_variable(): Removes selected variables from the selected list and updates the R script.
+        get_selected_columns(): Returns a list of selected columns without their data types.
+        generate_r_script(): Generates the R script based on selected variables, methods, and graph options.
+        accept(): Runs the normality test using the generated R script and displays the results.
+        closeEvent(event): Resets the dialog when it is closed.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

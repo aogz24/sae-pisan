@@ -8,6 +8,42 @@ from model.SummaryData import SummaryData
 from controller.Eksploration.EksplorationController import SummaryDataController
 
 class SummaryDataDialog(QDialog):
+    """
+    A dialog for summarizing data from two models and generating an R script.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns in model1.
+        all_columns_model2 (list): List of all columns in model2.
+        selected_status (dict): Dictionary to store the status of selected variables.
+        data_editor_label (QLabel): Label for the data editor list.
+        data_editor_model (QStringListModel): Model for the data editor list.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output list.
+        data_output_model (QStringListModel): Model for the data output list.
+        data_output_list (QListView): List view for the data output.
+        add_button (QPushButton): Button to add variables to the selected list.
+        remove_button (QPushButton): Button to remove variables from the selected list.
+        selected_label (QLabel): Label for the selected variables list.
+        selected_model (QStringListModel): Model for the selected variables list.
+        selected_list (QListView): List view for the selected variables.
+        script_label (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        script_box (QTextEdit): Text box to display the generated R script.
+        run_button (QPushButton): Button to run the R script.
+    Methods:
+        __init__(self, parent): Initializes the dialog with the given parent.
+        set_model(self, model1, model2): Sets the data models and updates the lists.
+        get_column_with_dtype(self, model): Returns a list of columns with their data types.
+        add_variable(self): Adds selected variables to the selected list and generates the R script.
+        remove_variable(self): Removes selected variables from the selected list and generates the R script.
+        get_selected_columns(self): Returns a list of selected columns without data types.
+        generate_r_script(self): Generates the R script based on selected variables.
+        accept(self): Runs the R script and handles the result.
+        closeEvent(self, event): Resets the dialog when it is closed.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent) 
         self.parent = parent

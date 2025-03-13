@@ -9,6 +9,43 @@ from model.BoxPlot import BoxPlot
 from controller.Graph.GraphController import BoxPlotController
 
 class BoxPlotDialog(QDialog):
+    """
+    A dialog for creating and displaying box plots using selected variables from two data models.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns from the first data model.
+        all_columns_model2 (list): List of all columns from the second data model.
+        selected_status (dict): Dictionary to store the status of selected variables.
+        data_editor_label (QLabel): Label for the data editor list.
+        data_editor_model (QStringListModel): Model for the data editor list.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output list.
+        data_output_model (QStringListModel): Model for the data output list.
+        data_output_list (QListView): List view for the data output.
+        add_button (QPushButton): Button to add selected variables.
+        remove_button (QPushButton): Button to remove selected variables.
+        selected_label (QLabel): Label for the selected variables list.
+        selected_model (QStringListModel): Model for the selected variables list.
+        selected_list (QListView): List view for the selected variables.
+        method_combo (QComboBox): Combo box to select the box plot method.
+        script_layout (QHBoxLayout): Layout for the R script display.
+        script_label (QLabel): Label for the R script.
+        icon_label (QLabel): Label to display the running icon.
+        script_box (QTextEdit): Text box to display the generated R script.
+        run_button (QPushButton): Button to run the generated R script.
+    Methods:
+        set_model(model1, model2): Sets the data models and updates the data editor and output lists.
+        get_column_with_dtype(model): Returns a list of columns with their data types from the given model.
+        add_variable(): Adds selected variables from the data editor and output lists to the selected variables list.
+        remove_variable(): Removes selected variables from the selected variables list and adds them back to the data editor or output lists.
+        get_selected_columns(): Returns a list of selected columns formatted for R script.
+        generate_r_script(): Generates the R script based on the selected variables and method.
+        accept(): Runs the generated R script and displays the result.
+        closeEvent(event): Resets the dialog when it is closed.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

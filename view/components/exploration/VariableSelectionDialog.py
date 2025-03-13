@@ -9,6 +9,52 @@ from controller.Eksploration.EksplorationController import VariableSelectionCont
 
 
 class VariableSelectionDialog(QDialog):
+    """
+    A dialog for selecting variables for regression analysis.
+    Attributes:
+        parent (QWidget): The parent widget.
+        model1 (Any): The first data model.
+        model2 (Any): The second data model.
+        all_columns_model1 (list): List of all columns in model1.
+        all_columns_model2 (list): List of all columns in model2.
+        selected_status (dict): Dictionary to store the status of selected variables.
+        data_editor_label (QLabel): Label for the data editor.
+        data_editor_model (QStringListModel): Model for the data editor list view.
+        data_editor_list (QListView): List view for the data editor.
+        data_output_label (QLabel): Label for the data output.
+        data_output_model (QStringListModel): Model for the data output list view.
+        data_output_list (QListView): List view for the data output.
+        remove_button1 (QPushButton): Button to remove selected variables.
+        add_dependent_variable_button (QPushButton): Button to add a dependent variable.
+        add_independent_variable_button (QPushButton): Button to add independent variables.
+        dependent_variable_label (QLabel): Label for the dependent variable list.
+        dependent_variable_model (QStringListModel): Model for the dependent variable list view.
+        dependent_variable_list (QListView): List view for the dependent variable.
+        independent_variable_label (QLabel): Label for the independent variable list.
+        independent_variable_model (QStringListModel): Model for the independent variable list view.
+        independent_variable_list (QListView): List view for the independent variable.
+        forward_checkbox (QCheckBox): Checkbox for forward selection method.
+        backward_checkbox (QCheckBox): Checkbox for backward selection method.
+        stepwise_checkbox (QCheckBox): Checkbox for stepwise selection method.
+        script_label (QLabel): Label for the R script.
+        icon_label (QLabel): Label for the running icon.
+        script_box (QTextEdit): Text box to display the generated R script.
+        run_button (QPushButton): Button to run the variable selection.
+    Methods:
+        __init__(self, parent): Initializes the dialog.
+        set_model(self, model1, model2): Sets the data models for the dialog.
+        get_column_with_dtype(self, model): Returns a list of columns with their data types.
+        dependent_variable(self): Adds a selected variable to the dependent variable list.
+        independent_variables(self): Adds selected variables to the independent variable list.
+        remove_variable(self): Removes selected variables from the dependent and independent variable lists.
+        get_selected_dependent_variable(self): Returns the selected dependent variable.
+        get_selected_independent_variables(self): Returns the selected independent variables.
+        accept(self): Runs the variable selection process.
+        closeEvent(self, event): Clears selected variables when the dialog is closed.
+        get_selected_methods(self): Returns the selected variable selection methods.
+        generate_r_script(self): Generates the R script for variable selection.
+    """
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
