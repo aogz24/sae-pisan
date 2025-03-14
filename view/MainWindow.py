@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame, QSpacerItem,
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, 
-    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout
+    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
 )
 from PyQt6.QtCore import Qt, QSize 
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
@@ -32,6 +32,7 @@ from service.table.DeleteColumn import confirm_delete_selected_columns
 from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
 from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
+import threading
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -1334,4 +1335,31 @@ class MainWindow(QMainWindow):
             self.remove_output(card_frame)
         elif action == copy_image_action:
             self.copy_output_image(card_frame)
+            
+    def closeEvent(self, event):
+        """Handle the close event to show a confirmation dialog."""
+        reply = QMessageBox.question(self, 'Confirm Exit',
+                                     'Are you sure you want to exit?',
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            import rpy2.robjects as ro
+            if 'saeHB' in ro.r('loadedNamespaces()'):
+                ro.r('detach("package:saeHB", unload=TRUE)')
+            if 'rjags' in ro.r('loadedNamespaces()'):
+                ro.r("unloadNamespace('rjags')")
+            for thread in threading.enumerate():
+                print(f"Thread Name: {thread.name}, Thread ID: {thread.ident}")
+            
+            #to kill the process
+            import os
+            import psutil
+
+            current_system_pid = os.getpid()
+
+            ThisSystem = psutil.Process(current_system_pid)
+            ThisSystem.terminate()
+            event.accept()
+        else:
+            event.ignore()
 
