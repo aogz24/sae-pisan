@@ -292,15 +292,23 @@ class ProjectionDialog(QDialog):
         self.run_model_finished.connect(self.on_run_model_finished)
         
         self.stop_thread = threading.Event()
+        self.reply=None
         
     def closeEvent(self, event):
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Projection" and thread.is_alive():
-                reply = QMessageBox.question(self, 'Run in Background', 'Do you want to run the model in the background?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-                if reply != QMessageBox.StandardButton.Yes and not self.finnish:
+                if self.reply is None:
+                    self.reply = QMessageBox(self)
+                    self.reply.setWindowTitle('Run in Background')
+                    self.reply.setText('Do you want to run the model in the background?')
+                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
+                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
                     self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+        self.finnish=False
+        self.reply=None
         event.accept()
     
     def show_prerequisites(self):
@@ -456,6 +464,8 @@ class ProjectionDialog(QDialog):
     def on_run_model_finished(self, result, error, sae_model, r_script):
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
+        if self.reply is not None:
+            self.reply.reject()
         display_script_and_output(self.parent, r_script, result)
         enable_service(self, error, result)
         self.finnish = True
