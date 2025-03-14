@@ -1348,8 +1348,6 @@ class MainWindow(QMainWindow):
                 ro.r('detach("package:saeHB", unload=TRUE)')
             if 'rjags' in ro.r('loadedNamespaces()'):
                 ro.r("unloadNamespace('rjags')")
-            for thread in threading.enumerate():
-                print(f"Thread Name: {thread.name}, Thread ID: {thread.ident}")
             
             #to kill the process
             import os
