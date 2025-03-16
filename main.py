@@ -60,6 +60,8 @@ def main():
     # Muat dan terapkan stylesheet global untuk aplikasi
     app.setStyleSheet(load_stylesheet())  # Terapkan ke seluruh aplikasi
 
+    app.styleHints().setColorScheme(Qt.ColorScheme.Light);
+    
     # Set icon aplikasi
     view.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), 'assets', 'icon.svg')))
 
