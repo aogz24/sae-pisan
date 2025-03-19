@@ -288,7 +288,7 @@ class NormalityTestDialog(QDialog):
             if show_histogram:
                 r_script += (
                     f"histogram_{safe_var} <- ggplot(data, aes(x = `{var}`)) +\n"
-                    f"    geom_histogram(binwidth = 30, color = 'black', fill = 'blue') +\n"
+                    f"    geom_histogram(bins = 10, color = 'black', fill = 'blue') +\n"
                     f"    ggtitle('Histogram of {var}') +\n"
                     f"    xlab('{var}') +\n"
                     f"    ylab('Frequency')\n"

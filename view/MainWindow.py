@@ -367,6 +367,7 @@ class MainWindow(QMainWindow):
 
         # Submenu "Pseudo"
         menu_pseudo = QMenu("Pseudo", self)
+        menu_pseudo.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'pseudo.svg')))
         action_eblup_pseudo = QAction("EBLUP", self)
         action_eblup_pseudo.triggered.connect(self.show_modellig_sae_pseudo_dialog_lazy)
         menu_pseudo.addAction(action_eblup_pseudo)
