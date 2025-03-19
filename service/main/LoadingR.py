@@ -18,7 +18,7 @@ def loadR(splash):
             suppressPackageStartupMessages({
                 r_home <- Sys.getenv("R_HOME")
                 packages <- c("sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car")
-                installed <- rownames(installed.packages())
+                installed <- rownames(installed.packages(lib.loc=r_home))
                 for (pkg in packages) {
                     if (!(pkg %in% installed)) {
                         install.packages(pkg, lib=r_home)

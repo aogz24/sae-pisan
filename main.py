@@ -57,26 +57,6 @@ def main():
         stylesheet_path = os.path.join(os.path.dirname(__file__), 'assets','style', 'style.qss')
         with open(stylesheet_path, 'r') as file:
             return file.read()
-        
-    status_file = os.path.join(os.path.dirname(__file__), 'file-data', 'run.dat')
-    if not os.path.exists(status_file) or os.path.getsize(status_file) == 0:
-        os.makedirs(os.path.dirname(status_file), exist_ok=True)
-        with open(status_file, 'w') as f:
-            f.write('run')
-        r_command = 'install.packages(c("sae", "arrow", "sae.projection", "emdi", "xgboost", ' \
-                    '"LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car"), ' \
-                    'repos="https://cloud.r-project.org")'
-        
-        # Run R with the install package command
-        subprocess.run([r_exe_path, '--vanilla', '-e', r_command], shell=True)
-        
-        # Command to install 'polars' package from a specific repository
-        r_command_polars = 'install.packages("polars", repos="https://community.r-multiverse.org")'
-        
-        # Run R with the install 'polars' package command
-        subprocess.run([r_exe_path, '--vanilla', '-e', r_command_polars], shell=True)
-    else:
-        print("Fungsi sudah pernah dijalankan.")
 
     # Muat dan terapkan stylesheet global untuk aplikasi
     app.setStyleSheet(load_stylesheet())  # Terapkan ke seluruh aplikasi
