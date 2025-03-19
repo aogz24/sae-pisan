@@ -101,5 +101,6 @@ coll = COLLECT(
     debug=False,
     bootloader_ignore_signals=False,
     codesign_identity=None,
-    entitlements_file=None
+    entitlements_file=None,
+    uac_admin=True
 )

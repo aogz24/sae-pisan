@@ -158,7 +158,7 @@ class ProjectionDialog(QDialog):
         
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         right_layout = QVBoxLayout()
-        right_layout.minimumSize(0, 650)
+        # right_layout.minimumSize(0, 650)
         self.of_interest_label = QLabel("Variable of interest:")
         self.of_interest_list = QListView()
         self.of_interest_list.setMinimumHeight(100)

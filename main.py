@@ -4,6 +4,7 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtCore import Qt
 import sys
 import os
+import pyuac
 from controller.FileController import FileController
 from service.main.CheckEnviroment import check_environment
 
@@ -81,4 +82,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if not pyuac.isUserAdmin():
+        pyuac.runAsAdmin()
+    else:
+        main()
