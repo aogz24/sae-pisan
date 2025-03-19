@@ -27,7 +27,7 @@ def run_model_eblup_area(parent):
     error = False
     convert_df(df, parent)
     try:
-        ro.r('suppressMessages(library(sae))')
+        ro.r('suppressMessages(library(sae, lib.loc=r_home))')
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R

@@ -30,4 +30,5 @@ def loadR(splash):
             })
             """
     ro.r(r_script)
+    ro.r('r_home <- Sys.getenv("R_HOME")')
     splash.update_message()
