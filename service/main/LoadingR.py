@@ -1,5 +1,6 @@
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
+import os
 
 def loadR(splash):
     """Loads and installs necessary R packages for the application.
@@ -17,7 +18,7 @@ def loadR(splash):
     r_script = """
             suppressPackageStartupMessages({
                 r_home <- Sys.getenv("R_HOME")
-                packages <- c("sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car")
+                packages <- c("sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest", "tidyr", "carData", "ggplot2", "ggcorrplot", "dplyr", "tseries")
                 installed <- rownames(installed.packages(lib.loc=r_home))
                 for (pkg in packages) {
                     if (!(pkg %in% installed)) {
@@ -30,5 +31,8 @@ def loadR(splash):
             })
             """
     ro.r(r_script)
-    ro.r('r_home <- Sys.getenv("R_HOME")')
+    r_home = ro.r('Sys.getenv("R_HOME")')[0]
+    os.environ['R_LIBS_USER'] = r_home
+    # Initialize rpy2 with the new library location
+    ro.r(f'.libPaths("{r_home}")')
     splash.update_message()

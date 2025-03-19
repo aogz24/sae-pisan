@@ -30,7 +30,7 @@ def run_model_hb_area(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library(saeHB, lib.loc=r_home))')
+        ro.r('suppressMessages(library(saeHB))')
         ro.r('data <- as.data.frame(r_df)')
         ro.r('attach(data)')
         try:

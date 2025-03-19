@@ -31,7 +31,7 @@ def run_model_eblup_pseudo(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library("emdi", lib.loc=r_home))')
+        ro.r('suppressMessages(library("emdi"))')
         ro.r('data <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
