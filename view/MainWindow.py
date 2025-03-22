@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
         
         super().__init__()
 
-        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v1.2.0")
+        self.setWindowTitle("SAE Pisan: Small Area Estimation Programming for Statistical Analysis v1.2.1")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({
