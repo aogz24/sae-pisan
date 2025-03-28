@@ -117,13 +117,11 @@ def assign_as_factor(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
-        new_vars = []
-        for index in selected_indexes:
-            new_vars.append(index.data())
-        parent.as_factor_var = list(set(parent.as_factor_var + new_vars))  # Add new variables if they are different
+        last_index = selected_indexes[-1]  # Get the last selected index
+        new_var = last_index.data()  # Get the data of the last selected variable
+        parent.as_factor_var = [new_var]  # Assign only the last variable
         parent.as_factor_model.setStringList(parent.as_factor_var)
-        for index in sorted(selected_indexes, reverse=True):
-            parent.variables_list.model().removeRow(index.row())  # Remove from variables list
+        parent.variables_list.model().removeRow(last_index.row())  # Remove the last selected variable from the list
         show_r_script(parent)
         
 def assign_domains(parent):
