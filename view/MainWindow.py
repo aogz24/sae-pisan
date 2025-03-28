@@ -34,7 +34,6 @@ from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
 import threading
 import json
-import tempfile
 import datetime
 
 class MainWindow(QMainWindow):
