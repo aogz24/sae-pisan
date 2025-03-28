@@ -1373,15 +1373,22 @@ class MainWindow(QMainWindow):
         """
         temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
         if os.path.exists(temp_file):
-            with open(temp_file, 'r') as file:
-                data = json.load(file)
-                self.data1 = pl.DataFrame(data['data1'])
-                self.data2 = pl.DataFrame(data['data2'])
-                self.model1.set_data(self.data1)
-                self.model2.set_data(self.data2)
-                self.update_table(1, self.model1)
-                self.update_table(2, self.model2)
-                self.set_output_data(data['output'])
+            reply = QMessageBox.question(self, 'Load Temporary Data',
+                                         'Temporary data was found. Do you want to load it?',
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                         QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.Yes:
+                with open(temp_file, 'r') as file:
+                    data = json.load(file)
+                    self.data1 = pl.DataFrame(data['data1'])
+                    self.data2 = pl.DataFrame(data['data2'])
+                    self.model1.set_data(self.data1)
+                    self.model2.set_data(self.data2)
+                    self.update_table(1, self.model1)
+                    self.update_table(2, self.model2)
+                    self.set_output_data(data['output'])
+        else:
+            QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
     def get_output_data(self):
         """
