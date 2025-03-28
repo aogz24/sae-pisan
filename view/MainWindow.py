@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, 
     QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
 )
-from PyQt6.QtCore import Qt, QSize 
+from PyQt6.QtCore import Qt, QSize, QTimer 
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
 import polars as pl
 from model.TableModel import TableModel
@@ -33,6 +33,9 @@ from service.table.AddColumn import show_add_column_before_dialog, show_add_colu
 from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
 import threading
+import json
+import tempfile
+import datetime
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -142,6 +145,12 @@ class MainWindow(QMainWindow):
 
         # Inisialisasi UI
         self.init_ui()
+
+        # Set up autosave timer
+        self.autosave_interval = 60000  # 60 seconds
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.timeout.connect(self.autosave_data)
+        self.autosave_timer.start(self.autosave_interval)
         self.showMaximized()
 
     def init_ui(self):
@@ -263,7 +272,12 @@ class MainWindow(QMainWindow):
 
         # Membuat menu File -> Load dan Save
         self.file_menu = self.menu_bar.addMenu("File")
-
+        
+        self.recent_data = QAction("Open Recent data", self)
+        self.recent_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_D))
+        self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.recent_data.setStatusTip("Ctrl+D")
+        
         self.load_action = QAction("Load File", self)
         self.load_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
@@ -284,6 +298,7 @@ class MainWindow(QMainWindow):
         self.save_output_pdf.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savepdf.svg')))
         self.save_output_pdf.setStatusTip("Ctrl+P")
 
+        self.file_menu.addAction(self.recent_data)
         self.file_menu.addAction(self.load_action)
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
@@ -1337,6 +1352,71 @@ class MainWindow(QMainWindow):
             self.remove_output(card_frame)
         elif action == copy_image_action:
             self.copy_output_image(card_frame)
+
+    def autosave_data(self):
+        """
+        Save the current state of data1, data2, and output to a temporary file.
+        """
+        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
+        data = {
+            'timestamp': datetime.datetime.now().isoformat(),
+            'data1': self.model1.get_data().to_dicts(),
+            'data2': self.model2.get_data().to_dicts(),
+            'output': self.get_output_data()
+        }
+        with open(temp_file, 'w') as file:
+            json.dump(data, file)
+
+    def load_temp_data(self):
+        """
+        Load data from the temporary file if it exists and is recent.
+        """
+        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
+        if os.path.exists(temp_file):
+            with open(temp_file, 'r') as file:
+                data = json.load(file)
+                self.data1 = pl.DataFrame(data['data1'])
+                self.data2 = pl.DataFrame(data['data2'])
+                self.model1.set_data(self.data1)
+                self.model2.set_data(self.data2)
+                self.update_table(1, self.model1)
+                self.update_table(2, self.model2)
+                self.set_output_data(data['output'])
+
+    def get_output_data(self):
+        """
+        Get the current state of the output layout.
+        """
+        output_data = []
+        for i in range(self.output_layout.count()):
+            widget = self.output_layout.itemAt(i).widget()
+            if isinstance(widget, QFrame):
+                data = {}
+                for j in range(widget.layout().count()):
+                    sub_widget = widget.layout().itemAt(j).widget()
+                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
+                        script_box = widget.layout().itemAt(j + 1).widget()
+                        data['script_text'] = script_box.toPlainText()
+                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
+                        result_box = widget.layout().itemAt(j + 1).widget()
+                        data['result_text'] = result_box.toPlainText()
+                    elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
+                        error_box = widget.layout().itemAt(j + 1).widget()
+                        data['error_text'] = error_box.toPlainText()
+                output_data.append(data)
+        return output_data
+
+    def set_output_data(self, output_data):
+        """
+        Set the output layout from the saved state.
+        """
+        for data in output_data:
+            self.add_output(
+                script_text=data.get('script_text', ''),
+                result_text=data.get('result_text', ''),
+                plot_paths=None,
+                error_text=data.get('error_text', '')
+            )
             
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
@@ -1345,6 +1425,7 @@ class MainWindow(QMainWindow):
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
+            self.autosave_data()
             import rpy2.robjects as ro
             if 'saeHB' in ro.r('loadedNamespaces()'):
                 ro.r('detach("package:saeHB", unload=TRUE)')

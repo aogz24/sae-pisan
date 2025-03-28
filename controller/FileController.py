@@ -45,7 +45,8 @@ class FileController:
         self.view.save_data_output_action.triggered.connect(self.save_data_output)
         self.view.actionLoad_file.triggered.connect(self.load_file)
         self.view.actionSave_Data.triggered.connect(self.save_data)
-        self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)  
+        self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)
+        self.view.recent_data.triggered.connect(self.view.load_temp_data)  
 
     def load_file(self):
         """Muat file CSV atau Excel ke model pertama."""

@@ -83,6 +83,7 @@ def main():
 
 if __name__ == "__main__":
     if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()
+        # pyuac.runAsAdmin()
+        main()
     else:
         main()
