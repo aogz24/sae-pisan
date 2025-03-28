@@ -90,7 +90,8 @@ class ProjectionDialog(QDialog):
         self.parent = parent
         self.model2 = parent.model2
         self.setWindowTitle("Projection SAE")
-        self.setMinimumHeight(700)
+        screen_height = self.parent.screen().size().height()
+        self.setMinimumHeight(int(round(screen_height * 0.82)))
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
@@ -258,8 +259,9 @@ class ProjectionDialog(QDialog):
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
-        self.r_script_edit.setFixedHeight(150)
+        self.r_script_edit.setFixedHeight(round(screen_height*0.18))
         self.r_script_edit.setReadOnly(False)
+        self.r_script_edit.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         main_layout.addWidget(self.r_script_edit)
 
         # Tombol untuk tindakan dialog

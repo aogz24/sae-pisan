@@ -85,7 +85,8 @@ class ModelingSaeUnitDialog(QDialog):
         self.parent = parent
         self.model2 = parent.model2
         self.setWindowTitle("SAE Eblup")
-        self.setFixedHeight(700)
+        screen_height = self.parent.screen().size().height()
+        self.setMinimumHeight(int(round(screen_height * 0.82)))
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
@@ -196,7 +197,6 @@ class ModelingSaeUnitDialog(QDialog):
         self.auxilary_vars_mean = QLabel("Auxilary Variable(s) Mean:")
         self.auxilary_vars_mean_list = QListView()
         self.aux_mean_model = QStringListModel()
-        self.auxilary_vars_mean_list.setMinimumHeight(80)
         self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
         self.auxilary_vars_mean_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         right_layout.addWidget(self.auxilary_vars_mean)
@@ -242,7 +242,8 @@ class ModelingSaeUnitDialog(QDialog):
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
-        self.r_script_edit.setFixedHeight(150)
+        self.r_script_edit.setFixedHeight(round(screen_height*0.20))
+        self.r_script_edit.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 

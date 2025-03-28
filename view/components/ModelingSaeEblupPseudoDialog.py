@@ -72,7 +72,8 @@ class ModelingSaePseudoDialog(QDialog):
         self.parent = parent
         self.model2 = parent.model2
         self.setWindowTitle("SAE Pseudo Eblup")
-        self.setFixedHeight(700)
+        screen_height = self.parent.screen().size().height()
+        self.setMinimumHeight(int(round(screen_height * 0.82)))
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
@@ -206,7 +207,8 @@ class ModelingSaePseudoDialog(QDialog):
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
-        self.r_script_edit.setFixedHeight(150)
+        self.r_script_edit.setFixedHeight(round(screen_height*0.20))
+        self.r_script_edit.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.r_script_edit.setReadOnly(False)
         main_layout.addWidget(self.r_script_edit)
 
