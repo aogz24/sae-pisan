@@ -72,6 +72,7 @@ class ModelingSaeHBDialog(QDialog):
         self.model2 = parent.model2
         self.setWindowTitle("SAE HB Beta")
         self.setFixedHeight(700)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
         self.model_method = "Beta"

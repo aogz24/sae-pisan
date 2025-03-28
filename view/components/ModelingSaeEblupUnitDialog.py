@@ -86,6 +86,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.model2 = parent.model2
         self.setWindowTitle("SAE Eblup")
         self.setFixedHeight(700)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
 

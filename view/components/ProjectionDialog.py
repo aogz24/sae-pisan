@@ -91,6 +91,7 @@ class ProjectionDialog(QDialog):
         self.model2 = parent.model2
         self.setWindowTitle("Projection SAE")
         self.setMinimumHeight(700)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
 

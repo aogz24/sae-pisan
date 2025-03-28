@@ -73,6 +73,7 @@ class ModelingSaePseudoDialog(QDialog):
         self.model2 = parent.model2
         self.setWindowTitle("SAE Pseudo Eblup")
         self.setFixedHeight(700)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.columns = []
 
