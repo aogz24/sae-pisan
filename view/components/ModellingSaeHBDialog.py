@@ -273,6 +273,12 @@ class ModelingSaeHBDialog(QDialog):
             self.ok_button.setText("Run Model")
             return
         
+        data = self.model.get_data()
+        variable = self.of_interest_var[0].split('[')[0].strip()
+        if not (data[variable].dtype == pl.Float64 and (data[variable] >= 0).all() and (data[variable] <= 1).all()):
+            QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
+            return
+        
         r_script = get_script(self)
         if not check_script(r_script):
             return
