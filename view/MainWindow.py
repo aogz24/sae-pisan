@@ -954,6 +954,7 @@ class MainWindow(QMainWindow):
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
+            self.autosave_data()
             if self.show_modeling_sae_dialog:
                 self.show_modeling_sae_dialog.set_model(model)
             if self.show_modeling_saeHB_dialog:
@@ -972,6 +973,7 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
+            self.autosave_data()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
