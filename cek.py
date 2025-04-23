@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget
-from PyQt6.QtGui import QPixmap, QClipboard
+from PyQt6.QtGui import QPixmap, QClipboard 
 
 class ClipboardImageApp(QWidget):
     def __init__(self):
