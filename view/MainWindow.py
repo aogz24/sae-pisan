@@ -140,7 +140,7 @@ class MainWindow(QMainWindow):
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
-        self.font_size = 14
+        self.font_size = 12
 
         # Inisialisasi UI
         self.init_ui()
@@ -523,7 +523,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 14, "Big": 22}
+        sizes = {"Small": 10, "Medium": 12, "Big": 16}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
@@ -585,7 +585,8 @@ class MainWindow(QMainWindow):
         if os.path.exists(stylesheet_path):
             with open(stylesheet_path, 'r') as file:
                 stylesheet = file.read()
-                stylesheet = stylesheet.replace("font-size: 14px;", f"font-size: {size}px;")
+                # stylesheet = stylesheet.replace("font-size: 12px;", f"font-size: {size}px;")
+                stylesheet = stylesheet.replace("__FONT_SIZE__", f"{size}px")
                 return stylesheet
         else:
             print(f"Stylesheet tidak ditemukan di {stylesheet_path}")
