@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy
+    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
@@ -165,19 +165,32 @@ class ModelingSaeDialog(QDialog):
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
         self.option_button.setFixedWidth(150)
+        
         self.text_script = QLabel("R Script:")
         self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setText(">")
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
+        
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.text_script)
+        button_layout.addWidget(self.toggle_script_button)
+        button_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+        
         # Create a horizontal layout to place the text_script and icon_label in one row
         script_layout = QHBoxLayout()
-        script_layout.addWidget(self.text_script)
+        script_layout.addLayout(button_layout)
+        script_layout.addStretch()
         script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
         script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
-        script_layout.setAlignment(self.icon_label, Qt.AlignmentFlag.AlignRight)
 
         main_layout.addLayout(script_layout)
         self.option_button.clicked.connect(lambda: show_options(self))
@@ -187,7 +200,9 @@ class ModelingSaeDialog(QDialog):
         self.r_script_edit.setFixedHeight(round(screen_height*0.20))
         self.r_script_edit.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.r_script_edit.setReadOnly(False)
+        self.r_script_edit.setVisible(False)
         main_layout.addWidget(self.r_script_edit)
+        
         
 
         # Tombol untuk tindakan dialog
@@ -199,6 +214,8 @@ class ModelingSaeDialog(QDialog):
         button_layout.addWidget(self.option_button)
         button_layout.addWidget(self.ok_button)
         main_layout.addLayout(button_layout)
+        
+
 
         self.setLayout(main_layout)
 
@@ -215,6 +232,16 @@ class ModelingSaeDialog(QDialog):
         self.stop_thread = threading.Event()
         self.reply=None
         
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.r_script_edit.isVisible()
+        self.r_script_edit.setVisible(not is_visible)
+        if is_visible:
+            self.toggle_script_button.setText(">")
+        else:
+            self.toggle_script_button.setText("v")
     
     def closeEvent(self, event):
         threads = threading.enumerate()
