@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton
+    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton, QStyle
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
@@ -75,29 +75,29 @@ class ModelingSaeDialog(QDialog):
 
         self.columns = []
 
-        main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
 
         # Layout utama untuk membagi area menjadi dua bagian (kiri dan kanan)
-        split_layout = QHBoxLayout()
+        self.split_layout = QHBoxLayout()
 
         # Layout kiri untuk daftar variabel
-        left_layout = QVBoxLayout()
+        self.left_layout = QVBoxLayout()
         self.variables_label = QLabel("Select Variables:")
         self.variables_list = QListView()
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
         self.variables_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.variables_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        left_layout.addWidget(self.variables_label)
-        left_layout.addWidget(self.variables_list)
+        self.left_layout.addWidget(self.variables_label)
+        self.left_layout.addWidget(self.variables_list)
         
-        middle_layout1 = QVBoxLayout()
+        self.middle_layout1 = QVBoxLayout()
         self.unassign_button = QPushButton("🡄")
         self.unassign_button.setObjectName("arrow_button")
-        middle_layout1.addWidget(self.unassign_button)
+        self.middle_layout1.addWidget(self.unassign_button)
 
         # Layout tengah untuk tombol panah
-        middle_layout = QVBoxLayout()
+        self.middle_layout = QVBoxLayout()
         self.assign_of_interest_button = QPushButton("🡆")
         self.assign_of_interest_button.setObjectName("arrow_button")
         self.assign_aux_button = QPushButton("🡆")
@@ -112,20 +112,20 @@ class ModelingSaeDialog(QDialog):
         self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
         self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
         self.unassign_button.clicked.connect(lambda: unassign_variable(self))
-        middle_layout.addWidget(self.assign_of_interest_button)
-        middle_layout.addWidget(self.assign_aux_button)
-        middle_layout.addWidget(self.assign_as_factor_button)
-        middle_layout.addWidget(self.assign_vardir_button)
+        self.middle_layout.addWidget(self.assign_of_interest_button)
+        self.middle_layout.addWidget(self.assign_aux_button)
+        self.middle_layout.addWidget(self.assign_as_factor_button)
+        self.middle_layout.addWidget(self.assign_vardir_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
-        right_layout = QVBoxLayout()
+        self.right_layout = QVBoxLayout()
         self.of_interest_label = QLabel("Variable of interest:")
         self.of_interest_list = QListView()
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        right_layout.addWidget(self.of_interest_label)
-        right_layout.addWidget(self.of_interest_list)
+        self.right_layout.addWidget(self.of_interest_label)
+        self.right_layout.addWidget(self.of_interest_list)
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
         self.auxilary_list = QListView()
@@ -133,8 +133,8 @@ class ModelingSaeDialog(QDialog):
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.auxilary_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        right_layout.addWidget(self.auxilary_label)
-        right_layout.addWidget(self.auxilary_list)
+        self.right_layout.addWidget(self.auxilary_label)
+        self.right_layout.addWidget(self.auxilary_list)
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
@@ -142,8 +142,8 @@ class ModelingSaeDialog(QDialog):
         self.as_factor_list.setModel(self.as_factor_model)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        right_layout.addWidget(self.as_factor_label)
-        right_layout.addWidget(self.as_factor_list)
+        self.right_layout.addWidget(self.as_factor_label)
+        self.right_layout.addWidget(self.as_factor_list)
         
         self.vardir_label = QLabel("Direct Variance:")
         self.vardir_list = QListView()
@@ -151,16 +151,16 @@ class ModelingSaeDialog(QDialog):
         self.vardir_list.setModel(self.vardir_model)
         self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        right_layout.addWidget(self.vardir_label)
-        right_layout.addWidget(self.vardir_list)
+        self.right_layout.addWidget(self.vardir_label)
+        self.right_layout.addWidget(self.vardir_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
-        split_layout.addLayout(left_layout)
-        split_layout.addLayout(middle_layout1)
-        split_layout.addLayout(middle_layout)
-        split_layout.addLayout(right_layout)
+        self.split_layout.addLayout(self.left_layout)
+        self.split_layout.addLayout(self.middle_layout1)
+        self.split_layout.addLayout(self.middle_layout)
+        self.split_layout.addLayout(self.right_layout)
 
-        main_layout.addLayout(split_layout)
+        self.main_layout.addLayout(self.split_layout)
 
         # Tombol untuk menghasilkan skrip R
         self.option_button = QPushButton("Option")
@@ -173,26 +173,27 @@ class ModelingSaeDialog(QDialog):
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
         self.toggle_script_button = QToolButton()
-        self.toggle_script_button.setText(">")
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
         self.toggle_script_button.setCheckable(True)
         self.toggle_script_button.setChecked(False)
         self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
         
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.text_script)
-        button_layout.addWidget(self.toggle_script_button)
-        button_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
-        button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.text_script)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
         
         # Create a horizontal layout to place the text_script and icon_label in one row
-        script_layout = QHBoxLayout()
-        script_layout.addLayout(button_layout)
-        script_layout.addStretch()
-        script_layout.addWidget(self.icon_label)
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
+        self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
+        self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
-        main_layout.addLayout(script_layout)
+        self.main_layout.addLayout(self.script_layout)
         self.option_button.clicked.connect(lambda: show_options(self))
         
         # Area teks untuk menampilkan dan mengedit skrip R
@@ -201,7 +202,7 @@ class ModelingSaeDialog(QDialog):
         self.r_script_edit.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.r_script_edit.setReadOnly(False)
         self.r_script_edit.setVisible(False)
-        main_layout.addWidget(self.r_script_edit)
+        self.main_layout.addWidget(self.r_script_edit)
         
         
 
@@ -213,11 +214,11 @@ class ModelingSaeDialog(QDialog):
         self.ok_button.clicked.connect(self.accept)
         button_layout.addWidget(self.option_button)
         button_layout.addWidget(self.ok_button)
-        main_layout.addLayout(button_layout)
+        self.main_layout.addLayout(button_layout)
         
 
 
-        self.setLayout(main_layout)
+        self.setLayout(self.main_layout)
 
         self.of_interest_var = []
         self.auxilary_vars = []
@@ -238,10 +239,10 @@ class ModelingSaeDialog(QDialog):
         """
         is_visible = self.r_script_edit.isVisible()
         self.r_script_edit.setVisible(not is_visible)
-        if is_visible:
-            self.toggle_script_button.setText(">")
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
         else:
-            self.toggle_script_button.setText("v")
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
     def closeEvent(self, event):
         threads = threading.enumerate()
