@@ -132,7 +132,7 @@ def mseFH(formula, vardir_col, method="REML", MAXITER=100, PRECISION=1e-4, B=0, 
     if np.any(np.isnan(y)) or np.any(np.isnan(vardir)):
         raise ValueError("NA values found in response or vardir.")
 
-    # Estimation step (you must provide this function)
+    # Estimation step
     result["est"] = eblupFH(formula, vardir, method, MAXITER, PRECISION, B, data)
     if not result["est"]["fit"]["convergence"]:
         print("Warning: The fitting method does not converge.")
@@ -148,15 +148,16 @@ def mseFH(formula, vardir_col, method="REML", MAXITER=100, PRECISION=1e-4, B=0, 
 
     g1d = vardir * (1 - Bd)
     g2d = np.array([(Bd[d]**2) * X[d:d+1] @ Q @ X[d:d+1].T for d in range(m)]).flatten()
-    g3d = (Bd**2) * (2 / SumAD2) / (A + vardir)
 
-    if method == "REML" or method == "ML":
+    if method == "REML":
         VarA = 2 / SumAD2
-        if method == "ML":
-            b = -np.trace(Q @ (XtVi @ (Vi[:, np.newaxis] * X))) / SumAD2
-            mse2d = g1d + g2d + 2 * g3d - b * (Bd**2)
-        else:
-            mse2d = g1d + g2d + 2 * g3d
+        g3d = (Bd**2) * VarA / (A + vardir)
+        mse2d = g1d + g2d + 2 * g3d
+    elif method == "ML":
+        VarA = 2 / SumAD2
+        b = -np.trace(Q @ (XtVi @ (Vi[:, np.newaxis] * X))) / SumAD2
+        g3d = (Bd**2) * VarA / (A + vardir)
+        mse2d = g1d + g2d + 2 * g3d - b * (Bd**2)
     else:  # FH
         SumAD = np.sum(Vi)
         VarA = 2 * m / (SumAD**2)

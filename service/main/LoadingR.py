@@ -35,4 +35,13 @@ def loadR(splash):
     os.environ['R_LIBS_USER'] = r_home
     # Initialize rpy2 with the new library location
     ro.r(f'.libPaths("{r_home}")')
+    r_script2= """
+            suppressPackageStartupMessages({
+                library(sae)
+                library(saeHB)
+                library(sae.projection)
+                library(emdi)
+            })
+    """
+    ro.r(r_script2)
     splash.update_message()
