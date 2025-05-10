@@ -49,17 +49,17 @@ class FileController:
         self.view.recent_data.triggered.connect(self.view.load_temp_data)  
 
     def load_file(self):
-        """Muat file CSV atau Excel ke model pertama."""
+        """Muat file CSV, Excel, atau Text ke model pertama."""
         file_path, selected_filter = QFileDialog.getOpenFileName(
             self.view, "Open File", "",
-            "CSV Files (*.csv);;Excel Files (*.xlsx)"
+            "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt)"
         )
 
         if not file_path:  # Jika file tidak dipilih
             return
 
         try:
-            if selected_filter == "CSV Files (*.csv)":
+            if selected_filter in ["CSV Files (*.csv)", "Text Files (*.txt)"]:
                 dialog = CSVOptionsDialog(self.view)
                 dialog.file_path = file_path
                 dialog.file_label.setText(f"Selected: {file_path}")
