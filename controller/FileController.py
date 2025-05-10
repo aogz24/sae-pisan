@@ -52,14 +52,14 @@ class FileController:
         """Muat file CSV, Excel, atau Text ke model pertama."""
         file_path, selected_filter = QFileDialog.getOpenFileName(
             self.view, "Open File", "",
-            "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt)"
+            "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt);;TSV Files (*.tsv);;JSON Files (*.json)"
         )
 
         if not file_path:  # Jika file tidak dipilih
             return
 
         try:
-            if selected_filter in ["CSV Files (*.csv)", "Text Files (*.txt)"]:
+            if selected_filter in ["CSV Files (*.csv)", "Text Files (*.txt)", "TSV Files (*.tsv)"]:
                 dialog = CSVOptionsDialog(self.view)
                 dialog.file_path = file_path
                 dialog.file_label.setText(f"Selected: {file_path}")
@@ -85,6 +85,8 @@ class FileController:
                 if not ok:
                     return
                 data = pl.read_excel(file_path, sheet_name=sheet_name)
+            elif selected_filter == "JSON Files (*.json)":
+                data = pl.read_json(file_path)
 
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
