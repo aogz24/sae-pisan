@@ -68,6 +68,9 @@ class FileController:
 
                 if not file_path:  # Jika file tidak dipilih
                     return
+                
+                if separator == r"\t":  # Jika input adalah string literal "\t"
+                    separator = "\t"
 
                 # Baca data dari CSV dengan atau tanpa header
                 if header:
