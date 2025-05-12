@@ -257,7 +257,8 @@ class ModelingSaeHBDialog(QDialog):
                     self.reply.setDefaultButton(QMessageBox.StandardButton.No)
                 if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
                     self.stop_thread.set()
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+                    print(self.stop_thread.is_set())
+                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "", None)
         self.finnish=False
         self.reply=None
         event.accept()
@@ -338,6 +339,7 @@ class ModelingSaeHBDialog(QDialog):
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 1 minute. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
+                    print(self.stop_thread.is_set())
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
                     enable_service(self, False, "")
 
