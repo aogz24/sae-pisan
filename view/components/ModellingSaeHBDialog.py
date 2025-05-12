@@ -65,7 +65,7 @@ class ModelingSaeHBDialog(QDialog):
         on_run_model_finished(result, error, sae_model, r_script): Handles the completion of the model run.
     """
     
-    run_model_finished = pyqtSignal(object, object, object, object)
+    run_model_finished = pyqtSignal(object, object, object, object, object)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent

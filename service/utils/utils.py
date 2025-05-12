@@ -108,6 +108,8 @@ def display_script_and_output(parent, r_script, result, plot_paths=None):
                 label.setScaledContents(True)
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                 card_layout.addWidget(label)
+                # Remove the plot file after displaying it
+                os.remove(plot_path)
 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
