@@ -333,6 +333,17 @@ class ModelingSaeHBDialog(QDialog):
                     self.run_model_finished.emit(result, error, sae_model, r_script, plot_paths)
                     self.finnish = True
                     return
+                else:
+                    import os
+                    temp_dir = os.path.join(os.getcwd(), "temp")
+                    if os.path.exists(temp_dir):
+                        for file in os.listdir(temp_dir):
+                            file_path = os.path.join(temp_dir, file)
+                            try:
+                                if os.path.isfile(file_path):
+                                    os.remove(file_path)
+                            except Exception as e:
+                                print(f"Error deleting file {file_path}: {e}")
 
         def check_run_time():
             if thread.is_alive():
