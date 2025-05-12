@@ -21,5 +21,5 @@ class SaeHBController:
         self.SAEmodel = SAEmodel
     
     def run_model(self, r_script):
-        result, error, df = self.SAEmodel.run_model(r_script)
-        return result, error, df
+        result, error, df, plot_paths = self.SAEmodel.run_model(r_script)
+        return result, error, df, plot_paths

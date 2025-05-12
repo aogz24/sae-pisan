@@ -1,6 +1,7 @@
 import polars as pl
 from rpy2.rinterface_lib.embedded import RRuntimeError
 from service.modelling.running_model.convert_df import convert_df
+import os
 
 def run_model_hb_area(parent):
     """
@@ -39,6 +40,46 @@ def run_model_hb_area(parent):
             result = str(e)
             error = True
             return result, error, None
+        
+        from contextlib import contextmanager
+        @contextmanager
+        def png_device(filename, width=800, height=600, res=100):
+            grdevices.png(file=filename, width=width, height=height, res=res)
+            try:
+                yield
+            finally:
+                grdevices.dev_off()
+        
+        script_png = """
+        sae_autocorr <- function() {
+            coda::autocorr.plot(model$plot[[3]], col='brown2', lwd=2)
+        }
+        sae_plot <- function() {
+            plot(model$plot[[3]], col='brown2', lwd=2)
+        }
+        """
+        
+        ro.r(script_png)
+        
+        r_objects = ro.r("ls()")
+        
+        import rpy2.robjects.lib.grdevices as grdevices
+        
+        plots = [obj for obj in r_objects if obj.startswith("sae_")]
+
+        temp_dir = os.path.join(os.getcwd(), "temp")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+        plot_paths = []
+
+        for plot_name in plots:
+            plot_path = os.path.join(temp_dir, f"{plot_name}.png")
+            with png_device(plot_path):
+                ro.r(f"{plot_name}()")
+            plot_paths.append(plot_path)
+        
+        print("Saved plots:", plot_paths)
+            
         ro.r('estimated_value <- model$Est')
         ro.r('sd <- model$sd')
         ro.r('refVar <- model$refVar')
@@ -65,7 +106,7 @@ def run_model_hb_area(parent):
         ro.r("detach(data)")
         
         error = False
-        return result_str, error, df
+        return result_str, error, df, plot_paths
         
     except Exception as e:
         error = True

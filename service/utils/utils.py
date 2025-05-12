@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
+import os
+from PyQt6.QtGui import QPixmap
 
 def check_script(r_script):
     """
@@ -17,7 +19,7 @@ def check_script(r_script):
     return True
         
 
-def display_script_and_output(parent, r_script, result):
+def display_script_and_output(parent, r_script, result, plot_paths=None):
     """
     Adds a new output card to the layout displaying the provided R script and its result.
     Parameters:
@@ -91,6 +93,21 @@ def display_script_and_output(parent, r_script, result):
 
         card_layout.addWidget(label_output)
         card_layout.addWidget(result_box)
+        
+    if plot_paths is not None:
+        label_plot = QLabel("<b>Plot:</b>")
+        label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+        card_layout.addWidget(label_plot)
+
+        for plot_path in plot_paths:
+            if os.path.exists(plot_path):
+                pixmap = QPixmap(plot_path)
+                label = QLabel()
+                label.setPixmap(pixmap)
+                label.setFixedSize(500, 350)
+                label.setScaledContents(True)
+                label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
+                card_layout.addWidget(label)
 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
