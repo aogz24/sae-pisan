@@ -110,6 +110,9 @@ def display_script_and_output(parent, r_script, result, plot_paths=None):
                 card_layout.addWidget(label)
                 # Remove the plot file after displaying it
                 os.remove(plot_path)
+                
+        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        card_frame.customContextMenuRequested.connect(lambda pos: parent.show_context_menu(pos, card_frame))
 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
