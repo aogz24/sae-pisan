@@ -22,7 +22,7 @@ def check_script(r_script):
 from PyQt6.QtWidgets import QTableView, QAbstractItemView, QVBoxLayout, QHeaderView
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
-import polars as pl  # Pastikan Anda sudah mengimpor polars
+import polars as pl
 
 def display_script_and_output(parent, r_script, results, plot_paths=None):
     """
@@ -164,7 +164,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 label.setScaledContents(True)
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                 card_layout.addWidget(label)
-                # Remove the plot file after displaying it
                 os.remove(plot_path)
 
     # Tambahkan card ke layout utama
