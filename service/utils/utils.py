@@ -1,8 +1,39 @@
-from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication
+from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication, QSpacerItem
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 import os
 from PyQt6.QtGui import QPixmap, QAction
+
+
+def copy_output_image(parent, card_frame):
+    """Menyalin gambar output ke clipboard"""
+    for child in card_frame.findChildren(QLabel):
+        pixmap = child.pixmap()
+        
+        if pixmap and not pixmap.isNull():
+            temp_folder = os.path.join(parent.path, 'temp')
+            temp_path = os.path.join(temp_folder, 'temp_image.png')
+
+            os.makedirs(temp_folder, exist_ok=True)
+
+            if pixmap.save(temp_path):
+                print(f"Gambar disimpan di: {temp_path}")
+                
+                clipboard = QApplication.clipboard()
+                clipboard.setPixmap(QPixmap(temp_path))
+
+                if os.path.exists(temp_path):  
+                    os.remove(temp_path)
+            break
+
+def show_context_menu(parent, pos, card_frame):
+    """Menampilkan menu klik kanan di setiap output"""
+    menu = QMenu(parent)
+    copy_image_action = menu.addAction("Copy Output Image")
+    action = menu.exec(card_frame.mapToGlobal(pos))
+    
+    if action == copy_image_action:
+        parent.copy_output_image(card_frame)
 
 def check_script(r_script):
     """
@@ -87,6 +118,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     """
     # Membuat frame sebagai card
     card_frame = QFrame()
+    card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+    card_frame.customContextMenuRequested.connect(lambda pos: show_context_menu(parent, pos, card_frame))
     card_frame.setStyleSheet("""
         QFrame {
             background-color: #f9f9f9;
@@ -220,6 +253,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                 card_layout.addWidget(label)
                 os.remove(plot_path)
+    
+    
 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
