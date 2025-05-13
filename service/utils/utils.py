@@ -79,7 +79,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
         
         if "Model" in results:
             model_value = results["Model"]
-            model_label = QLabel(f"Summary of Modelling {model_value}")
+            model_label = QLabel(f"<b>Summary of {model_value}</b>")
             model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
             card_layout.addWidget(model_label)
 
