@@ -105,12 +105,12 @@ def run_model_hb_area(parent):
         hb_97_5 = estimated_value["97.5%"]
         hb_sd = estimated_value["SD"]
         df = pl.DataFrame({
-            'HB_Mean': hb_mean,
-            'HB_25%': hb_25,
-            'HB_50%': hb_50,
-            'HB_75%': hb_75,
-            'HB_97.5%': hb_97_5,
-            'SD': hb_sd,})
+            'HB Mean': hb_mean,
+            'HB 25%': hb_25,
+            'HB 50%': hb_50,
+            'HB 75%': hb_75,
+            'HB 97.5%': hb_97_5,
+            'Standard Deviation': hb_sd,})
         ro.r("detach(data)")
         
         error = False
