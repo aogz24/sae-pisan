@@ -93,9 +93,9 @@ def run_model_hb_area(parent):
         coefficient = pl.DataFrame(coefficient)
         
         results ={
-            "Model": "EBLUP Pseudo",
-            "RefVar": refvar,
-            "Coefficient": coefficient,
+            "Model": "Hierarchical Bayesian",
+            "Estimated Random Effect Variances": refvar,
+            "Estimated Model Coefficient": coefficient,
         }
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         hb_mean = estimated_value["MEAN"]
