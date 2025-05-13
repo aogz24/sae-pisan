@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox
 
-def enable_service(parent, error, result):
+def enable_service(parent, error, results):
     """
     Enables and updates the UI elements of the parent widget based on the result of a modelling process.
     Args:
@@ -23,7 +23,7 @@ def enable_service(parent, error, result):
     if not error:
         QMessageBox.information(parent, "Success", "Modelling finished!")
     else:
-        QMessageBox.critical(parent, "Error", result)
+        QMessageBox.critical(parent, "Error", str(results))
     parent.ok_button.setText("Run Model")
     
 def disable_service(parent):

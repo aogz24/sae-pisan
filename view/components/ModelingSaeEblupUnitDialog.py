@@ -362,16 +362,16 @@ class ModelingSaeUnitDialog(QDialog):
         current_context = contextvars.copy_context()
         
         def run_model_thread():
-            result, error, df = None, None, None
+            results, error, df = None, None, None
             try:
-                result, error, df = current_context.run(controller.run_model, r_script)
+                results, error, df = current_context.run(controller.run_model, r_script)
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
                 error = e
             finally:
                 if not self.stop_thread.is_set():
-                    self.run_model_finished.emit(result, error, sae_model, r_script)
+                    self.run_model_finished.emit(results, error, sae_model, r_script)
                     self.finnish = True
 
         def check_run_time():
@@ -391,12 +391,12 @@ class ModelingSaeUnitDialog(QDialog):
         timer.timeout.connect(check_run_time)
         timer.start(60000)
     
-    def on_run_model_finished(self, result, error, sae_model, r_script):
+    def on_run_model_finished(self, results, error, sae_model, r_script):
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:
             self.reply.reject()
-        display_script_and_output(self.parent, r_script, result)
-        enable_service(self, error, result)
+        display_script_and_output(self.parent, r_script, results)
+        enable_service(self, error, results)
         self.finnish = True
         self.close()

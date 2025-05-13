@@ -3,6 +3,7 @@ import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QInputDialog
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame, QTextEdit, QTableView
 from PyQt6.QtGui import QPainter, QPdfWriter
 from PyQt6.QtCore import QRectF
 
@@ -194,32 +195,54 @@ class FileController:
             return y_offset
 
         for i in range(self.view.output_layout.count()):
-            widget = self.view.output_layout.itemAt(i).widget()
+            item = self.view.output_layout.itemAt(i)
+            widget = item.widget()
+            if widget is None:
+                continue
+
             if isinstance(widget, QFrame):
                 for j in range(widget.layout().count()):
                     sub_widget = widget.layout().itemAt(j).widget()
-                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
+                    if isinstance(sub_widget, QLabel) and "<b>R Script:</b>" in sub_widget.text():
                         script_box = widget.layout().itemAt(j + 1).widget()
                         text = script_box.toPlainText()
                         y_offset = draw_text_multiline(text, y_offset)
                     elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
                         result_box = widget.layout().itemAt(j + 1).widget()
-                        text = result_box.toPlainText()
-                        y_offset = draw_text_multiline(text, y_offset)
+                        if isinstance(result_box, QTextEdit):
+                            text = result_box.toPlainText()
+                            y_offset = draw_text_multiline(text, y_offset)
+                    elif isinstance(sub_widget, QTableView):
+                        model = sub_widget.model()
+                        if model:
+                            # Ekspor header tabel
+                            headers = [model.headerData(col, Qt.Orientation.Horizontal) for col in range(model.columnCount())]
+                            header_text = "\t".join(headers)
+                            y_offset = draw_text_multiline(header_text, y_offset)
+
+                            # Ekspor data baris
+                            for row in range(model.rowCount()):
+                                row_data = []
+                                for col in range(model.columnCount()):
+                                    index = model.index(row, col)
+                                    row_data.append(model.data(index))
+                                text = "\t".join(row_data)
+                                y_offset = draw_text_multiline(text, y_offset)
                     elif isinstance(sub_widget, QLabel) and "<b>Plot:</b>" in sub_widget.text():
                         for k in range(j + 1, widget.layout().count()):
                             plot_label = widget.layout().itemAt(k).widget()
                             if isinstance(plot_label, QLabel):
-                                image = plot_label.pixmap().toImage()
-                                image_height = image.height() * (page_width - 2 * side_margin) / image.width()
-                                if y_offset + image_height > page_height - top_margin:
-                                    pdf_writer.newPage()
-                                    y_offset = top_margin
-                                rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
-                                painter.drawImage(rect, image)
-                                y_offset += image_height
+                                pixmap = plot_label.pixmap()
+                                if pixmap:
+                                    image = pixmap.toImage()
+                                    image_height = image.height() * (page_width - 2 * side_margin) / image.width()
+                                    if y_offset + image_height > page_height - top_margin:
+                                        pdf_writer.newPage()
+                                        y_offset = top_margin
+                                    rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
+                                    painter.drawImage(rect, image)
+                                    y_offset += image_height
 
-            # Check if y_offset exceeds page height for next widget
             if y_offset > page_height - top_margin:
                 pdf_writer.newPage()
                 y_offset = top_margin

@@ -19,18 +19,22 @@ def check_script(r_script):
     return True
         
 
-def display_script_and_output(parent, r_script, result, plot_paths=None):
+from PyQt6.QtWidgets import QTableView, QAbstractItemView, QVBoxLayout, QHeaderView
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
+
+import polars as pl  # Pastikan Anda sudah mengimpor polars
+
+def display_script_and_output(parent, r_script, results, plot_paths=None):
     """
     Adds a new output card to the layout displaying the provided R script and its result.
     Parameters:
     parent (object): The parent widget containing the layout to which the card will be added.
     r_script (str): The R script to be displayed in the card.
-    result (str): The output result of the R script to be displayed in the card. If empty or None, only the script will be displayed.
+    results (dict or str): The output result of the R script to be displayed in the card. If empty or None, only the script will be displayed.
+    plot_paths (list): List of paths to plot images to be displayed.
     Returns:
     None
     """
-    
-    """Fungsi untuk menambahkan output baru ke layout dalam bentuk card"""
     # Membuat frame sebagai card
     card_frame = QFrame()
     card_frame.setStyleSheet("""
@@ -68,11 +72,58 @@ def display_script_and_output(parent, r_script, result, plot_paths=None):
     card_layout.addWidget(script_box)
 
     # Bagian Output (jika ada)
-    if result:
+    if isinstance(results, dict):
+        label_output = QLabel("<b>Output:</b>")
+        label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
+        card_layout.addWidget(label_output)
+
+        for key, value in results.items():
+            # Tambahkan header untuk setiap key
+            key_label = QLabel(f"<b>{key}:</b>")
+            key_label.setStyleSheet("color: #333; margin-top: 5px;")
+            card_layout.addWidget(key_label)
+
+            if isinstance(value, pl.DataFrame):
+                # Tampilkan DataFrame polars ke dalam QTableView
+                table_view = QTableView()
+                model = QStandardItemModel()
+                model.setHorizontalHeaderLabels(value.columns)
+
+                for row in value.iter_rows(named=True):
+                    items = [QStandardItem(str(row[col])) for col in value.columns]
+                    model.appendRow(items)
+
+                table_view.setModel(model)
+                table_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+                table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+                table_view.horizontalHeader().setFixedHeight(50)
+
+                # Hitung tinggi tabel berdasarkan jumlah baris
+                row_height = table_view.verticalHeader().defaultSectionSize()
+                header_height = table_view.horizontalHeader().height()
+                total_height = row_height * model.rowCount() + header_height + 20  # Tambahkan margin
+                table_view.setFixedHeight(total_height)
+
+                table_view.setStyleSheet("""
+                    QTableView {
+                        background-color: #fff;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                        padding: 5px;
+                        font-family: Consolas, Courier New, monospace;
+                    }
+                """)
+                card_layout.addWidget(table_view)
+            else:
+                # Tampilkan nilai biasa sebagai teks
+                value_label = QLabel(str(value))
+                value_label.setStyleSheet("color: #333; margin-left: 10px;")
+                card_layout.addWidget(value_label)
+    elif results:
         label_output = QLabel("<b>Output:</b>")
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
         result_box = QTextEdit()
-        result_box.setPlainText(result)
+        result_box.setPlainText(results)
         result_box.setReadOnly(True)
         result_box.setStyleSheet("""
             QTextEdit {
@@ -83,17 +134,11 @@ def display_script_and_output(parent, r_script, result, plot_paths=None):
                 font-family: Consolas, Courier New, monospace;
             }
         """)
-        max_height = 400
-        calculated_height = result_box.fontMetrics().lineSpacing() * (result.count('\n') + 3)
-        result_box.setFixedHeight(min(calculated_height, max_height))
-        if calculated_height > max_height:
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        else:
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
 
         card_layout.addWidget(label_output)
         card_layout.addWidget(result_box)
-        
+
     if plot_paths is not None:
         label_plot = QLabel("<b>Plot:</b>")
         label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -110,9 +155,6 @@ def display_script_and_output(parent, r_script, result, plot_paths=None):
                 card_layout.addWidget(label)
                 # Remove the plot file after displaying it
                 os.remove(plot_path)
-                
-        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        card_frame.customContextMenuRequested.connect(lambda pos: parent.show_context_menu(pos, card_frame))
 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)

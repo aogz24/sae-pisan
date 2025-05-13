@@ -35,8 +35,8 @@ class SaeEblupUnit(SaeModelling):
     
     def run_model(self, r_script):
         self.r_script = r_script
-        result, error, df = run_model_eblup_unit(self)
-        return result, error, df
+        results, error, df = run_model_eblup_unit(self)
+        return results, error, df
     
     def get_model2(self):
         return self.model2
