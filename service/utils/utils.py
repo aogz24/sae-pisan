@@ -104,6 +104,7 @@ from PyQt6.QtWidgets import QTableView, QAbstractItemView, QVBoxLayout, QHeaderV
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 import polars as pl
+from datetime import datetime
 
 def display_script_and_output(parent, r_script, results, plot_paths=None):
     """
@@ -168,6 +169,13 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
             model_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
             card_layout.addWidget(model_label)
+
+        # Add timestamp for generation
+        timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
+        timestamp_label = QLabel(f"<i>Generated on: {timestamp}</i>")
+        timestamp_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        timestamp_label.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
+        card_layout.addWidget(timestamp_label)
 
         for key, value in results.items():
             # Skip displaying if the key is "Model"
