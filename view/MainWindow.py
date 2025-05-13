@@ -1409,7 +1409,7 @@ class MainWindow(QMainWindow):
                         result_box = widget.layout().itemAt(j + 1).widget()
                         try:
                             data['result_text'] = result_box.toPlainText()
-                        except Exception as e:
+                        except Exception:
                             data['result_text'] = None
                     elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
                         error_box = widget.layout().itemAt(j + 1).widget()
