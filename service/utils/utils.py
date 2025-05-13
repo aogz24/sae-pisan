@@ -1,8 +1,8 @@
-from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout
+from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 import os
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QAction
 
 def check_script(r_script):
     """
@@ -18,6 +18,56 @@ def check_script(r_script):
         return False
     return True
         
+        
+def add_copy_context_menu_to_table(table_view):
+    """
+    Adds a context menu to the QTableView for copying data (including headers and content).
+    Args:
+        table_view (QTableView): The table view to which the context menu will be added.
+    """
+    def copy_table_data():
+        """
+        Copies the table data (headers and content) to the clipboard.
+        """
+        model = table_view.model()
+        if model is None:
+            return
+
+        # Get headers
+        headers = [model.headerData(i, Qt.Orientation.Horizontal) for i in range(model.columnCount())]
+        data = '\t'.join(headers) + '\n'
+
+        # Get table content
+        for row in range(model.rowCount()):
+            row_data = [model.index(row, col).data() for col in range(model.columnCount())]
+            data += '\t'.join(map(str, row_data)) + '\n'
+
+        # Copy to clipboard
+        clipboard = QApplication.clipboard()
+        clipboard.setText(data)
+
+    # Add context menu
+    table_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+    table_view.customContextMenuRequested.connect(lambda pos: show_table_context_menu(pos, table_view, copy_table_data))
+    
+    header = table_view.horizontalHeader()
+    header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+    header.customContextMenuRequested.connect(lambda pos: show_table_context_menu(pos, table_view, copy_table_data))
+
+
+def show_table_context_menu(pos, table_view, copy_action):
+    """
+    Displays the context menu for the QTableView.
+    Args:
+        pos (QPoint): The position where the context menu is requested.
+        table_view (QTableView): The table view for which the context menu is displayed.
+        copy_action (function): The function to execute when "Copy" is selected.
+    """
+    menu = QMenu(table_view)
+    copy_action_item = QAction("Copy", table_view)
+    copy_action_item.triggered.connect(copy_action)
+    menu.addAction(copy_action_item)
+    menu.exec(table_view.mapToGlobal(pos))
 
 from PyQt6.QtWidgets import QTableView, QAbstractItemView, QVBoxLayout, QHeaderView
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
@@ -74,12 +124,14 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     # Bagian Output (jika ada)
     if isinstance(results, dict):
         label_output = QLabel("<b>Output:</b>")
+        label_output.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
         card_layout.addWidget(label_output)
         
         if "Model" in results:
             model_value = results["Model"]
             model_label = QLabel(f"<b>Summary of {model_value}</b>")
+            model_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             model_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
             card_layout.addWidget(model_label)
@@ -91,6 +143,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
 
             # Tambahkan header untuk setiap key
             key_label = QLabel(f"<b>{key}:</b>")
+            key_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             key_label.setStyleSheet("color: #333; margin-top: 5px;")
             card_layout.addWidget(key_label)
 
@@ -124,10 +177,12 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                         font-family: Consolas, Courier New, monospace;
                     }
                 """)
+                add_copy_context_menu_to_table(table_view)
                 card_layout.addWidget(table_view)
             else:
                 # Tampilkan nilai biasa sebagai teks
                 value_label = QLabel(str(value))
+                value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
                 value_label.setStyleSheet("color: #333; margin-left: 10px;")
                 card_layout.addWidget(value_label)
     elif results:
