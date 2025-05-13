@@ -39,7 +39,7 @@ def run_model_eblup_pseudo(parent):
             result = str(e)
             error = True
             return result, error, None
-        ro.r('estimated_value <- getResponse(model)\n mse <- model$MSE$FH \n domain<-model$MSE$Domain')
+        ro.r('estimated_value <- getResponse(model)\n mse <- model$MSE$FH \n domain<-model$MSE$Domain \n refvar<-model$refVar')
         domain = ro.conversion.rpy2py(ro.globalenv['domain'])
         result_str = ro.r('capture.output(print(model))')
         result = "\n".join(result_str)

@@ -319,7 +319,7 @@ class ModelingSaeHBDialog(QDialog):
         current_context = contextvars.copy_context()
         
         def run_model_thread():
-            result, error, df = None, None, None
+            result, error, df, plot_paths = None, None, None, None
             try:
                 result, error, df, plot_paths = current_context.run(controller.run_model, r_script)
                 if not error:

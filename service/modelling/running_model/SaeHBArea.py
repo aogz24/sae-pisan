@@ -85,10 +85,18 @@ def run_model_hb_area(parent):
         ro.r('refVar <- model$refVar')
         ro.r('coefficient <- model$coefficient')
         
-        result_str = "Estimated Value:\n" + "\n".join(ro.r('capture.output(print(estimated_value))')) + "\n\n"
-        result_str += "Standard Deviation:\n" + "\n".join(ro.r('capture.output(print(sd))')) + "\n\n"
-        result_str += "Reference Variance:\n" + "\n".join(ro.r('capture.output(print(refVar))')) + "\n\n"
-        result_str += "Coefficient:\n" + "\n".join(ro.r('capture.output(print(coefficient))')) + "\n"
+        refvar = ro.globalenv['refVar']
+        refvar = int(float(refvar[0]))
+        coefficient = ro.conversion.rpy2py(ro.globalenv['coefficient'])
+        coefficient.reset_index(inplace=True)
+        coefficient.columns = ['Parameter'] + list(coefficient.columns[1:])
+        coefficient = pl.DataFrame(coefficient)
+        
+        results ={
+            "Model": "EBLUP Pseudo",
+            "RefVar": refvar,
+            "Coefficient": coefficient,
+        }
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         hb_mean = estimated_value["MEAN"]
         hb_25 = estimated_value["25%"]
@@ -106,7 +114,7 @@ def run_model_hb_area(parent):
         ro.r("detach(data)")
         
         error = False
-        return result_str, error, df, plot_paths
+        return results, error, df, plot_paths
         
     except Exception as e:
         error = True
