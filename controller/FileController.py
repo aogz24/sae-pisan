@@ -242,6 +242,12 @@ class FileController:
                                     rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
                                     painter.drawImage(rect, image)
                                     y_offset += image_height
+                    elif isinstance(sub_widget, QTextEdit):
+                        text = sub_widget.toPlainText()
+                        y_offset = draw_text_multiline(text, y_offset)
+                    elif isinstance(sub_widget, QLabel):
+                        text = sub_widget.text().replace("<b>", "").replace("</b>", "")
+                        y_offset = draw_text_multiline(text, y_offset)
 
             if y_offset > page_height - top_margin:
                 pdf_writer.newPage()
