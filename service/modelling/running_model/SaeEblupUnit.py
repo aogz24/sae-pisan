@@ -100,15 +100,16 @@ def extract_formatted(output):
 
     # Menggabungkan hasil ekstraksi menjadi string yang user-friendly
     results = {
-        "method": extract_method(output),
-        "formula": extract_formula(output),
-        "criterion": extract_criterion(output),
-        "number_of_obs": number_of_obs(output),
+        "Model": "EBLUP Unit Level",
+        "Method": extract_method(output),
+        "Formula": extract_formula(output),
+        "Criterion": extract_criterion(output),
+        "Number of Observation": number_of_obs(output),
         "groups": extract_groups(output),
-        "summary": extract_summary(output),
-        "fixed_effects": extract_fixed_effects(output),
-        "random_effects": extract_random_effects(output),
-        "correlation_fixed_effects": correlation_fixed_effects(output)
+        "Summary of Modelling": extract_summary(output),
+        "Fixed Effects": extract_fixed_effects(output),
+        "Random Effects": extract_random_effects(output),
+        "Correlation of Fixed Effect": correlation_fixed_effects(output)
     }
     return results
 

@@ -76,8 +76,18 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
         label_output = QLabel("<b>Output:</b>")
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
         card_layout.addWidget(label_output)
+        
+        if "Model" in results:
+            model_value = results["Model"]
+            model_label = QLabel(f"Summary of Modelling {model_value}")
+            model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
+            card_layout.addWidget(model_label)
 
         for key, value in results.items():
+            # Skip displaying if the key is "Model"
+            if key == "Model":
+                continue
+
             # Tambahkan header untuk setiap key
             key_label = QLabel(f"<b>{key}:</b>")
             key_label.setStyleSheet("color: #333; margin-top: 5px;")
