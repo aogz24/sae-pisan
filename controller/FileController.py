@@ -1,11 +1,16 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QBuffer, QIODevice
 from PyQt6.QtWidgets import QInputDialog
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame, QTextEdit, QTableView
-from PyQt6.QtGui import QPainter, QPdfWriter
-from PyQt6.QtCore import QRectF
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.styles import ParagraphStyle
+import io
 
 class FileController:
     """
@@ -159,9 +164,10 @@ class FileController:
         """Simpan data sebagai file teks."""
         data = model.get_data()
         data.write_csv(file_path, separator="\t")
-    
+
+
     def export_output_to_pdf(self):
-        """Export the content of all widgets in the output layout to a PDF file."""
+        """Export the content of all widgets in the output layout to a PDF file (menggunakan reportlab untuk tabel)."""
         file_path, _ = QFileDialog.getSaveFileName(
             self.view, "Save PDF", "", "PDF Files (*.pdf)"
         )
@@ -169,30 +175,10 @@ class FileController:
         if not file_path:
             return
 
-        pdf_writer = QPdfWriter(file_path)
-        painter = QPainter(pdf_writer)
-
-        # Convert cm to points (1 cm = 28.3465 points)
-        top_margin = 4 * 28.3465
-        side_margin = 3 * 28.3465
-
-        y_offset = top_margin
-        page_height = pdf_writer.height()
-        page_width = pdf_writer.width()
-
-        def draw_text_multiline(text, y_offset):
-            """Helper function to split text and draw it across multiple pages if needed."""
-            font_metrics = painter.fontMetrics()
-            line_height = font_metrics.lineSpacing()
-            lines = text.splitlines()
-            for line in lines:
-                if y_offset + line_height > page_height - top_margin:
-                    pdf_writer.newPage()
-                    y_offset = top_margin
-                painter.drawText(QRectF(side_margin, y_offset, page_width - 2 * side_margin, line_height),
-                                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, line)
-                y_offset += line_height
-            return y_offset
+        doc = SimpleDocTemplate(file_path, pagesize=A4, leftMargin=30, rightMargin=30, topMargin=40, bottomMargin=40)
+        elements = []
+        styles = getSampleStyleSheet()
+        normal_style = styles["Normal"]
 
         for i in range(self.view.output_layout.count()):
             item = self.view.output_layout.itemAt(i)
@@ -206,53 +192,85 @@ class FileController:
                     if isinstance(sub_widget, QLabel) and "<b>R Script:</b>" in sub_widget.text():
                         script_box = widget.layout().itemAt(j + 1).widget()
                         text = script_box.toPlainText()
-                        y_offset = draw_text_multiline(text, y_offset)
-                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
+                        elements.append(Paragraph("R Script:", styles["Heading4"]))
+                        elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                        elements.append(Spacer(1, 12))
+                    elif isinstance(sub_widget, QLabel) and "Output" in sub_widget.text():
                         result_box = widget.layout().itemAt(j + 1).widget()
                         if isinstance(result_box, QTextEdit):
                             text = result_box.toPlainText()
-                            y_offset = draw_text_multiline(text, y_offset)
+                            elements.append(Paragraph("Output:", styles["Heading4"]))
+                            elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                            elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QTableView):
                         model = sub_widget.model()
                         if model:
-                            # Ekspor header tabel
-                            headers = [model.headerData(col, Qt.Orientation.Horizontal) for col in range(model.columnCount())]
-                            header_text = "\t".join(headers)
-                            y_offset = draw_text_multiline(header_text, y_offset)
-
-                            # Ekspor data baris
+                            columns = [model.headerData(col, Qt.Orientation.Horizontal) for col in range(model.columnCount())]
+                            data_rows = []
                             for row in range(model.rowCount()):
                                 row_data = []
                                 for col in range(model.columnCount()):
                                     index = model.index(row, col)
-                                    row_data.append(model.data(index))
-                                text = "\t".join(row_data)
-                                y_offset = draw_text_multiline(text, y_offset)
+                                    row_data.append(str(model.data(index)))
+                                data_rows.append(row_data)
+                            if data_rows:
+                                table_data = [columns] + data_rows
+                                table = Table(table_data, repeatRows=1)
+                                table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                ]))
+                                elements.append(table)
+                                elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel) and "<b>Plot:</b>" in sub_widget.text():
                         for k in range(j + 1, widget.layout().count()):
                             plot_label = widget.layout().itemAt(k).widget()
                             if isinstance(plot_label, QLabel):
                                 pixmap = plot_label.pixmap()
                                 if pixmap:
-                                    image = pixmap.toImage()
-                                    image_height = image.height() * (page_width - 2 * side_margin) / image.width()
-                                    if y_offset + image_height > page_height - top_margin:
-                                        pdf_writer.newPage()
-                                        y_offset = top_margin
-                                    rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
-                                    painter.drawImage(rect, image)
-                                    y_offset += image_height
+                                    # Simpan gambar ke buffer menggunakan QBuffer
+                                    buffer = QBuffer()
+                                    buffer.open(QIODevice.OpenModeFlag.ReadWrite)
+                                    pixmap.toImage().save(buffer, "PNG")
+                                    buffer.seek(0)
+                                    img = Image(io.BytesIO(buffer.data()), width=400, height=250)
+                                    elements.append(img)
+                                    elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QTextEdit):
                         text = sub_widget.toPlainText()
-                        y_offset = draw_text_multiline(text, y_offset)
+                        elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                        elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel):
                         text = sub_widget.text().replace("<b>", "").replace("</b>", "")
-                        y_offset = draw_text_multiline(text, y_offset)
+                        text = text.replace("<i>", "").replace("</i>", "")
+                        if "Summary of" in sub_widget.text():
+                            summary_style = ParagraphStyle(
+                                name="SummaryHeading",
+                                parent=styles["Heading1"],
+                                alignment=TA_CENTER,
+                                fontName="Helvetica-Bold"
+                            )
+                            elements.append(Paragraph(text, summary_style))
+                            elements.append(Spacer(1, 12))
+                        elif "Generated on" in sub_widget.text():
+                            generated_style = ParagraphStyle(
+                                name="GeneratedHeading",
+                                parent=styles["Normal"],
+                                alignment=2,  # TA_RIGHT is 2
+                                fontName="Helvetica-Oblique",  # Italic
+                                fontSize=10,
+                                textColor=colors.black
+                            )
+                            elements.append(Paragraph(text, generated_style))
+                            elements.append(Spacer(1, 12))
+                        else:
+                            elements.append(Paragraph(text, normal_style))
+                            elements.append(Spacer(1, 12))
 
-            if y_offset > page_height - top_margin:
-                pdf_writer.newPage()
-                y_offset = top_margin
-
-        painter.end()
-
+        doc.build(elements)
         QMessageBox.information(self.view, "Success", "PDF exported successfully!")
