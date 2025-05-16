@@ -264,9 +264,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                 card_layout.addWidget(label)
                 os.remove(plot_path)
-    
-    
-
+                
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
     parent.output_layout.addStretch()
