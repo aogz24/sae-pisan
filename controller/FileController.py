@@ -193,7 +193,14 @@ class FileController:
                         script_box = widget.layout().itemAt(j + 1).widget()
                         text = script_box.toPlainText()
                         elements.append(Paragraph("R Script:", styles["Heading4"]))
-                        elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                        script_style = ParagraphStyle(
+                            name="ScriptStyle",
+                            parent=styles["Normal"],
+                            fontName="Courier",
+                            fontSize=9,
+                            leading=12,
+                        )
+                        elements.append(Paragraph(text.replace("\n", "<br/>"), script_style))
                         elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel) and "Output" in sub_widget.text():
                         result_box = widget.layout().itemAt(j + 1).widget()
@@ -201,6 +208,9 @@ class FileController:
                             text = result_box.toPlainText()
                             elements.append(Paragraph("Output:", styles["Heading4"]))
                             elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                            elements.append(Spacer(1, 12))
+                        else:
+                            elements.append(Paragraph("Output:", styles["Heading4"]))
                             elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QTableView):
                         model = sub_widget.model()
@@ -241,10 +251,6 @@ class FileController:
                                     img = Image(io.BytesIO(buffer.data()), width=400, height=250)
                                     elements.append(img)
                                     elements.append(Spacer(1, 12))
-                    elif isinstance(sub_widget, QTextEdit):
-                        text = sub_widget.toPlainText()
-                        elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
-                        elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel):
                         text = sub_widget.text().replace("<b>", "").replace("</b>", "")
                         text = text.replace("<i>", "").replace("</i>", "")
