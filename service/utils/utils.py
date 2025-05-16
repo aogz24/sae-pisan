@@ -146,10 +146,14 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
             border: 1px solid #ccc;
             border-radius: 4px;
             padding: 5px;
-            font-family: Consolas, Courier New, monospace;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 9pt;
         }
     """)
-    script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (r_script.count('\n') + 3))
+    max_height = 400
+    calculated_height = script_box.fontMetrics().lineSpacing() * (r_script.count('\n') + 2)
+    script_box.setFixedHeight(min(calculated_height, max_height))
+    script_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     # Tambahkan elemen teks ke layout card
     card_layout.addWidget(label_script)
@@ -189,7 +193,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
             card_layout.addWidget(key_label)
 
             if isinstance(value, pl.DataFrame):
-                # Tampilkan DataFrame polars ke dalam QTableView
                 table_view = QTableView()
                 model = QStandardItemModel()
                 model.setHorizontalHeaderLabels(value.columns)
@@ -197,7 +200,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 for row in value.iter_rows(named=True):
                     items = [QStandardItem(str(row[col])) for col in value.columns]
                     model.appendRow(items)
-
+                
                 table_view.setModel(model)
                 table_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
                 table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
