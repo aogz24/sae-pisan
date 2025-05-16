@@ -176,7 +176,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
 
         # Add timestamp for generation
         timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
-        timestamp_label = QLabel(f"<i>Generated on: {timestamp}</i>")
+        timestamp_label = QLabel(f"<i>Generated at: {timestamp}</i>")
         timestamp_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         timestamp_label.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
         card_layout.addWidget(timestamp_label)
