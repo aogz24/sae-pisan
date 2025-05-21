@@ -35,9 +35,34 @@ def run_model_eblup_area(parent):
             result = str(e)
             error = True
             return result, error, None
-        ro.r('estimated_value <- model$est$eblup\n mse <- model$mse')
-        result_str = ro.r('capture.output(print(model))')
-        result = "\n".join(result_str)
+        ro.r('estimated_value <- model$est$eblup\n mse <- model$mse \n method <- model$est$fit$method \n convergence<-model$est$fit$convergence \n iterations <- model$est$fit$iterations \n refvar <- model$est$fit$refvar \n goodness <-model$est$fit$goodness')
+        method = ro.globalenv['method']
+        convergence = ro.globalenv['convergence']
+        if isinstance(convergence, ro.vectors.BoolVector):
+            convergence = "Yes" if bool(convergence[0]) else "NO"
+        else:
+            convergence = "Not Converged"
+        itteration = ro.globalenv['iterations']
+        itteration = int(float(itteration[0]))
+        refvar = ro.globalenv['refvar']
+        refvar = int(float(refvar[0]))
+        goodness_r = ro.conversion.rpy2py(ro.globalenv['goodness'])
+        goodness = pl.DataFrame({
+            'Logarithmic Likelihood': [goodness_r[0]],
+            'Akaike Information Criterion ( AIC )': [goodness_r[1]],
+            'Bayesian Information Criterion (BIC)': [goodness_r[2]],
+            'Kullback Information Criterion (KIC)': [goodness_r[3]],
+        })
+        
+        results = {
+            "Model": "EBLUP Area Level",
+            "Method": method,
+            "Convergence": convergence,
+            "Number of Iterations Performed by The Fisher-scoring Algorithm": itteration,
+            "Random Effect Variance": refvar,
+            "Goodness of Fit Models": goodness
+        }
+        
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
         mse = ro.conversion.rpy2py(ro.globalenv['mse'])
         vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
@@ -49,7 +74,7 @@ def run_model_eblup_area(parent):
             'MSE': mse,
             'RSE (%)': rse})
         error = False
-        return result, error, df
+        return results, error, df
         
     except Exception as e:
         error = True

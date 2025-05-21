@@ -1408,7 +1408,10 @@ class MainWindow(QMainWindow):
                         data['script_text'] = script_box.toPlainText()
                     elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
                         result_box = widget.layout().itemAt(j + 1).widget()
-                        data['result_text'] = result_box.toPlainText()
+                        try:
+                            data['result_text'] = result_box.toPlainText()
+                        except Exception:
+                            data['result_text'] = None
                     elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
                         error_box = widget.layout().itemAt(j + 1).widget()
                         data['error_text'] = error_box.toPlainText()

@@ -50,8 +50,8 @@ class SaeHB(SaeModelling):
         
     def run_model(self, r_script):
         self.r_script = r_script
-        result, error, df = run_model_hb_area(self)
-        return result, error, df
+        result, error, df, plot_paths = run_model_hb_area(self)
+        return result, error, df, plot_paths
     
     def get_model2(self):
         return self.model2
