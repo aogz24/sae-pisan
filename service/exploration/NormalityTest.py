@@ -3,6 +3,7 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
+import rpy2_arrow.polars as rpy2polars
 
 def run_normality_test(parent):
     """
@@ -28,14 +29,10 @@ def run_normality_test(parent):
     Exception: If any error occurs during the execution of the R script or data processing.
     """
     
-    import rpy2.robjects as ro
-    import rpy2_arrow.polars as rpy2polars
-    
     parent.activate_R()
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
-    df = df.drop_nulls() 
 
     with rpy2polars.converter.context() as cv_ctx:
         r_df = rpy2polars.converter.py2rpy(df)
@@ -53,20 +50,36 @@ def run_normality_test(parent):
         ro.r(script)
 
         selected_vars = parent.selected_columns
-        result_str = ""
         plot_paths = []  
         test_names = ["shapiro", "jarque", "lilliefors"]
 
+        # Prepare data containers
+        shapiro_data = []
+        jarque_data = []
+        lillie_data = []
+
+        test_map = {
+            "shapiro": shapiro_data,
+            "jarque": jarque_data,
+            "lilliefors": lillie_data
+        }
+
         for var in selected_vars:
-            safe_var = var.replace(" ", "_")  
+
+            safe_var = var.replace(" ", "_")
 
             for test in test_names:
                 result_key = f"normality_results_{safe_var}_{test}"
                 if ro.r(f"exists('{result_key}')")[0]:
-                    result = ro.r(f"capture.output(print({result_key}))")
-                    result_str += f"{var} - {test} Test:\n" + "\n".join(result) + "\n"
+                    stat = ro.r(f"{result_key}$statistic")[0]
+                    pval = ro.r(f"{result_key}$p.value")[0]
+                    test_map[test].append({
+                        "Variable Name": var,
+                        "Statistic": stat,
+                        "P-Value": pval
+                    })
 
-            # Menyimpan plot jika ada
+            # Save plots if available
             for plot_type in ["histogram", "qqplot"]:
                 plot_name = f"{plot_type}_{safe_var}"
                 if ro.r(f"exists('{plot_name}')")[0]:
@@ -76,8 +89,18 @@ def run_normality_test(parent):
                     grdevices.dev_off()
                     plot_paths.append(plot_path)
 
-        parent.result = result_str
-        parent.plot = plot_paths 
+        # Build parent.result only with non-empty tables
+        result_dict = {}
+        if shapiro_data:
+            result_dict["Shapiro Test Results"] = pl.DataFrame(shapiro_data)
+        if jarque_data:
+            result_dict["Jarque Test Results"] = pl.DataFrame(jarque_data)
+        if lillie_data:
+            result_dict["Lilliefors Test Results"] = pl.DataFrame(lillie_data)
+
+        parent.result = result_dict
+        parent.plot = plot_paths if plot_paths else None
+
         
     except Exception as e:
         parent.result = str(e)

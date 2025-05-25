@@ -1,12 +1,12 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QSizePolicy, QMessageBox, QSpacerItem
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QSizePolicy, QMessageBox, QSpacerItem, QToolButton
 )
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
 from model.NormalityTest import NormalityTest
 from controller.Eksploration.EksplorationController import NormalityTestController
-
+from service.utils.utils import display_script_and_output
 
 class NormalityTestDialog(QDialog):
     """
@@ -65,7 +65,7 @@ class NormalityTestDialog(QDialog):
         self.selected_status = {}
 
         # Main layout
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
 
         # Main content layout
         content_layout = QHBoxLayout()
@@ -149,7 +149,7 @@ class NormalityTestDialog(QDialog):
         right_layout.addWidget(graph_group)
 
         content_layout.addLayout(right_layout)
-        main_layout.addLayout(content_layout)
+        self.main_layout.addLayout(content_layout)
 
         self.script_layout = QHBoxLayout() 
         self.script_label = QLabel("R Script:", self)
@@ -160,26 +160,57 @@ class NormalityTestDialog(QDialog):
 
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.script_layout.addWidget(self.script_label)
-        self.script_layout.addItem(spacer)  
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
+
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.script_label)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
         self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        self.script_box = QTextEdit(self)
+        self.script_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
 
-        # Add to main layout
-        main_layout.addLayout(self.script_layout)  
-        main_layout.addWidget(self.script_box)
+        self.main_layout.addLayout(self.script_layout)
+
+        self.script_box = QTextEdit()
+        self.script_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.script_box.setReadOnly(False)
+        self.script_box.setVisible(False)
+        self.main_layout.addWidget(self.script_box)
 
         # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-        main_layout.addLayout(button_row_layout)
+        self.main_layout.addLayout(button_row_layout)
 
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+
+
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.script_box.isVisible()
+        self.script_box.setVisible(not is_visible)
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
+        else:
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+    
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -314,7 +345,8 @@ class NormalityTestDialog(QDialog):
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
-        normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns(), self.parent)
+        normality_test = NormalityTest(self.model1, self.model2, self.get_selected_columns())
+        print("Plot:", normality_test.plot)
         controller = NormalityTestController(normality_test)
         controller.run_model(r_script)
 
@@ -322,8 +354,9 @@ class NormalityTestDialog(QDialog):
             QMessageBox.information(self, "Normality Test", "Exploration has been completed.")
         else:
             QMessageBox.critical(self, "Normality Test", normality_test.result) 
-
-        self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+        print("Plot:", normality_test.plot)
+        # self.parent.add_output(r_script, normality_test.result, normality_test.plot)
+        display_script_and_output(self.parent, r_script, normality_test.result, normality_test.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
