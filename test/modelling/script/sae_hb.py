@@ -193,6 +193,8 @@ def set_selection_method(parent, dialog):
     
 import unittest
 from unittest.mock import MagicMock
+from PyQt6.QtWidgets import QApplication
+import sys
 
 class TestSaeHBArea(unittest.TestCase):
 
@@ -244,6 +246,326 @@ class TestSaeHBArea(unittest.TestCase):
         self.parent.as_factor_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_with(0)
         self.parent.variables_list.model().setData.assert_called_with(self.parent.variables_list.model().index(0), "var5 [String]")
+        
+    def test_assign_of_interest_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+
+        assign_of_interest(self.parent)
+
+        self.assertEqual(self.parent.of_interest_var, ["variable1 [Numeric]"])
+        self.parent.of_interest_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_aux_mean_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.auxilary_vars = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_auxilary(self.parent)
+            self.assertEqual(self.parent.auxilary_vars, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            mock_exec.assert_called_once()
+    
+    def test_assign_vardir_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+
+        assign_vardir(self.parent)
+
+        self.assertEqual(self.parent.vardir_var, ["variable1 [Numeric]"])
+        self.parent.vardir_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_as_factor(self):
+        self.parent.as_factor_var = []
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+
+        assign_as_factor(self.parent)
+
+        self.assertEqual(self.parent.as_factor_var, ["variable1 [String]"])
+        self.parent.as_factor_model.setStringList.assert_called_with(["variable1 [String]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index1.row())
+    
+    def test_generate_r_script(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_empty_vars(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_only_as_factor(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_only_auxilary(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ var2 + var3\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_only_vardir(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+        
+    def test_generate_r_script_with_empty_selection_method(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = ""
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'model<-lm (formula, iter.update=3, iter.mcmc = 2000, burn.in =1000, data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+        
+    def test_generate_r_script_with_only_of_interest(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ 1\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+        
+    def test_generate_r_script_with_empty_of_interest(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ var2 + var3 + as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_scrip_with_multiple_as_factor(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = ["var4 [String]", "var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var4) + as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_empty_as_factor(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_empty_auxilary(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
+    
+    def test_generate_r_script_with_empty_vardir(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.selection_method = "Stepwise"
+        self.parent.model_method = "lm"
+        self.parent.iter_update = "3"
+        self.parent.iter_mcmc = "2000"
+        self.parent.burn_in = "1000"
+
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'stepwise_model <- step(formula, direction="both")\n'
+            'final_formula <- formula(stepwise_model)\n'
+            'model<-lm (final_formula, iter.update=3, iter.mcmc = 2000, burn.in =1000 , data=data)'
+        )
+        
+        self.assertEqual(r_script.strip(), expected_script.strip())
 
 if __name__ == '__main__':
+    app = QApplication(sys.argv)
     unittest.main()

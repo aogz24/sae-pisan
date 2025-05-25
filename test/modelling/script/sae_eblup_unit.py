@@ -1,3 +1,7 @@
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QAbstractItemView, QTextEdit, QComboBox, QLineEdit
+from PyQt6.QtGui import QDoubleValidator, QIntValidator
+from PyQt6.QtWidgets import QMessageBox
+
 def assign_of_interest(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
@@ -233,13 +237,6 @@ def show_options(parent):
 
     layout = QVBoxLayout()
 
-    # method_label = QLabel("Stepwise Selection Method:")
-    # layout.addWidget(method_label)
-
-    # parent.method_combo = QComboBox()
-    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    # layout.addWidget(parent.method_combo)
-
     method_label = QLabel("Method:")
     layout.addWidget(method_label)
 
@@ -281,6 +278,8 @@ def set_selection_method(parent, dialog):
 
 import unittest
 from unittest.mock import MagicMock
+import sys
+from PyQt6.QtWidgets import QApplication
 
 class TestUnassignVariable(unittest.TestCase):
 
@@ -303,6 +302,19 @@ class TestUnassignVariable(unittest.TestCase):
         self.parent.population_sample_size_list.selectedIndexes.return_value = []
 
     def test_unassign_of_interest_variable(self):
+        """
+        Test the unassignment of a variable of interest from the parent object.
+
+        This test verifies that:
+        - The specified variable ("var1 [Numeric]") is removed from the parent's list of variables of interest.
+        - The model's string list is updated accordingly.
+        - The variable is reinserted into the variables list model.
+        - The data in the variables list model is updated.
+        - The R script display function is called to reflect the changes.
+
+        Komentar:
+        Fungsi ini memastikan bahwa ketika variabel of interest di-unassign, seluruh komponen terkait diupdate dengan benar, termasuk tampilan dan model data.
+        """
         unassign_variable(self.parent)
         self.assertNotIn("var1 [Numeric]", self.parent.of_interest_var)
         self.parent.of_interest_model.setStringList.assert_called_with(self.parent.of_interest_var)
@@ -369,6 +381,431 @@ class TestUnassignVariable(unittest.TestCase):
         self.parent.variables_list.model().insertRow.assert_called()
         self.parent.variables_list.model().setData.assert_called()
         self.parent.show_r_script.assert_called()
+        
+    def test_assign_of_interest_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_of_interest(self.parent)
+        self.assertEqual(self.parent.of_interest_var, ["variable1 [Numeric]"])
+        self.parent.of_interest_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
 
+    def test_assign_of_interest_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.of_interest_var = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_of_interest(self.parent)
+            self.assertEqual(self.parent.of_interest_var, [])
+            self.parent.of_interest_model.setStringList.assert_not_called()
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            self.assertFalse(self.parent.show_r_script.called)
+            mock_exec.assert_called_once()
+
+    def test_assign_auxilary_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_auxilary(self.parent)
+        self.assertIn("variable1 [Numeric]", self.parent.auxilary_vars)
+        self.parent.auxilary_model.setStringList.assert_called_with(self.parent.auxilary_vars)
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_auxilary_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.auxilary_vars = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_auxilary(self.parent)
+            self.assertEqual(self.parent.auxilary_vars, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            self.assertFalse(self.parent.show_r_script.called)
+            mock_exec.assert_called_once()
+
+    def test_assign_index(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_index(self.parent)
+        self.assertEqual(self.parent.index_var, ["variable1 [Numeric]"])
+        self.parent.index_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_as_factor(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_as_factor(self.parent)
+        self.assertIn("variable1 [String]", self.parent.as_factor_var)
+        self.parent.as_factor_model.setStringList.assert_called_with(self.parent.as_factor_var)
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_domains(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_domains(self.parent)
+        self.assertEqual(self.parent.domain_var, ["variable1 [Numeric]"])
+        self.parent.domain_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_aux_mean_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_aux_mean(self.parent)
+        self.assertIn("variable1 [Numeric]", self.parent.aux_mean_vars)
+        self.parent.aux_mean_model.setStringList.assert_called_with(self.parent.aux_mean_vars)
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_aux_mean_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.aux_mean_vars = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_aux_mean(self.parent)
+            self.assertEqual(self.parent.aux_mean_vars, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            self.assertFalse(self.parent.show_r_script.called)
+            mock_exec.assert_called_once()
+
+    def test_assign_population_sample_size(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        assign_population_sample_size(self.parent)
+        self.assertEqual(self.parent.population_sample_size_var, ["variable1 [Numeric]"])
+        self.parent.population_sample_size_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_unassign_variable_of_interest(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.of_interest_list.selectedIndexes.return_value = [index]
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.of_interest_var, [])
+        self.parent.of_interest_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_auxilary(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.auxilary_list.selectedIndexes.return_value = [index]
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.auxilary_vars, [])
+        self.parent.auxilary_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_index(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_var = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.index_list.selectedIndexes.return_value = [index]
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.index_var, [])
+        self.parent.index_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_as_factor(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_var = ["variable1 [String]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.as_factor_list.selectedIndexes.return_value = [index]
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.as_factor_var, [])
+        self.parent.as_factor_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_domain(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_var = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.domain_list.selectedIndexes.return_value = [index]
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.domain_var, [])
+        self.parent.domain_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_aux_mean(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.aux_mean_vars = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = [index]
+        self.parent.population_sample_size_list.selectedIndexes.return_value = []
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.aux_mean_vars, [])
+        self.parent.aux_mean_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_unassign_variable_population_sample_size(self):
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.index_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        self.parent.domain_list.selectedIndexes.return_value = []
+        self.parent.auxilary_vars_mean_list.selectedIndexes.return_value = []
+        self.parent.population_sample_size_var = ["variable1 [Numeric]"]
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.population_sample_size_list.selectedIndexes.return_value = [index]
+        unassign_variable(self.parent)
+        self.assertEqual(self.parent.population_sample_size_var, [])
+        self.parent.population_sample_size_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called()
+        self.parent.show_r_script.assert_called()
+
+    def test_get_selected_variables(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.vardir_var = ["variable3 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        result = get_selected_variables(self.parent)
+        self.assertEqual(result, (
+            ["variable1 [Numeric]"],
+            ["variable2 [Numeric]"],
+            ["variable3 [Numeric]"],
+            ["variable4 [String]"],
+        ))
+
+    def test_generate_r_script(self):
+        self.parent.of_interest_var = ["y [Numeric]"]
+        self.parent.auxilary_vars = ["x1 [Numeric]", "x2 [Numeric]"]
+        self.parent.as_factor_var = ["f1 [String]"]
+        self.parent.index_var = ["idx [Numeric]"]
+        self.parent.aux_mean_vars = ["mx1 [Numeric]"]
+        self.parent.population_sample_size_var = ["pop [Numeric]"]
+        self.parent.domain_var = ["dom [Numeric]"]
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "100"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- y ~ x1 + x2 + as.factor(f1)', script)
+        self.assertIn('model<-pbmseBHF(formula,dom=dom, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B=100, method = "REML", data=data)', script)
+
+    def test_generate_r_script_with_empty_vars(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- "" ~ 1', script)
+    
+    def test_generate_r_script_with_only_of_interest(self):
+        self.parent.of_interest_var = ["y [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- y ~ 1', script)
+    
+    def test_generate_r_script_with_only_auxilary(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["x1 [Numeric]", "x2 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- "" ~ x1 + x2', script)
+    
+    def test_generate_r_script_with_only_as_factor(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = ["f1 [String]"]
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- "" ~ as.factor(f1)', script)
+    
+    def test_generate_r_script_with_index(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = ["idx [Numeric]"]
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('Xmeans <- with(data, data.frame(idx,""))', script)
+        self.assertIn('Popn <- with(data, data.frame(idx,""))', script)
+    
+    def test_generate_r_script_with_aux_mean(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = ["mx1 [Numeric]"]
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('Xmeans <- with(data, data.frame("",mx1)', script)
+    
+    def test_generate_r_script_with_aux_mean_and_index(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = ["idx [Numeric]"]
+        self.parent.aux_mean_vars = ["mx1 [Numeric]"]
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('Xmeans <- with(data, data.frame(idx,mx1)', script)
+    
+    def test_generate_r_script_with_population_sample_size(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = ["pop [Numeric]"]
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('Popn <- with(data, data.frame("",pop))', script)
+    
+    def test_generate_r_script_with_domain(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = ["dom [Numeric]"]
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('domains=Xmeans[,1]', script)
+    
+    def test_generate_r_script_with_multi_auxilary_and_mean_aux(self):
+        self.parent.of_interest_var = ["y [Numeric]"]
+        self.parent.auxilary_vars = ["x1 [Numeric]", "x2 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = ["mx1 [Numeric]", "mx2 [Numeric]"]
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- y ~ x1 + x2', script)
+    
+    def test_generate_r_script_with_multi_of_interest(self):
+        self.parent.of_interest_var = ["y1 [Numeric]", "y2 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.as_factor_var = []
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- y1 ~ 1', script)
+    
+    def test_generate_r_script_with_multi_auxilary_and_as_factor(self):
+        self.parent.of_interest_var = ["y [Numeric]"]
+        self.parent.auxilary_vars = ["x1 [Numeric]", "x2 [Numeric]"]
+        self.parent.as_factor_var = ["f1 [String]", "f2 [String]"]
+        self.parent.index_var = []
+        self.parent.aux_mean_vars = []
+        self.parent.population_sample_size_var = []
+        self.parent.domain_var = []
+        self.parent.selection_method = "None"
+        self.parent.method = "REML"
+        self.parent.bootstrap = "50"
+        script = generate_r_script(self.parent)
+        self.assertIn('formula <- y ~ x1 + x2 + as.factor(f1) + as.factor(f2)', script)
+    
 if __name__ == '__main__':
+    app = QApplication(sys.argv)
     unittest.main()
+        
