@@ -3,6 +3,7 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
+from rpy2.robjects import pandas2ri
 
 def run_correlation_matrix(parent):
     """
@@ -31,12 +32,13 @@ def run_correlation_matrix(parent):
 
     # Aktivasi R
     parent.activate_R()
+    pandas2ri.activate()
 
     # Mengambil data dari model1 dan model2
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
-    df = df.drop_nulls()  # Menghapus nilai null
+ 
 
     # Mengonversi DataFrame Polars ke R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
@@ -47,32 +49,41 @@ def run_correlation_matrix(parent):
         # Memuat library R yang diperlukan
         ro.r('suppressMessages(library(tidyr))')
         ro.r('suppressMessages(library(ggcorrplot))')
-
         ro.r('rm(list=ls()[ls() != "r_df"])')
 
         # Menyiapkan data di R
         ro.r('data <- as.data.frame(r_df)')
+        ro.r(parent.r_script)
 
-        # Mengeksekusi script yang dibuat pada dialog
-        script = parent.r_script  # Script R yang dihasilkan di dialog
-        ro.r(script)
+        result_tables = {}
+        result_plots = []
 
-        correlation_result = ro.r('capture.output(print(correlation_matrix))')
-        correlation_text = "\n".join(correlation_result)  # Gabungkan menjadi teks
-        parent.result = correlation_text  # Simpan sebagai string
+        # Daftar metode yang mungkin digunakan
+        methods = ["pearson", "spearman", "kendall"]
 
-        # Mengecek apakah ada plot korelasi yang dihasilkan
-        correlation_plot_exists = ro.r('exists("correlation_plot")')
+        for method in methods:
+            matrix_name = f"correlation_matrix_{method}"
+            plot_name = f"correlation_plot_{method}"
 
-        if correlation_plot_exists[0]:
-            plot_path =[]
-            plot_path.append("correlation_plot.png")
-            grdevices.png(file=plot_path, width=800, height=600)
-            ro.r('print(correlation_plot)')
-            grdevices.dev_off()
-            parent.plot = plot_path
+            if ro.r(f'exists("{matrix_name}")')[0]:
+                # Ambil tabel korelasi
+                matrix_df = ro.r(f'as.data.frame({matrix_name})')
+                pandas_df = pandas2ri.rpy2py(matrix_df)
+                correlation_df = pl.from_pandas(pandas_df)
+                result_tables[f"{method.title()} Correlation"] = correlation_df
+
+            if ro.r(f'exists("{plot_name}")')[0]:
+                # Simpan plot korelasi ke file
+                plot_path = f"{plot_name}.png"
+                grdevices.png(file=plot_path, width=800, height=600)
+                ro.r(f'print({plot_name})')
+                grdevices.dev_off()
+                result_plots.append(plot_path)
+
+        parent.result = result_tables
+        parent.plot = result_plots if result_plots else None
 
     except Exception as e:
         parent.error = True
         parent.result = str(e)
-        return
+

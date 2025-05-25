@@ -3,9 +3,9 @@ from PyQt6.QtGui import QIcon
 import polars as pl
 from model.CorrelationMatrix import CorrelationMatrix
 from controller.Eksploration.EksplorationController import CorrelationMatrixController
-
+from service.utils.utils import display_script_and_output
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox, QSizePolicy, QMessageBox, QSpacerItem
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QCheckBox, QSizePolicy, QMessageBox, QSpacerItem, QToolButton
 )
 
 class CorrelationMatrixDialog(QDialog):
@@ -60,7 +60,7 @@ class CorrelationMatrixDialog(QDialog):
         self.selected_status = {}
 
         # Main layout
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         content_layout = QHBoxLayout()
 
         # Left layout for Data Editor and Data Output
@@ -112,6 +112,21 @@ class CorrelationMatrixDialog(QDialog):
         right_layout.addWidget(self.selected_label)
         right_layout.addWidget(self.selected_list)
 
+        # Method group with checkboxes
+        method_group = QGroupBox("Methods")
+        method_layout = QVBoxLayout()
+        self.pearson_checkbox = QCheckBox("Pearson")
+        self.spearman_checkbox = QCheckBox("Spearman")
+        self.kendall_checkbox = QCheckBox("Kendall")
+        self.pearson_checkbox.stateChanged.connect(self.generate_r_script)
+        self.spearman_checkbox.stateChanged.connect(self.generate_r_script)
+        self.kendall_checkbox.stateChanged.connect(self.generate_r_script)
+        method_layout.addWidget(self.pearson_checkbox)
+        method_layout.addWidget(self.spearman_checkbox)
+        method_layout.addWidget(self.kendall_checkbox)
+        method_group.setLayout(method_layout)
+        right_layout.addWidget(method_group)
+        
         # Graph group
         graph_group = QGroupBox("Visualization")
         graph_layout = QVBoxLayout()
@@ -122,7 +137,7 @@ class CorrelationMatrixDialog(QDialog):
         right_layout.addWidget(graph_group)
 
         content_layout.addLayout(right_layout)
-        main_layout.addLayout(content_layout)
+        self.main_layout.addLayout(content_layout)
 
         self.script_layout = QHBoxLayout()  
         self.script_label = QLabel("R Script:", self)
@@ -133,22 +148,41 @@ class CorrelationMatrixDialog(QDialog):
 
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.script_layout.addWidget(self.script_label)
-        self.script_layout.addItem(spacer)  
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
+
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.script_label)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
         self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
+        self.script_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
 
-        self.script_box = QTextEdit(self)
+        self.main_layout.addLayout(self.script_layout)
 
-        main_layout.addLayout(self.script_layout)  
-        main_layout.addWidget(self.script_box)  
+        self.script_box = QTextEdit()
+        self.script_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.script_box.setReadOnly(False)
+        self.script_box.setVisible(False)
+        self.main_layout.addWidget(self.script_box)
+
 
         # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-        main_layout.addLayout(button_row_layout)
+        self.main_layout.addLayout(button_row_layout)
 
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
@@ -162,6 +196,17 @@ class CorrelationMatrixDialog(QDialog):
         self.data_output_model.setStringList(self.get_column_with_dtype(model2))
         self.all_columns_model1 = self.get_column_with_dtype(model1)
         self.all_columns_model2 = self.get_column_with_dtype(model2)
+
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.script_box.isVisible()
+        self.script_box.setVisible(not is_visible)
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
+        else:
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
         self.columns = [
@@ -234,11 +279,17 @@ class CorrelationMatrixDialog(QDialog):
         r_script = ""
 
         # Step 1: Generate the correlation matrix
-        r_script += f"""correlation_matrix <- cor(data[, c({formatted_columns})], use="complete.obs", method="pearson")"""
-        if self.correlation_plot_checkbox.isChecked():
-            r_script += """
-correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "upper", lab = TRUE)
-            """
+        for method, checkbox in [("pearson", self.pearson_checkbox), ("spearman", self.spearman_checkbox), ("kendall", self.kendall_checkbox)]:
+            if checkbox.isChecked():
+                correlation_matrix_method = f"correlation_matrix_{method}"
+                r_script += f"{correlation_matrix_method} <- cor(data[, c({formatted_columns})], use='complete.obs', method='{method}')\n"
+
+            if self.correlation_plot_checkbox.isChecked():
+                r_script += (
+                    f"correlation_plot_{method} <- ggcorrplot({correlation_matrix_method}, "
+                    f"method = 'square', type = 'upper', lab = TRUE) + "
+                    f"ggtitle('{method.title()} Correlation Matrix')\n\n"
+                )
         self.script_box.setPlainText(r_script)
 
 
@@ -250,7 +301,7 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
-        correlation_matrix = CorrelationMatrix(self.model1, self.model2, self.parent)
+        correlation_matrix = CorrelationMatrix(self.model1, self.model2)
         controller = CorrelationMatrixController(correlation_matrix)
         controller.run_model(r_script)
 
@@ -259,7 +310,8 @@ correlation_plot <- ggcorrplot(correlation_matrix, method = "square", type = "up
         else:
             QMessageBox.warning(self, "Correlation Matrix", correlation_matrix.result)
 
-        self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
+        # self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
+        display_script_and_output(self.parent, r_script, correlation_matrix.result, correlation_matrix.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
