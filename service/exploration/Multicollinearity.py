@@ -2,6 +2,8 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2_arrow.polars as rpy2polars
+from rpy2.robjects import pandas2ri
+
 
 def run_multicollinearity(parent):
     """
@@ -21,9 +23,8 @@ def run_multicollinearity(parent):
     ValueError: If no R script has been generated in the parent object.
     Exception: If any other error occurs during the execution, it is caught and stored in the parent object.
     """
-    
+    pandas2ri.activate()
     parent.activate_R()  # Pastikan R aktif
-
     # Ambil data dari model
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
@@ -39,33 +40,39 @@ def run_multicollinearity(parent):
 
     try:
         ro.r('suppressMessages(library(car))')
-        # Bersihkan variabel di R, tetapi simpan `r_df`
+        ro.r('suppressMessages(library(tibble))')  # untuk rownames_to_column
+
+        # Bersihkan environment di R kecuali r_df
         ro.r('rm(list=ls()[ls() != "r_df"])')
         ro.r('data <- as.data.frame(r_df)')
 
-        # Pastikan script R telah dihasilkan
-        if not hasattr(parent, 'r_script'):
-            raise ValueError("No R script has been generated.")
-
-        # Jalankan script R
+        # Jalankan script R dari parent
         ro.r(parent.r_script)
 
-        # Simpan hasil model regresi (lm) jika ada
+        result = {}
+
         if parent.reg_model:
-            regression_model_output = ro.r('capture.output(print(regression_model))')
-            regression_result = "\n".join(regression_model_output)
-        else:
-            regression_result = ""
+            # Ambil formula regresi sebagai teks string
+            regression_formula_r = ro.r('deparse(regression_model$call)')
+            regression_formula = " ".join(regression_formula_r)
+            result["Regression Formula"] = regression_formula
 
-        # Ambil output hasil perhitungan VIF
-        vif_output = ro.r('capture.output(print(vif_values))')
-        vif_result = "\n".join(vif_output)  
+            # Ambil intercept (koefisien), ubah rownames jadi kolom
+            ro.r('intercept_df <- tibble::rownames_to_column(as.data.frame(regression_model$coefficients), var = "Variable")')
+            intercept_df = ro.r('intercept_df')
+            intercept_polars = pl.from_pandas(pandas2ri.rpy2py(intercept_df))
+            intercept_polars = intercept_polars.rename({"regression_model$coefficients": "Coefficient"})
+            result["Intercept"] = intercept_polars
 
-        # Gabungkan hasil dalam satu variabel tanpa menghapus hasil lm sebelumnya
-        final_result = f"{regression_result}\nVIF Value:\n{vif_result}"
+        # Ambil VIF dan ubah rownames jadi kolom
+        ro.r('vif_df <- tibble::rownames_to_column(as.data.frame(vif_values), var = "Variable")')
+        vif_df = ro.r('vif_df')
+        vif_polars_df = pl.from_pandas(pandas2ri.rpy2py(vif_df))
+        vif_polars_df = vif_polars_df.rename({"vif_values": "VIF"})
+        result["VIF Table"] = vif_polars_df
 
-        # Simpan hasil ke dalam parent.result
-        parent.result = final_result
+        # Simpan hasil ke parent
+        parent.result = result
 
     except Exception as e:
         parent.error = True

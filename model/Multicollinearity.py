@@ -27,10 +27,9 @@ class Multicollinearity:
         Activates the R environment for running R scripts.
     """
     
-    def __init__(self, model1, model2, view):
+    def __init__(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
-        self.view = view
         self.result =""
         self.reg_model = False
         self.error = False
