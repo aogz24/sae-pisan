@@ -124,14 +124,7 @@ def generate_r_script(parent):
     r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
     r_script += f'vardir_var <- data["{vardir_var}"]\n'
-    if parent.selection_method=="Stepwise":
-        parent.selection_method = "both"
-    if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
-        r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
-        r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-fh(final_formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
-    else:
-        r_script += f'model<-fh(formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+    r_script += f'model<-fh(formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
     return r_script
 
 def show_r_script(parent):
@@ -225,6 +218,339 @@ class TestUnassignVariable(unittest.TestCase):
         self.assertEqual(self.parent.domain_var, [])
         self.parent.domain_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_with(0)
+    
+    def test_assign_of_interest_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.of_interest_var = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_of_interest(self.parent)
+            self.assertEqual(self.parent.of_interest_var, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            mock_exec.assert_called_once()
+    
+    def test_assign_auxilary_with_no_numeric(self):
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [String]"
+        index2 = MagicMock()
+        index2.data.return_value = "variable2 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1, index2]
+        self.parent.auxilary_vars = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_auxilary(self.parent)
+            self.assertEqual(self.parent.auxilary_vars, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            mock_exec.assert_called_once()
+    
+    def test_assign_vardir_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.vardir_var = []
+        with unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.exec") as mock_exec:
+            assign_vardir(self.parent)
+            self.assertEqual(self.parent.vardir_var, [])
+            self.parent.variables_list.model().removeRow.assert_not_called()
+            mock_exec.assert_called_once()
+    
+    def test_assign_as_factor(self):
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+        self.parent.as_factor_var = []
+        assign_as_factor(self.parent)
+        self.assertEqual(self.parent.as_factor_var, ["variable1 [String]"])
+        self.parent.as_factor_model.setStringList.assert_called_with(["variable1 [String]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index1.row())
+    
+    def test_assign_domain(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.domain_var = []
+        assign_domain(self.parent)
+        self.assertEqual(self.parent.domain_var, ["variable1 [Numeric]"])
+        self.parent.domain_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index.row())
+    
+    def test_assign_of_interest_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.of_interest_var = []
+        assign_of_interest(self.parent)
+        self.assertEqual(self.parent.of_interest_var, ["variable1 [Numeric]"])
+        self.parent.of_interest_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index.row())
+    
+    def test_assign_auxilary_with_numeric(self):
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+        self.parent.auxilary_vars = []
+        assign_auxilary(self.parent)
+        self.assertEqual(self.parent.auxilary_vars, ["variable1 [Numeric]"])
+        self.parent.auxilary_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index1.row())
+    
+    def test_assign_vardir_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.vardir_var = []
+        assign_vardir(self.parent)
+        self.assertEqual(self.parent.vardir_var, ["variable1 [Numeric]"])
+        self.parent.vardir_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index.row())
+    
+    def test_assign_as_factor_with_numeric(self):
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+        self.parent.as_factor_var = []
+        assign_as_factor(self.parent)
+        self.assertEqual(self.parent.as_factor_var, ["variable1 [Numeric]"])
+        self.parent.as_factor_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index1.row())
+    
+    def test_assign_domain_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.domain_var = []
+        assign_domain(self.parent)
+        self.assertEqual(self.parent.domain_var, ["variable1 [Numeric]"])
+        self.parent.domain_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_any_call(index.row())
+    
+    def test_generate_r_script(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.domain_var = ["var6 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'vardir_var <- data["var4"]\n'
+            'model<-fh(formula, vardir="var4", combined_data =data, domains="var6", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_no_auxilary_or_as_factor(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var6 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ 1\n'
+            'vardir_var <- data["var4"]\n'
+            'model<-fh(formula, vardir="var4", combined_data =data, domains="var6", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_no_vardir(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.domain_var = ["var6 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'vardir_var <- data[""""]\n'
+            'model<-fh(formula, vardir="""", combined_data =data, domains="var6", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_no_domain(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.domain_var = []
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'vardir_var <- data["var4"]\n'
+            'model<-fh(formula, vardir="var4", combined_data =data, domains=NULL, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_empty(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.domain_var = []
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'vardir_var <- data[""""]\n'
+            'model<-fh(formula, vardir="""", combined_data =data, domains=NULL, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_multiple_auxilary(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [Numeric]", "var4 [Numeric]"]
+        self.parent.vardir_var = ["var5 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var6 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + var4\n'
+            'vardir_var <- data["var5"]\n'
+            'model<-fh(formula, vardir="var5", combined_data =data, domains="var6", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_multiple_as_factor(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["var2 [Numeric]"]
+        self.parent.as_factor_var = ["var3 [String]", "var4 [String]"]
+        self.parent.domain_var = ["var5 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ as.factor(var3) + as.factor(var4)\n'
+            'vardir_var <- data["var2"]\n'
+            'model<-fh(formula, vardir="var2", combined_data =data, domains="var5", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_mixed_types(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]", "var3 [String]"]
+        self.parent.vardir_var = ["var4 [Numeric]"]
+        self.parent.as_factor_var = ["var5 [String]"]
+        self.parent.domain_var = ["var6 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2 + var3 + as.factor(var5)\n'
+            'vardir_var <- data["var4"]\n'
+            'model<-fh(formula, vardir="var4", combined_data =data, domains="var6", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_multiple_of_interest(self):
+        self.parent.of_interest_var = ["var1 [Numeric]", "var2 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["var3 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var4 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ 1\n'
+            'vardir_var <- data["var3"]\n'
+            'model<-fh(formula, vardir="var3", combined_data =data, domains="var4", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_empty_of_interest(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["var1 [Numeric]"]
+        self.parent.vardir_var = ["var2 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var3 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ var1\n'
+            'vardir_var <- data["var2"]\n'
+            'model<-fh(formula, vardir="var2", combined_data =data, domains="var3", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_multiple_vardir(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]"]
+        self.parent.vardir_var = ["var3 [Numeric]", "var4 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var5 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2\n'
+            'vardir_var <- data["var3"]\n'
+            'model<-fh(formula, vardir="var3", combined_data =data, domains="var5", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_empty_vardir(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var3 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2\n'
+            'vardir_var <- data[""""]\n'
+            'model<-fh(formula, vardir="""", combined_data =data, domains="var3", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_empty_as_factor(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]"]
+        self.parent.vardir_var = ["var3 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var4 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2\n'
+            'vardir_var <- data["var3"]\n'
+            'model<-fh(formula, vardir="var3", combined_data =data, domains="var4", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_empty_domain(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]"]
+        self.parent.vardir_var = ["var3 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = []
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2\n'
+            'vardir_var <- data["var3"]\n'
+            'model<-fh(formula, vardir="var3", combined_data =data, domains=NULL, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_multiple_domain(self):
+        self.parent.of_interest_var = ["var1 [Numeric]"]
+        self.parent.auxilary_vars = ["var2 [Numeric]"]
+        self.parent.vardir_var = ["var3 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.domain_var = ["var4 [Numeric]", "var5 [Numeric]"]
+        r_script = generate_r_script(self.parent)
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- var1 ~ var2\n'
+            'vardir_var <- data["var3"]\n'
+            'model<-fh(formula, vardir="var3", combined_data =data, domains="var4", method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        )
+        self.assertEqual(r_script, expected_script)
 
 if __name__ == '__main__':
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    app = QApplication(sys.argv)
     unittest.main()

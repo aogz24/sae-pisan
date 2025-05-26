@@ -81,7 +81,7 @@ def run_model_eblup_pseudo(parent):
         vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
         estimated_value = estimated_value.flatten()
         vardir_var = vardir_var.to_numpy()[:, 0]
-        rse = mse**0.5/estimated_value*100
+        rse = abs(mse**0.5/estimated_value*100)
         df = pl.DataFrame({
             'Domain': domain,
             'Eblup': estimated_value,
