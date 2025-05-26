@@ -150,7 +150,6 @@ def run_model_eblup_unit(parent):
         result_str = ro.r('model$est$fit$summary')
         result = str(result_str)
         results = extract_formatted(result)
-        print(results)
         domain = ro.r('domain')
         estimated_value = ro.r('estimated_value')
         n_size = ro.r('n_size')
