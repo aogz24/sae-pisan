@@ -33,6 +33,7 @@ def run_normality_test(parent):
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
 
     with rpy2polars.converter.context() as cv_ctx:
         r_df = rpy2polars.converter.py2rpy(df)

@@ -31,7 +31,7 @@ def run_multicollinearity(parent):
 
     # Gabungkan data menggunakan Polars
     df = pl.concat([df1, df2], how="horizontal")
-    df = df.drop_nulls()  # Hapus data kosong
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
 
     # Konversi Polars DataFrame ke R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
