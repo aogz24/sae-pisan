@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.3.0")
         columns = [f"Column {i+1}" for i in range(100)]
-        self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
+        self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
             "Estimated Value": [None] * 100,
             "Standar Error": [None] * 100,
@@ -416,6 +416,17 @@ class MainWindow(QMainWindow):
         action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         menu_about.addAction(action_about_info)
         
+        action_header_icon_info = QAction("Header Icon Info", self)
+        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_header_icon_info.triggered.connect(self.show_header_icon_info)
+        menu_about.addAction(action_header_icon_info)
+        
+        # Add R Packages Used menu
+        action_r_packages_info = QAction("R Packages Used", self)
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_r_packages_info.triggered.connect(self.show_r_packages_info)
+        menu_about.addAction(action_r_packages_info)
+        
 
         # Tool Bar
         self.toolBar = QToolBar(self)
@@ -489,6 +500,7 @@ class MainWindow(QMainWindow):
         self.actionSetting.setText("Setting")
         self.actionSetting.triggered.connect(self.change_font_size)
         self.toolBar.addAction(self.actionSetting)
+        
 
         # Menu "Settings"
         menu_settings = self.menu_bar.addMenu("Settings")
@@ -1418,6 +1430,69 @@ class MainWindow(QMainWindow):
                 output_data.append(data)
         return output_data
 
+    def show_header_icon_info(self):
+        """
+        Show a dialog explaining the meaning of header icons in the data table.
+        """
+        msg = (
+            "<b>Header Icon Legend:</b><br><br>"
+            "<div style='display:flex; flex-direction:column; gap:8px;'>"
+            "<div><img src='assets/nominal.svg' width='24' height='24' style='vertical-align:middle;'> <b>Nominal/String</b></div>"
+            "<div><img src='assets/null.svg' width='24' height='24' style='vertical-align:middle;'> <b>Null/Empty</b></div>"
+            "<div><img src='assets/numeric.svg' width='24' height='24' style='vertical-align:middle;'> <b>Numeric</b></div>"
+            "</div><br>"
+            "<div style='max-width:350px;'>"
+            "These icons indicate the data type of each column in the table. "
+            "Nominal/String columns are represented by the nominal icon, "
+            "Null/Empty columns are represented by the null icon, and "
+            "Numeric columns are represented by the numeric icon."
+            "</div>"
+        )
+        QMessageBox.information(self, "Header Icon Info", msg)
+    
+    def show_r_packages_info(self):
+        """
+        Show a dialog listing the R packages used and their versions in a styled table.
+        """
+        try:
+            import rpy2.robjects as ro
+            packages = [
+                "sae", "saeHB", "rjags", "ggplot2", "MASS"
+            ]
+            versions = []
+            for pkg in packages:
+                try:
+                    ver = ro.r(f"as.character(packageVersion('{pkg}'))")[0]
+                except Exception:
+                    ver = "Not Installed"
+                versions.append((pkg, ver))
+            msg = """
+            <b>R Packages Used:</b><br><br>
+            <table style="
+                border-collapse: collapse;
+                min-width: 320px;
+                font-size: 13px;
+                ">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for pkg, ver in versions:
+                msg += (
+                    f"<tr>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{pkg}</td>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{ver}</td>"
+                    f"</tr>"
+                )
+            msg += "</tbody></table>"
+        except Exception as e:
+            msg = f"Could not retrieve R package versions.<br>Error: {e}"
+        QMessageBox.information(self, "R Packages Used", msg)
+    
     def set_output_data(self, output_data):
         """
         Set the output layout from the saved state.
