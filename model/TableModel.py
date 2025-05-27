@@ -101,6 +101,8 @@ class TableModel(QtCore.QAbstractTableModel):
                     dtype = self._data[column_name].dtype
                     if dtype == pl.Utf8:
                         return QtGui.QIcon("assets/nominal.svg")
+                    elif dtype == pl.Null:
+                        return QtGui.QIcon("assets/null.svg")
                     else:
                         return QtGui.QIcon("assets/numeric.svg")
         return None
