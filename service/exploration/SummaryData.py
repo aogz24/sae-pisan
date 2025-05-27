@@ -13,7 +13,6 @@ def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
     # Extract variable name from R script
     pattern = r'(?<=\(")(.*?)(?="\))'
     variable_name = re.search(pattern, r_script).group(0)
-    print(f"Variable Name: {variable_name}")
 
     # Mapping labels
     mapping = {
@@ -31,7 +30,6 @@ def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
     # Clean and split lines
     lines = r_output.strip().split('\n')
     lines = [line.strip() for line in lines if line.strip()]
-    print(f"Cleaned and Split Lines: {lines}")
 
     # Initialize dictionary with Variable Name column
     data = {"Variable Name": [variable_name]}
@@ -55,11 +53,10 @@ def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
             value = str(value)
 
         data[label] = [value]
+        
     if "Length" in data and data["Length"][0] is not None:
         data["Class"] = ["character"]
         data["Mode"] = ["character"]
-
-    print(f"Final Data Dictionary: {data}")
 
     return pl.DataFrame(data)
 
@@ -145,6 +142,7 @@ def run_summary_data(parent):
 
     # Combine data using Polars
     df = pl.concat([df1, df2], how="horizontal")
+    # df = df.drop_nulls()  
 
     # Convert Polars DataFrame to R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
@@ -168,7 +166,6 @@ def run_summary_data(parent):
         ''')
 
         # Get the number of rows and columns from the summary_table in R
-        nrow = int(ro.r('nrow(summary_table)')[0])
         ncol = int(ro.r('ncol(summary_table)')[0])
 
         # Get the output summary_table as a string
@@ -177,8 +174,7 @@ def run_summary_data(parent):
 
         parent.result = {}
 
-        # If row ≤ 6 consider it as a single summary (numeric or string)
-        if nrow <= 6:
+        if ncol == 2 :
             summary_table = extract_formatted_single(summary_str_joined, parent.r_script)
             parent.result["Summary Table"] = summary_table
         else:
