@@ -415,6 +415,10 @@ class MainWindow(QMainWindow):
         action_about_info.triggered.connect(self.open_about_dialog)
         action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         menu_about.addAction(action_about_info)
+        action_header_icon_info = QAction("Header Icon Info", self)
+        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_header_icon_info.triggered.connect(self.show_header_icon_info)
+        menu_about.addAction(action_header_icon_info)
         
 
         # Tool Bar
@@ -489,6 +493,7 @@ class MainWindow(QMainWindow):
         self.actionSetting.setText("Setting")
         self.actionSetting.triggered.connect(self.change_font_size)
         self.toolBar.addAction(self.actionSetting)
+        
 
         # Menu "Settings"
         menu_settings = self.menu_bar.addMenu("Settings")
@@ -1418,6 +1423,26 @@ class MainWindow(QMainWindow):
                 output_data.append(data)
         return output_data
 
+    def show_header_icon_info(self):
+        """
+        Show a dialog explaining the meaning of header icons in the data table.
+        """
+        msg = (
+            "<b>Header Icon Legend:</b><br><br>"
+            "<div style='display:flex; flex-direction:column; gap:8px;'>"
+            "<div><img src='assets/nominal.svg' width='24' height='24' style='vertical-align:middle;'> <b>Nominal/String</b></div>"
+            "<div><img src='assets/null.svg' width='24' height='24' style='vertical-align:middle;'> <b>Null/Empty</b></div>"
+            "<div><img src='assets/numeric.svg' width='24' height='24' style='vertical-align:middle;'> <b>Numeric</b></div>"
+            "</div><br>"
+            "<div style='max-width:350px;'>"
+            "These icons indicate the data type of each column in the table. "
+            "Nominal/String columns are represented by the nominal icon, "
+            "Null/Empty columns are represented by the null icon, and "
+            "Numeric columns are represented by the numeric icon."
+            "</div>"
+        )
+        QMessageBox.information(self, "Header Icon Info", msg)
+    
     def set_output_data(self, output_data):
         """
         Set the output layout from the saved state.
