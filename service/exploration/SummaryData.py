@@ -66,7 +66,8 @@ def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFram
     lines = [line.strip(" '") for line in lines if line.strip()]
 
     # Regex for numeric summary (Min., 1st Qu., ..., Max.)
-    pattern_num = r'^\d+\s+([A-Za-z0-9_.\s]+)\s+(Min\.|1st Qu\.|Median|Mean|3rd Qu\.|Max\.)\s*:\s*([-\d.]+)'
+    pattern_num = r'^\d+\s+([A-Za-z0-9_.\s]+)\s+(Min\.|1st Qu\.|Median|Mean|3rd Qu\.|Max\.|NA\'s)\s*:\s*(<NA>|[-\d.]+)'
+
     
     # Regex for string summary (Length, Class, Mode)
     pattern_char = r'^\d+\s+([A-Za-z0-9_.\s]+)\s+(Length|Class|Mode)\s*:\s*(.*)'
@@ -77,10 +78,11 @@ def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFram
         "Median": "Median",
         "Mean": "Mean",
         "3rd Qu.": "Quartil 3",
-        "Max.": "Maximum"
+        "Max.": "Maximum",
+        "NA's": "Missing",
     }
 
-    stat_order = ["Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max."]
+    stat_order = ["Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max.", "NA's"]
     string_keys = ["Length", "Class", "Mode"]
 
     # Save summary results
@@ -91,13 +93,15 @@ def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFram
         if match := re.match(pattern_num, line):
             var_name = match.group(1).strip()
             stat = match.group(2)
-            value = float(match.group(3))
+            value_str = match.group(3)
+            value = None if value_str == "<NA>" else float(value_str)
             numeric_summary[var_name][stat] = value
         elif match := re.match(pattern_char, line):
             var_name = match.group(1).strip()
             stat = match.group(2)
             value = match.group(3).strip()
             string_summary[var_name][stat] = value
+
 
     # Create numeric DataFrame
     num_result = {
@@ -107,7 +111,9 @@ def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFram
         "Median": [],
         "Mean": [],
         "Quartil 3": [],
-        "Maximum": []
+        "Maximum": [],
+        "Missing": []
+
     }
 
     for var in numeric_summary:
@@ -142,7 +148,9 @@ def run_summary_data(parent):
 
     # Combine data using Polars
     df = pl.concat([df1, df2], how="horizontal")
-    # df = df.drop_nulls()  
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
+    print("[DEBUG] Combined DataFrame:", df)
+
 
     # Convert Polars DataFrame to R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
@@ -171,7 +179,7 @@ def run_summary_data(parent):
         # Get the output summary_table as a string
         summary_str = ro.r('capture.output(print(summary_table))')
         summary_str_joined = "\n".join(summary_str)
-
+        print("[DEBUG] Summary String:", summary_str_joined)
         parent.result = {}
 
         if ncol == 2 :
