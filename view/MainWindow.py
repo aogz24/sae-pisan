@@ -1457,7 +1457,7 @@ class MainWindow(QMainWindow):
         try:
             import rpy2.robjects as ro
             packages = [
-                "sae", "saeHB", "rjags", "survey", "dplyr", "ggplot2", "MASS"
+                "sae", "saeHB", "rjags", "ggplot2", "MASS"
             ]
             versions = []
             for pkg in packages:
