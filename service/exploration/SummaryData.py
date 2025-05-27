@@ -2,17 +2,20 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 from collections import defaultdict
 import re
+import re
+import polars as pl
 
 import rpy2.robjects as ro
 import rpy2_arrow.polars as rpy2polars
 
-
 def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
-    # Ambil nama variabel dari script R
+
+    # Extract variable name from R script
     pattern = r'(?<=\(")(.*?)(?="\))'
     variable_name = re.search(pattern, r_script).group(0)
+    print(f"Variable Name: {variable_name}")
 
-    # Mapping label
+    # Mapping labels
     mapping = {
         "Min.": "Minimum", 
         "1st Qu.": "Quartile 1",
@@ -25,31 +28,42 @@ def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
         "Mode": "Mode"
     }
 
+    # Clean and split lines
     lines = r_output.strip().split('\n')
     lines = [line.strip() for line in lines if line.strip()]
+    print(f"Cleaned and Split Lines: {lines}")
 
+    # Initialize dictionary with Variable Name column
     data = {"Variable Name": [variable_name]}
-    for line in lines[1:]:
+
+    found_stats = set()
+
+    for line in lines:
         parts = line.split()
-        if len(parts) == 3:  
-            stat = parts[1]
-            value = parts[2]
-        else: 
+        if len(parts) >= 3:
             stat = " ".join(parts[1:-1])
             value = parts[-1]
+        else:
+            continue
 
         label = mapping.get(stat, stat)
+        found_stats.add(label)
 
         try:
             value = float(value)
         except ValueError:
-            pass
+            value = str(value)
 
         data[label] = [value]
+    if "Length" in data and data["Length"][0] is not None:
+        data["Class"] = ["character"]
+        data["Mode"] = ["character"]
+
+    print(f"Final Data Dictionary: {data}")
 
     return pl.DataFrame(data)
 
-def extract_summary(r_output: str) -> tuple[pl.DataFrame, pl.DataFrame]:
+def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFrame]:
     # Clean r_output and split into lines
     lines = r_output.strip().strip("[]").split('\n')
     lines = [line.strip(" '") for line in lines if line.strip()]
@@ -119,53 +133,6 @@ def extract_summary(r_output: str) -> tuple[pl.DataFrame, pl.DataFrame]:
 
     return pl.DataFrame(num_result), pl.DataFrame(char_result)
 
-def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
-    # Ambil nama variabel dari script R
-    pattern = r'(?<=\(")(.*?)(?="\))'
-    variable_name = re.search(pattern, r_script).group(0)
-
-    # Mapping label
-    mapping = {
-        "Min.": "Minimum", 
-        "1st Qu.": "Quartile 1",
-        "Median": "Median",
-        "Mean": "Mean",
-        "3rd Qu.": "Quartile 3",
-        "Max.": "Maximum",
-        "Length": "Length",
-        "Class": "Class",
-        "Mode": "Mode"
-    }
-
-    # Bersihkan dan pecah baris
-    lines = r_output.strip().split('\n')
-    lines = [line.strip() for line in lines if line.strip()]
-
-    # Inisialisasi dictionary dengan kolom Variable Name
-    data = {"Variable Name": [variable_name]}
-
-    # Proses setiap baris statistik
-    for line in lines[1:]:
-        parts = line.split()
-        if len(parts) == 3:  # Untuk string seperti: 1 Length 100
-            stat = parts[1]
-            value = parts[2]
-        else:  # Untuk numerik: 1 Min. 4.166667
-            stat = " ".join(parts[1:-1])
-            value = parts[-1]
-
-        label = mapping.get(stat, stat)
-
-        # Coba ubah ke float, jika gagal tetap string
-        try:
-            value = float(value)
-        except ValueError:
-            pass
-
-        data[label] = [value]
-
-    return pl.DataFrame(data)
-
 def run_summary_data(parent):
     """
     Run data summary using Python (Polars) and R.
@@ -210,13 +177,13 @@ def run_summary_data(parent):
 
         parent.result = {}
 
-        # Jika row ≤ 6 anggap sebagai single summary (numeric atau string)
+        # If row ≤ 6 consider it as a single summary (numeric or string)
         if nrow <= 6:
             summary_table = extract_formatted_single(summary_str_joined, parent.r_script)
             parent.result["Summary Table"] = summary_table
         else:
-            # Gunakan extract_summary untuk data multi variabel
-            numeric_df, string_df = extract_summary(summary_str_joined)
+            # Use extract_summary for multi-variable data
+            numeric_df, string_df = extract_formatted_multiple(summary_str_joined)
 
             if numeric_df.shape[0] > 0:
                 parent.result["Summary Table (Numeric)"] = numeric_df
