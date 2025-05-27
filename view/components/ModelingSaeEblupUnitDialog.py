@@ -124,6 +124,8 @@ class ModelingSaeUnitDialog(QDialog):
         self.assign_aux_button = QPushButton("🡆")
         self.assign_aux_button.setObjectName("arrow_button")
         self.assign_as_factor_button = QPushButton("🡆")
+        self.assign_as_factor_button.setVisible(False)
+        self.assign_as_factor_button.setEnabled(False)
         self.assign_as_factor_button.setObjectName("arrow_button")
         self.assign_domains_button = QPushButton("🡆")
         self.assign_domains_button.setObjectName("arrow_button")
@@ -177,6 +179,9 @@ class ModelingSaeUnitDialog(QDialog):
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.right_layout.addWidget(self.as_factor_label)
         self.right_layout.addWidget(self.as_factor_list)
+        self.as_factor_label.setVisible(False)
+        self.as_factor_list.setVisible(False)
+        self.as_factor_model.setStringList([])
         
         self.domain_label = QLabel("Domain:")
         self.domain_list = QListView()
