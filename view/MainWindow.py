@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.3.0")
         columns = [f"Column {i+1}" for i in range(100)]
-        self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
+        self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
             "Estimated Value": [None] * 100,
             "Standar Error": [None] * 100,
