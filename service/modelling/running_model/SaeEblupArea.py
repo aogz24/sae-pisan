@@ -22,7 +22,7 @@ def run_model_eblup_area(parent):
     import rpy2.robjects as ro
     parent.activate_R()
     df = parent.model1.get_data()
-    df = df.drop_nulls()
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
     result = ""
     error = False
     convert_df(df, parent)
