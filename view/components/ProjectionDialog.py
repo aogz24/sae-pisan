@@ -173,7 +173,7 @@ class ProjectionDialog(QDialog):
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
         self.auxilary_list = QListView()
-        self.auxilary_list.setMinimumHeight(200)
+        self.auxilary_list.setMinimumHeight(100)
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -183,7 +183,7 @@ class ProjectionDialog(QDialog):
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
         self.as_factor_list = QListView()
-        self.as_factor_list.setMinimumHeight(200)
+        self.as_factor_list.setMinimumHeight(100)
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
