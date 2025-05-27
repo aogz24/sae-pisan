@@ -131,9 +131,9 @@ class MainWindow(QMainWindow):
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
         self.data2 = pl.DataFrame({
-            "Estimated Value": [""] * 100,
-            "Standar Error": [""] * 100,
-            "CV": [""] * 100
+            "Estimated Value": [None] * 100,
+            "Standar Error": [None] * 100,
+            "RSE (%)": [None] * 100
         })
 
         # Model untuk Sheet 2

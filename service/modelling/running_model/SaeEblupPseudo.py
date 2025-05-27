@@ -18,7 +18,7 @@ def extract_output_results(output):
     results['In Sample domains'] = int(re.search(r"In-sample domains:\s+(\d+)", output).group(1))
 
     # Extract variance estimation method
-    results['Variance Estimation Method'] = re.search(r"Variance estimation method:\s+([\w\s,]+)", output).group(1).strip()
+    results['Variance Estimation Method'] = re.search(r"Variance estimation method:\s+([\w\s,]+)", output).group(1).strip().split('\n')[0]
     
     # Extract k and mult_constant
     results['k'] = float(re.search(r"k\s+=\s+([\d.]+)", output).group(1))
@@ -28,8 +28,8 @@ def extract_output_results(output):
     results['Variance of Random Effect'] = float(re.search(r"Variance of random effects:\s+([\d.]+)", output).group(1))
 
     # Extract MSE method
-    results['MSE Method'] = re.search(r"MSE method:\s+([\w\s]+)", output).group(1).strip
-
+    results['MSE Method'] = re.search(r"MSE method:\s+([\w\s]+)", output).group(1).strip().split('\n')[0]
+    
     # Extract transformation
     results['Transformation'] = re.search(r"Transformation:\s+([\w\s]+)", output).group(1).strip()
 

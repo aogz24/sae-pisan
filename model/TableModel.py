@@ -77,7 +77,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
             value = self._data[index.row(), index.column()]
-            return str(value)
+            return "" if value is None else str(value)
 
     def rowCount(self, _):
         return self.loaded_rows
