@@ -415,10 +415,17 @@ class MainWindow(QMainWindow):
         action_about_info.triggered.connect(self.open_about_dialog)
         action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         menu_about.addAction(action_about_info)
+        
         action_header_icon_info = QAction("Header Icon Info", self)
         action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         action_header_icon_info.triggered.connect(self.show_header_icon_info)
         menu_about.addAction(action_header_icon_info)
+        
+        # Add R Packages Used menu
+        action_r_packages_info = QAction("R Packages Used", self)
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_r_packages_info.triggered.connect(self.show_r_packages_info)
+        menu_about.addAction(action_r_packages_info)
         
 
         # Tool Bar
@@ -1442,6 +1449,49 @@ class MainWindow(QMainWindow):
             "</div>"
         )
         QMessageBox.information(self, "Header Icon Info", msg)
+    
+    def show_r_packages_info(self):
+        """
+        Show a dialog listing the R packages used and their versions in a styled table.
+        """
+        try:
+            import rpy2.robjects as ro
+            packages = [
+                "sae", "saeHB", "rjags", "survey", "dplyr", "ggplot2", "MASS"
+            ]
+            versions = []
+            for pkg in packages:
+                try:
+                    ver = ro.r(f"as.character(packageVersion('{pkg}'))")[0]
+                except Exception:
+                    ver = "Not Installed"
+                versions.append((pkg, ver))
+            msg = """
+            <b>R Packages Used:</b><br><br>
+            <table style="
+                border-collapse: collapse;
+                min-width: 320px;
+                font-size: 13px;
+                ">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for pkg, ver in versions:
+                msg += (
+                    f"<tr>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{pkg}</td>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{ver}</td>"
+                    f"</tr>"
+                )
+            msg += "</tbody></table>"
+        except Exception as e:
+            msg = f"Could not retrieve R package versions.<br>Error: {e}"
+        QMessageBox.information(self, "R Packages Used", msg)
     
     def set_output_data(self, output_data):
         """
