@@ -242,7 +242,6 @@ class TableModel(QtCore.QAbstractTableModel):
     
     def addRowsBefore(self, index, count):
         if index.isValid() and count > 0:
-            print("Adding rows before")
             row = index.row()
             new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
@@ -266,7 +265,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addColumnBefore(self, index, count):
         if index.isValid() and count > 0:
             column = index.column()
-            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            new_columns = {f"new_col_{i}": [None] * self._data.shape[0] for i in range(count)}
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
@@ -278,7 +277,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addColumnAfter(self, index, count):
         if index.isValid() and count > 0:
             column = index.column() + 1
-            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            new_columns = {f"new_col_{i}": [None] * self._data.shape[0] for i in range(count)}
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
