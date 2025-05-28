@@ -1369,38 +1369,47 @@ class MainWindow(QMainWindow):
 
     def autosave_data(self):
         """
-        Save the current state of data1, data2, and output to a temporary file.
+        Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
+        temp_dir = os.path.join(self.path, 'file-data')
+        os.makedirs(temp_dir, exist_ok=True)
+        # Save data1 and data2 as parquet
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        self.model1.get_data().write_parquet(data1_path)
+        self.model2.get_data().write_parquet(data2_path)
+        # Save output as JSON
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
         data = {
             'timestamp': datetime.datetime.now().isoformat(),
-            'data1': self.model1.get_data().to_dicts(),
-            'data2': self.model2.get_data().to_dicts(),
             'output': self.get_output_data()
         }
-        with open(temp_file, 'w') as file:
+        with open(output_path, 'w') as file:
             json.dump(data, file)
 
     def load_temp_data(self):
         """
-        Load data from the temporary file if it exists and is recent.
+        Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
-        if os.path.exists(temp_file):
+        temp_dir = os.path.join(self.path, 'file-data')
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        if os.path.exists(data1_path) and os.path.exists(data2_path) and os.path.exists(output_path):
             reply = QMessageBox.question(self, 'Load Temporary Data',
                                          'Temporary data was found. Do you want to load it?',
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                with open(temp_file, 'r') as file:
+                self.data1 = pl.read_parquet(data1_path)
+                self.data2 = pl.read_parquet(data2_path)
+                self.model1.set_data(self.data1)
+                self.model2.set_data(self.data2)
+                self.update_table(1, self.model1)
+                self.update_table(2, self.model2)
+                with open(output_path, 'r') as file:
                     data = json.load(file)
-                    self.data1 = pl.DataFrame(data['data1'])
-                    self.data2 = pl.DataFrame(data['data2'])
-                    self.model1.set_data(self.data1)
-                    self.model2.set_data(self.data2)
-                    self.update_table(1, self.model1)
-                    self.update_table(2, self.model2)
-                    self.set_output_data(data['output'])
+                    self.set_output_data(data.get('output', []))
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
