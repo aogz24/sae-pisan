@@ -2,7 +2,6 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 from collections import defaultdict
 import re
-import re
 import polars as pl
 
 import rpy2.robjects as ro

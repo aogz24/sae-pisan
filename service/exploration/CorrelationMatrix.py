@@ -38,7 +38,7 @@ def run_correlation_matrix(parent):
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
- 
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
 
     # Mengonversi DataFrame Polars ke R DataFrame
     with rpy2polars.converter.context() as cv_ctx:
