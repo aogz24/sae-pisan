@@ -35,6 +35,7 @@ from PyQt6.QtWidgets import QLabel
 import threading
 import json
 import datetime
+from service.utils.utils import display_script_and_output
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -141,6 +142,7 @@ class MainWindow(QMainWindow):
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
         self.font_size = 12
+        self.data = []
 
         # Inisialisasi UI
         self.init_ui()
@@ -960,14 +962,13 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table(self, sheet_number, model):
+    def update_table(self, sheet_number, model, add_data=True):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
-            self.autosave_data()
             if self.show_modeling_sae_dialog:
                 self.show_modeling_sae_dialog.set_model(model)
             if self.show_modeling_saeHB_dialog:
@@ -986,6 +987,8 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
+        
+        if add_data:
             self.autosave_data()
 
     def keyPressEvent(self, event):
@@ -1369,66 +1372,83 @@ class MainWindow(QMainWindow):
 
     def autosave_data(self):
         """
-        Save the current state of data1, data2, and output to a temporary file.
+        Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
+        temp_dir = os.path.join(self.path, 'file-data')
+        os.makedirs(temp_dir, exist_ok=True)
+        # Save data1 and data2 as parquet
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        self.model1.get_data().write_parquet(data1_path)
+        self.model2.get_data().write_parquet(data2_path)
+        # Save output as JSON
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        import numpy as np
+
+        def make_json_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(v) for v in obj]
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif hasattr(obj, 'tolist'):
+                return obj.tolist()
+            elif isinstance(obj, (int, float, str, type(None), bool)):
+                return obj
+            else:
+                return str(obj)
+
+        serializable_data = make_json_serializable(self.data)
         data = {
             'timestamp': datetime.datetime.now().isoformat(),
-            'data1': self.model1.get_data().to_dicts(),
-            'data2': self.model2.get_data().to_dicts(),
-            'output': self.get_output_data()
+            'output': serializable_data
         }
-        with open(temp_file, 'w') as file:
+        with open(output_path, 'w') as file:
             json.dump(data, file)
 
     def load_temp_data(self):
         """
-        Load data from the temporary file if it exists and is recent.
+        Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
-        if os.path.exists(temp_file):
+        temp_dir = os.path.join(self.path, 'file-data')
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        if os.path.exists(data1_path) and os.path.exists(data2_path) and os.path.exists(output_path):
             reply = QMessageBox.question(self, 'Load Temporary Data',
                                          'Temporary data was found. Do you want to load it?',
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                with open(temp_file, 'r') as file:
+                self.data1 = pl.read_parquet(data1_path)
+                self.data2 = pl.read_parquet(data2_path)
+                self.model1.set_data(self.data1)
+                self.model2.set_data(self.data2)
+                self.update_table(1, self.model1, add_data=False)
+                self.update_table(2, self.model2, add_data=False)
+                with open(output_path, 'r') as file:
                     data = json.load(file)
-                    self.data1 = pl.DataFrame(data['data1'])
-                    self.data2 = pl.DataFrame(data['data2'])
-                    self.model1.set_data(self.data1)
-                    self.model2.set_data(self.data2)
-                    self.update_table(1, self.model1)
-                    self.update_table(2, self.model2)
-                    self.set_output_data(data['output'])
+                    self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
-    def get_output_data(self):
+    def set_output_data(parent, output_data, timestamp=None):
         """
-        Get the current state of the output layout.
+        Menampilkan kembali output card dari data hasil get_output_data.
         """
-        output_data = []
-        for i in range(self.output_layout.count()):
-            widget = self.output_layout.itemAt(i).widget()
-            if isinstance(widget, QFrame):
-                data = {}
-                for j in range(widget.layout().count()):
-                    sub_widget = widget.layout().itemAt(j).widget()
-                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
-                        script_box = widget.layout().itemAt(j + 1).widget()
-                        data['script_text'] = script_box.toPlainText()
-                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
-                        result_box = widget.layout().itemAt(j + 1).widget()
-                        try:
-                            data['result_text'] = result_box.toPlainText()
-                        except Exception:
-                            data['result_text'] = None
-                    elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
-                        error_box = widget.layout().itemAt(j + 1).widget()
-                        data['error_text'] = error_box.toPlainText()
-                output_data.append(data)
-        return output_data
+        for output in output_data:
+            r_script = output.get("r_script", "")
+            results = output.get("result", "")
+            for key, value in results.items():
+                if isinstance(value, dict):
+                    df = pl.DataFrame(value)
+                    results[key] = df
+                else:
+                    results[key] = value
+            display_script_and_output(parent, r_script, results, timestamp=timestamp)
+        
+
 
     def show_header_icon_info(self):
         """
@@ -1492,18 +1512,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)
-    
-    def set_output_data(self, output_data):
-        """
-        Set the output layout from the saved state.
-        """
-        for data in output_data:
-            self.add_output(
-                script_text=data.get('script_text', ''),
-                result_text=data.get('result_text', ''),
-                plot_paths=None,
-                error_text=data.get('error_text', '')
-            )
             
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
