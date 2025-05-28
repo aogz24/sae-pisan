@@ -107,7 +107,7 @@ import polars as pl
 from datetime import datetime
 import json
 
-def display_script_and_output(parent, r_script, results, plot_paths=None):
+def display_script_and_output(parent, r_script, results, plot_paths=None, timestamp=None):
     """
     Adds a new output card to the layout displaying the provided R script and its result.
     Parameters:
@@ -180,7 +180,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
             result["Model"] = results["Model"]
 
         # Add timestamp for generation
-        timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
+        timestamp = timestamp if not None else datetime.now().strftime("%H:%M:%S %d-%m-%Y")
         timestamp_label = QLabel(f"<i>Generated at: {timestamp}</i>")
         timestamp_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         timestamp_label.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
@@ -282,4 +282,3 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
     parent.data.append(out)
-    print(parent.data)

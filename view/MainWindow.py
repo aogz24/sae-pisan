@@ -1429,11 +1429,11 @@ class MainWindow(QMainWindow):
                 self.update_table(2, self.model2, add_data=False)
                 with open(output_path, 'r') as file:
                     data = json.load(file)
-                    self.set_output_data(data.get('output', []))
+                    self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
-    def set_output_data(parent, output_data):
+    def set_output_data(parent, output_data, timestamp=None):
         """
         Menampilkan kembali output card dari data hasil get_output_data.
         """
@@ -1446,7 +1446,7 @@ class MainWindow(QMainWindow):
                     results[key] = df
                 else:
                     results[key] = value
-            display_script_and_output(parent, r_script, results)
+            display_script_and_output(parent, r_script, results, timestamp=timestamp)
         
 
 
