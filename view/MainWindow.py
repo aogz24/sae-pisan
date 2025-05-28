@@ -145,11 +145,11 @@ class MainWindow(QMainWindow):
         # Inisialisasi UI
         self.init_ui()
 
-        # Set up autosave timer
-        self.autosave_interval = 60000  # 60 seconds
-        self.autosave_timer = QTimer(self)
-        self.autosave_timer.timeout.connect(self.autosave_data)
-        self.autosave_timer.start(self.autosave_interval)
+        # # Set up autosave timer
+        # self.autosave_interval = 60000  # 60 seconds
+        # self.autosave_timer = QTimer(self)
+        # self.autosave_timer.timeout.connect(self.autosave_data)
+        # self.autosave_timer.start(self.autosave_interval)
         self.showMaximized()
 
     def init_ui(self):
@@ -960,14 +960,13 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table(self, sheet_number, model):
+    def update_table(self, sheet_number, model, add_data=True):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
-            self.autosave_data()
             if self.show_modeling_sae_dialog:
                 self.show_modeling_sae_dialog.set_model(model)
             if self.show_modeling_saeHB_dialog:
@@ -986,6 +985,8 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
+        
+        if add_data:
             self.autosave_data()
 
     def keyPressEvent(self, event):
@@ -1405,39 +1406,55 @@ class MainWindow(QMainWindow):
                 self.data2 = pl.read_parquet(data2_path)
                 self.model1.set_data(self.data1)
                 self.model2.set_data(self.data2)
-                self.update_table(1, self.model1)
-                self.update_table(2, self.model2)
+                self.update_table(1, self.model1, add_data=False)
+                self.update_table(2, self.model2, add_data=False)
                 with open(output_path, 'r') as file:
                     data = json.load(file)
                     self.set_output_data(data.get('output', []))
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
-    def get_output_data(self):
+    def get_output_data(card_frame):
         """
-        Get the current state of the output layout.
+        Mengambil data output dari card_frame yang sudah ditampilkan.
+        Return:
+            dict: {
+                "r_script": str,
+                "results": dict/str,
+                "plot_images": [bytes, ...]  # atau path jika ingin simpan path
+            }
         """
-        output_data = []
-        for i in range(self.output_layout.count()):
-            widget = self.output_layout.itemAt(i).widget()
-            if isinstance(widget, QFrame):
-                data = {}
-                for j in range(widget.layout().count()):
-                    sub_widget = widget.layout().itemAt(j).widget()
-                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
-                        script_box = widget.layout().itemAt(j + 1).widget()
-                        data['script_text'] = script_box.toPlainText()
-                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
-                        result_box = widget.layout().itemAt(j + 1).widget()
-                        try:
-                            data['result_text'] = result_box.toPlainText()
-                        except Exception:
-                            data['result_text'] = None
-                    elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
-                        error_box = widget.layout().itemAt(j + 1).widget()
-                        data['error_text'] = error_box.toPlainText()
-                output_data.append(data)
-        return output_data
+        data = {}
+        widgets = card_frame.findChildren(QLabel)
+        script_box = card_frame.findChild(QTextEdit)
+        data["r_script"] = script_box.toPlainText() if script_box else ""
+        results = {}
+        output_started = False
+        key = None
+        for w in widgets:
+            text = w.text()
+            if "<b>Output:</b>" in text:
+                output_started = True
+                continue
+            if output_started:
+                if text.startswith("<b>") and text.endswith(":</b>"):
+                    key = text.replace("<b>", "").replace(":</b>", "")
+                elif key:
+                    results[key] = w.text()
+                    key = None
+        data["results"] = results if results else ""
+        return data
+
+    def set_output_data(parent, output_data):
+        """
+        Menampilkan kembali output card dari data hasil get_output_data.
+        """
+        r_script = output_data.get("r_script", "")
+        results = output_data.get("results", "")
+        
+        from service.utils.utils import display_script_and_output
+        display_script_and_output(parent, r_script, results)
+
 
     def show_header_icon_info(self):
         """
@@ -1501,18 +1518,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)
-    
-    def set_output_data(self, output_data):
-        """
-        Set the output layout from the saved state.
-        """
-        for data in output_data:
-            self.add_output(
-                script_text=data.get('script_text', ''),
-                result_text=data.get('result_text', ''),
-                plot_paths=None,
-                error_text=data.get('error_text', '')
-            )
             
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""

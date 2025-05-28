@@ -15,3 +15,4 @@ main.dist
 data-coba*
 *.pdf
 bangkitan
+*.parquet
