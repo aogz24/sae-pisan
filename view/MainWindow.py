@@ -141,15 +141,16 @@ class MainWindow(QMainWindow):
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
         self.font_size = 12
+        self.data = {}
 
         # Inisialisasi UI
         self.init_ui()
 
-        # # Set up autosave timer
-        # self.autosave_interval = 60000  # 60 seconds
-        # self.autosave_timer = QTimer(self)
-        # self.autosave_timer.timeout.connect(self.autosave_data)
-        # self.autosave_timer.start(self.autosave_interval)
+        # Set up autosave timer
+        self.autosave_interval = 60000  # 60 seconds
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.timeout.connect(self.autosave_data)
+        self.autosave_timer.start(self.autosave_interval)
         self.showMaximized()
 
     def init_ui(self):
@@ -1381,9 +1382,26 @@ class MainWindow(QMainWindow):
         self.model2.get_data().write_parquet(data2_path)
         # Save output as JSON
         output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        import numpy as np
+
+        def make_json_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(v) for v in obj]
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif hasattr(obj, 'tolist'):
+                return obj.tolist()
+            elif isinstance(obj, (int, float, str, type(None), bool)):
+                return obj
+            else:
+                return str(obj)
+
+        serializable_data = make_json_serializable(self.data)
         data = {
             'timestamp': datetime.datetime.now().isoformat(),
-            'output': self.get_output_data()
+            'output': serializable_data
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
@@ -1414,44 +1432,19 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
-    def get_output_data(card_frame):
-        """
-        Mengambil data output dari card_frame yang sudah ditampilkan.
-        Return:
-            dict: {
-                "r_script": str,
-                "results": dict/str,
-                "plot_images": [bytes, ...]  # atau path jika ingin simpan path
-            }
-        """
-        data = {}
-        widgets = card_frame.findChildren(QLabel)
-        script_box = card_frame.findChild(QTextEdit)
-        data["r_script"] = script_box.toPlainText() if script_box else ""
-        results = {}
-        output_started = False
-        key = None
-        for w in widgets:
-            text = w.text()
-            if "<b>Output:</b>" in text:
-                output_started = True
-                continue
-            if output_started:
-                if text.startswith("<b>") and text.endswith(":</b>"):
-                    key = text.replace("<b>", "").replace(":</b>", "")
-                elif key:
-                    results[key] = w.text()
-                    key = None
-        data["results"] = results if results else ""
-        return data
-
     def set_output_data(parent, output_data):
         """
         Menampilkan kembali output card dari data hasil get_output_data.
         """
         r_script = output_data.get("r_script", "")
-        results = output_data.get("results", "")
-        
+        results = output_data.get("result", "")
+        for key, value in results.items():
+            if isinstance(value, dict):
+                df = pl.DataFrame(value)
+                results[key] = df
+            else:
+                results[key] = value
+             
         from service.utils.utils import display_script_and_output
         display_script_and_output(parent, r_script, results)
 

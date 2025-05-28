@@ -105,6 +105,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 import polars as pl
 from datetime import datetime
+import json
 
 def display_script_and_output(parent, r_script, results, plot_paths=None):
     """
@@ -137,6 +138,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     # Bagian Script
     label_script = QLabel("<b>R Script:</b>")
     label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
+    parent.data["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
+    result = {}
     script_box = QTextEdit()
     script_box.setPlainText(r_script)
     script_box.setReadOnly(True)
@@ -173,6 +176,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
             model_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
             card_layout.addWidget(model_label)
+            result["Model"] = results["Model"]
 
         # Add timestamp for generation
         timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
@@ -201,6 +205,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                     items = [QStandardItem(str(row[col])) for col in value.columns]
                     model.appendRow(items)
                 
+                result[key] = value.to_dict(as_series=False)
+                
                 table_view.setModel(model)
                 table_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
                 table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -223,12 +229,15 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 """)
                 add_copy_context_menu_to_table(table_view)
                 card_layout.addWidget(table_view)
+                
             else:
                 # Tampilkan nilai biasa sebagai teks
                 value_label = QLabel(str(value))
                 value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
                 value_label.setStyleSheet("color: #333; margin-left: 10px;")
                 card_layout.addWidget(value_label)
+                result[key] = value
+        parent.data["result"] = result  # Simpan hasil ke dalam data parent untuk referensi
     elif results:
         label_output = QLabel("<b>Output:</b>")
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -269,3 +278,4 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     parent.output_layout.addWidget(card_frame)
     parent.output_layout.addStretch()
     parent.tab_widget.setCurrentWidget(parent.tab3)
+    print(parent.data)  # Debugging: Print the data dictionary to check stored values
