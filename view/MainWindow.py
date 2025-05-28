@@ -35,6 +35,7 @@ from PyQt6.QtWidgets import QLabel
 import threading
 import json
 import datetime
+from service.utils.utils import display_script_and_output
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -141,7 +142,7 @@ class MainWindow(QMainWindow):
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
         self.font_size = 12
-        self.data = {}
+        self.data = []
 
         # Inisialisasi UI
         self.init_ui()
@@ -1436,17 +1437,17 @@ class MainWindow(QMainWindow):
         """
         Menampilkan kembali output card dari data hasil get_output_data.
         """
-        r_script = output_data.get("r_script", "")
-        results = output_data.get("result", "")
-        for key, value in results.items():
-            if isinstance(value, dict):
-                df = pl.DataFrame(value)
-                results[key] = df
-            else:
-                results[key] = value
-             
-        from service.utils.utils import display_script_and_output
-        display_script_and_output(parent, r_script, results)
+        for output in output_data:
+            r_script = output.get("r_script", "")
+            results = output.get("result", "")
+            for key, value in results.items():
+                if isinstance(value, dict):
+                    df = pl.DataFrame(value)
+                    results[key] = df
+                else:
+                    results[key] = value
+            display_script_and_output(parent, r_script, results)
+        
 
 
     def show_header_icon_info(self):

@@ -138,7 +138,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     # Bagian Script
     label_script = QLabel("<b>R Script:</b>")
     label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
-    parent.data["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
+    out = {}
+    out["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
     result = {}
     script_box = QTextEdit()
     script_box.setPlainText(r_script)
@@ -237,7 +238,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
                 value_label.setStyleSheet("color: #333; margin-left: 10px;")
                 card_layout.addWidget(value_label)
                 result[key] = value
-        parent.data["result"] = result  # Simpan hasil ke dalam data parent untuk referensi
+        out["result"] = result  # Simpan hasil ke dalam data parent untuk referensi
     elif results:
         label_output = QLabel("<b>Output:</b>")
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -278,4 +279,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None):
     parent.output_layout.addWidget(card_frame)
     parent.output_layout.addStretch()
     parent.tab_widget.setCurrentWidget(parent.tab3)
-    print(parent.data)  # Debugging: Print the data dictionary to check stored values
+    if not hasattr(parent, "data") or not isinstance(parent.data, list):
+        parent.data = []
+    parent.data.append(out)
+    print(parent.data)
