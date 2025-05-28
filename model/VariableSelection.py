@@ -23,10 +23,9 @@ class VariableSelection:
         Activates the R environment using rpy2.
     """
     
-    def __init__(self, model1, model2, view):
+    def __init__(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
-        self.view = view
         self.result =""
         self.error = False
 

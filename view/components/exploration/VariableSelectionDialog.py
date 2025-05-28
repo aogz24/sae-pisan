@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton,QToolButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy
 )
 from PyQt6.QtGui import QIcon
 import polars as pl
 from PyQt6.QtCore import Qt, QStringListModel, QSize
+from service.utils.utils import display_script_and_output
 from model.VariableSelection import VariableSelection
 from controller.Eksploration.EksplorationController import VariableSelectionController
 
@@ -69,7 +70,7 @@ class VariableSelectionDialog(QDialog):
         self.selected_status = {}
 
         # Layout utama
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
 
         # Layout konten utama
         content_layout = QHBoxLayout()
@@ -122,7 +123,7 @@ class VariableSelectionDialog(QDialog):
 
         button_layout2.addStretch(1)
         button_layout2.addWidget(self.add_dependent_variable_button)
-        button_layout2.addStretch(2)
+        button_layout2.addStretch(4)
         button_layout2.addWidget(self.add_independent_variable_button)
         button_layout2.addStretch(6)
 
@@ -159,7 +160,7 @@ class VariableSelectionDialog(QDialog):
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         independent_variable_layout.addWidget(self.independent_variable_label)
         independent_variable_layout.addWidget(self.independent_variable_list)
-        right_layout.addLayout(independent_variable_layout)
+        right_layout.addLayout(independent_variable_layout,1)
 
         # Grup Variable Selection Method (Dipisah)
         selection_method_group = QGroupBox("Variable Selection Method")
@@ -179,38 +180,53 @@ class VariableSelectionDialog(QDialog):
         selection_method_layout.addWidget(self.backward_checkbox)
         selection_method_layout.addWidget(self.stepwise_checkbox)
         selection_method_group.setLayout(selection_method_layout)
-
         right_layout.addWidget(selection_method_group)
+
         content_layout.addLayout(right_layout)
-        main_layout.addLayout(content_layout)
+        self.main_layout.addLayout(content_layout)
 
-
-        # Script box
         self.script_layout = QHBoxLayout() 
         self.script_label = QLabel("R Script:", self)
-
-        self.icon_label = QLabel(self)
+        self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
         self.icon_label.setFixedSize(16, 30)
-        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.script_layout.addWidget(self.script_label)
-        self.script_layout.addItem(spacer)  
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
+
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.script_label)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
         self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        self.script_box = QTextEdit(self)
+        self.script_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
 
-        main_layout.addLayout(self.script_layout)  
-        main_layout.addWidget(self.script_box)
+        self.main_layout.addLayout(self.script_layout)
 
+        self.script_box = QTextEdit()
+        self.script_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.script_box.setReadOnly(False)
+        self.script_box.setVisible(False)
+        self.main_layout.addWidget(self.script_box)
         # Tombol Run
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-        main_layout.addLayout(button_row_layout)
+        self.main_layout.addLayout(button_row_layout)
         
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
@@ -225,6 +241,16 @@ class VariableSelectionDialog(QDialog):
         self.all_columns_model1 = self.get_column_with_dtype(model1)
         self.all_columns_model2 = self.get_column_with_dtype(model2)
 
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.script_box.isVisible()
+        self.script_box.setVisible(not is_visible)
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
+        else:
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
         self.columns = [
@@ -383,7 +409,7 @@ class VariableSelectionDialog(QDialog):
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
 
-        variable_selection = VariableSelection(self.model1, self.model2, self.parent)
+        variable_selection = VariableSelection(self.model1, self.model2)
 
         controller =  VariableSelectionController(variable_selection)
         controller.run_model(r_script)
@@ -393,7 +419,8 @@ class VariableSelectionDialog(QDialog):
         else:
             QMessageBox.information(self, "Variable Selection", "Exploration has been completed.")
             
-        self.parent.add_output(script_text=r_script, result_text=variable_selection.result)
+        # self.parent.add_output(script_text=r_script, result_text=variable_selection.result)
+        display_script_and_output(self.parent,r_script, variable_selection.result)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")
         self.run_button.setEnabled(True)
