@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
         # Set up autosave timer
-        self.autosave_interval = 60000  # 60 seconds
+        self.autosave_interval = 600000 #10 minutes
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self.autosave_data)
         self.autosave_timer.start(self.autosave_interval)
@@ -1406,6 +1406,32 @@ class MainWindow(QMainWindow):
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
+        
+        # ?? delete image wasnt used
+        temp_img_dir = os.path.join(temp_dir, 'temp')
+        if os.path.exists(temp_img_dir):
+            used_images = set()
+            for output in serializable_data:
+                result = output.get("result", {})
+                plot_path = result.get("Plot")
+                if plot_path and isinstance(plot_path, str):
+                    used_images.add(os.path.abspath(plot_path))
+            for output in self.data:
+                result = output.get("result", {})
+                plot_paths = result.get("Plot")
+                if isinstance(plot_paths, list):
+                    for p in plot_paths:
+                        used_images.add(os.path.abspath(p))
+                elif isinstance(plot_paths, str):
+                    used_images.add(os.path.abspath(plot_paths))
+            # Hapus file di temp yang tidak digunakan
+            for fname in os.listdir(temp_img_dir):
+                fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+                if fpath not in used_images:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
 
     def load_temp_data(self):
         """
@@ -1439,14 +1465,20 @@ class MainWindow(QMainWindow):
         """
         for output in output_data:
             r_script = output.get("r_script", "")
-            results = output.get("result", "")
+            results = output.get("result", {})
+            # Convert dict values to DataFrame if needed
             for key, value in results.items():
                 if isinstance(value, dict):
                     df = pl.DataFrame(value)
                     results[key] = df
+                elif key == "Plot" and isinstance(value, list):
+                    results[key] = value
                 else:
                     results[key] = value
-            display_script_and_output(parent, r_script, results, timestamp=timestamp)
+            if "Plot" in results:
+                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamp=timestamp)
+            else:
+                display_script_and_output(parent, r_script, results, plot_paths=None, timestamp=timestamp)
         
 
 
