@@ -1,9 +1,8 @@
 import os
 import polars as pl
-from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-import rpy2_arrow.polars as rpy2polars
+from service.convert_df import convert_df
 
 def run_normality_test(parent):
     """
@@ -34,10 +33,7 @@ def run_normality_test(parent):
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df
+    convert_df(df, parent)
 
     try:
         ro.r('rm(list=ls()[ls() != "r_df"])')
