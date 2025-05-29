@@ -26,14 +26,45 @@ def copy_output_image(parent, card_frame):
                     os.remove(temp_path)
             break
 
+def delete_output_card(parent, card_frame):
+    """Delete the selected output card"""
+    parent.output_layout.removeWidget(card_frame)
+    card_frame.deleteLater()
+
+    # Optional: remove from parent.data list
+    if hasattr(parent, "data") and isinstance(parent.data, list):
+        index = parent.output_layout.indexOf(card_frame)
+        if 0 <= index < len(parent.data):
+            del parent.data[index]
+
+
+def delete_all_outputs(parent):
+    """Removes all output cards from the output layout"""
+    while parent.output_layout.count() > 0:
+        item = parent.output_layout.takeAt(0)
+        widget = item.widget()
+        if widget is not None:
+            widget.deleteLater()
+    parent.data = []  # Clear stored data
+
+
 def show_context_menu(parent, pos, card_frame):
-    """Menampilkan menu klik kanan di setiap output"""
+    """Display right-click menu on each output card"""
     menu = QMenu(parent)
+
     copy_image_action = menu.addAction("Copy Output Image")
+    delete_action = menu.addAction("Delete Output")
+    delete_all_action = menu.addAction("Delete All Outputs")
+
     action = menu.exec(card_frame.mapToGlobal(pos))
-    
+
     if action == copy_image_action:
         parent.copy_output_image(card_frame)
+    elif action == delete_action:
+        delete_output_card(parent, card_frame)
+    elif action == delete_all_action:
+        delete_all_outputs(parent)
+
 
 def check_script(r_script):
     """
