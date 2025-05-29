@@ -319,7 +319,7 @@ class NormalityTestDialog(QDialog):
             if show_histogram:
                 r_script += (
                     f"histogram_{safe_var} <- ggplot(data, aes(x = `{var}`)) +\n"
-                    f"    geom_histogram(bins = 10, color = 'black', fill = 'blue') +\n"
+                    f"    geom_histogram(bins = 10, color = 'black', fill = 'darkorange3') +\n"
                     f"    ggtitle('Histogram of {var}') +\n"
                     f"    xlab('{var}') +\n"
                     f"    ylab('Frequency')\n"
@@ -329,7 +329,7 @@ class NormalityTestDialog(QDialog):
                 r_script += (
                     f"qqplot_{safe_var} <- ggplot(data, aes(sample = `{var}`)) +\n"
                     f"    stat_qq() +\n"
-                    f"    stat_qq_line(color = 'red') +\n"
+                    f"    stat_qq_line(color = 'darkorange3') +\n"
                     f"    ggtitle('Q-Q Plot of {var}') +\n"
                     f"    xlab('Theoretical Quantiles') +\n"
                     f"    ylab('Sample Quantiles')\n"
