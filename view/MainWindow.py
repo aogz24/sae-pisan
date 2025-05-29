@@ -1407,9 +1407,9 @@ class MainWindow(QMainWindow):
         with open(output_path, 'w') as file:
             json.dump(data, file)
         
+        # ?? delete image wasnt used
         temp_img_dir = os.path.join(temp_dir, 'temp')
         if os.path.exists(temp_img_dir):
-            # Kumpulkan semua path gambar yang masih digunakan di output JSON
             used_images = set()
             for output in serializable_data:
                 result = output.get("result", {})
