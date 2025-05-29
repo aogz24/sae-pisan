@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QComboBox, QSpacerItem, QSizePolicy, QMessageBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QGroupBox, QComboBox, QSpacerItem, QSizePolicy, QMessageBox, QToolButton
 )
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
@@ -7,7 +7,7 @@ import polars as pl
 import re
 from model.BoxPlot import BoxPlot
 from controller.Graph.GraphController import BoxPlotController
-
+from service.convert_df import convert_df
 class BoxPlotDialog(QDialog):
     """
     A dialog for creating and displaying box plots using selected variables from two data models.
@@ -61,7 +61,7 @@ class BoxPlotDialog(QDialog):
         self.selected_status = {}
 
         # Layout utama
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         content_layout = QHBoxLayout()
 
         # Layout kiri untuk Data Editor dan Data Output
@@ -124,37 +124,69 @@ class BoxPlotDialog(QDialog):
         right_layout.addWidget(method_group)
 
         content_layout.addLayout(right_layout)
-        main_layout.addLayout(content_layout)
+        self.main_layout.addLayout(content_layout)
 
-        self.script_layout = QHBoxLayout()  # Tambahkan self. di sini
+
+        # Horizontal layout for label and icon
+        script_layout = QHBoxLayout()
         self.script_label = QLabel("R Script:", self)
         self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
+        # Spacer to keep the icon_label on the right end
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
 
-        self.script_layout.addWidget(self.script_label)
-        self.script_layout.addItem(spacer)  
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.script_label)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
         self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        self.script_box = QTextEdit(self)
+        self.script_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
 
-        # Tambahkan ke layout utama
-        main_layout.addLayout(self.script_layout)  # Sekarang script_layout adalah atribut kelas
-        main_layout.addWidget(self.script_box)
+        self.main_layout.addLayout(self.script_layout)
+
+        self.script_box = QTextEdit()
+        self.script_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.script_box.setReadOnly(False)
+        self.script_box.setVisible(False)
+        self.main_layout.addWidget(self.script_box)
 
         # Tombol Run
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-        main_layout.addLayout(button_row_layout)
+        self.main_layout.addLayout(button_row_layout)
 
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.script_box.isVisible()
+        self.script_box.setVisible(not is_visible)
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
+        else:
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def set_model(self, model1, model2):
         self.model1 = model1
