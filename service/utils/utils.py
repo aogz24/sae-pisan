@@ -106,6 +106,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 import polars as pl
 from datetime import datetime
 import json
+import uuid
 
 def display_script_and_output(parent, r_script, results, plot_paths=None, timestamp=None):
     """
@@ -273,6 +274,15 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 label.setScaledContents(True)
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
                 card_layout.addWidget(label)
+                dest_folder = os.path.join(parent.path, 'file-data', 'temp')
+                os.makedirs(dest_folder, exist_ok=True)
+                unique_id = uuid.uuid4().hex
+                filename, ext = os.path.splitext(os.path.basename(plot_path))
+                dest_path = os.path.join(dest_folder, f"{filename}_{unique_id}{ext}")
+                pixmap.save(dest_path)
+                if "Plot" not in result:
+                    result["Plot"] = []
+                result["Plot"].append(dest_path)
                 os.remove(plot_path)
                 
     # Tambahkan card ke layout utama
