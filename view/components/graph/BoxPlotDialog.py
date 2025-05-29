@@ -7,7 +7,8 @@ import polars as pl
 import re
 from model.BoxPlot import BoxPlot
 from controller.Graph.GraphController import BoxPlotController
-from service.convert_df import convert_df
+from service.utils.utils import display_script_and_output
+
 class BoxPlotDialog(QDialog):
     """
     A dialog for creating and displaying box plots using selected variables from two data models.
@@ -321,7 +322,7 @@ class BoxPlotDialog(QDialog):
         else:
             QMessageBox.information(self, "Box Plot", "Graph has been generated")
 
-        self.parent.add_output(script_text=r_script, result_text=box_plot.result, plot_paths=box_plot.plot)
+        display_script_and_output(self.parent, r_script, box_plot.result, box_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
 
         self.icon_label.setVisible(False)
