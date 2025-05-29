@@ -306,7 +306,7 @@ class HistogramDialog(QDialog):
                     f"histogram_{col_safe.replace(' ', '_')} <- ggplot(data, aes(x = `{col_safe}`)) +\n"  
                     f"    geom_histogram("
                     f"{'bins = ' + str(bin_value) if graph_option == 'Bins' else 'binwidth = ' + str(bin_value)}, "
-                    f"fill = sample(colors(), 1), color = 'black') +\n"
+                    f"fill = 'darkorange3', color = 'black') +\n"
                     f"    ggtitle('Histogram: {col_safe}') +\n"  # Tidak pakai backticks
                     f"    xlab('{col_safe}') +\n"  # Tidak pakai backticks
                     f"    ylab('Frequency') +\n"
