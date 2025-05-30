@@ -139,21 +139,21 @@ def run_model_eblup_unit(parent):
     error = False
     try:
         ro.r('suppressMessages(library(sae))')
-        ro.r('data <- as.data.frame(r_df)')
+        ro.r('data_unit <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
             result = str(e)
             error = True
             return result, error, None
-        ro.r('domain <- model$est$eblup$domain\n estimated_value <- model$est$eblup$eblup\n n_size <- model$est$eblup$sampsize \n mse <- model$mse$mse')
-        result_str = ro.r('model$est$fit$summary')
+        ro.r('domain_unit <- model_unit$est$eblup$domain\n estimated_value_unit <- model_unit$est$eblup$eblup\n n_size_unit <- model_unit$est$eblup$sampsize \n mse_unit <- model_unit$mse$mse')
+        result_str = ro.r('model_unit$est$fit$summary')
         result = str(result_str)
         results = extract_formatted(result)
-        domain = ro.r('domain')
-        estimated_value = ro.r('estimated_value')
-        n_size = ro.r('n_size')
-        mse = ro.r('mse')
+        domain = ro.r('domain_unit')
+        estimated_value = ro.r('estimated_value_unit')
+        n_size = ro.r('n_size_unit')
+        mse = ro.r('mse_unit')
         df = pl.DataFrame({
             'Domain': domain,
             'Eblup': estimated_value,

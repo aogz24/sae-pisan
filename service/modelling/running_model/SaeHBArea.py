@@ -32,8 +32,8 @@ def run_model_hb_area(parent):
     error = False
     try:
         ro.r('suppressMessages(library(saeHB))')
-        ro.r('data <- as.data.frame(r_df)')
-        ro.r('attach(data)')
+        ro.r('datahb <- as.data.frame(r_df)')
+        ro.r('attach(datahb)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
@@ -52,10 +52,10 @@ def run_model_hb_area(parent):
         
         script_png = """
         sae_autocorr <- function() {
-            coda::autocorr.plot(model$plot[[3]], col='brown2', lwd=2)
+            coda::autocorr.plot(modelhb$plot[[3]], col='brown2', lwd=2)
         }
         sae_plot <- function() {
-            plot(model$plot[[3]], col='brown2', lwd=2)
+            plot(modelhb$plot[[3]], col='brown2', lwd=2)
         }
         """
         
@@ -80,14 +80,14 @@ def run_model_hb_area(parent):
         
         print("Saved plots:", plot_paths)
             
-        ro.r('estimated_value <- model$Est')
-        ro.r('sd <- model$sd')
-        ro.r('refVar <- model$refVar')
-        ro.r('coefficient <- model$coefficient')
+        ro.r('estimated_value_hb <- modelhb$Est')
+        ro.r('sd_hb <- modelhb$sd')
+        ro.r('refVar_hb <- modelhb$refVar')
+        ro.r('coefficient_hb <- modelhb$coefficient')
         
-        refvar = ro.globalenv['refVar']
+        refvar = ro.globalenv['refVar_hb']
         refvar = int(float(refvar[0]))
-        coefficient = ro.conversion.rpy2py(ro.globalenv['coefficient'])
+        coefficient = ro.conversion.rpy2py(ro.globalenv['coefficient_hb'])
         coefficient.reset_index(inplace=True)
         coefficient.columns = ['Parameter'] + list(coefficient.columns[1:])
         coefficient = pl.DataFrame(coefficient)
@@ -97,7 +97,7 @@ def run_model_hb_area(parent):
             "Estimated Random Effect Variances": refvar,
             "Estimated Model Coefficient": coefficient,
         }
-        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
+        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_hb'])
         hb_mean = estimated_value["MEAN"]
         hb_25 = estimated_value["25%"]
         hb_50 = estimated_value["50%"]
@@ -111,7 +111,7 @@ def run_model_hb_area(parent):
             'HB 75%': hb_75,
             'HB 97.5%': hb_97_5,
             'Standard Deviation': hb_sd,})
-        ro.r("detach(data)")
+        ro.r("detach(datahb)")
         
         error = False
         return results, error, df, plot_paths

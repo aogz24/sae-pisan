@@ -258,17 +258,17 @@ def generate_r_script(parent):
     else:
         formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
 
-    r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+    r_script = f'names(data_pseudo) <- gsub(" ", "_", names(data_pseudo)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
-    r_script += f'vardir_var <- data["{vardir_var}"]\n'
+    r_script += f'vardir_var_pseudo <- data_pseudo["{vardir_var}"]\n'
     if parent.selection_method=="Stepwise":
         parent.selection_method = "both"
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-fh(final_formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-fh(final_formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
     else:
-        r_script += f'model<-fh(formula, vardir="{vardir_var}", combined_data =data, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-fh(formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
     return r_script
 
 def show_r_script(parent):

@@ -245,8 +245,8 @@ def generate_r_script(parent):
     if parent.as_factor_var:
         for var in parent.as_factor_var:
             var_name = var.split(" [")[0].replace(" ", "_")
-            dummy_creation_script += f'dummies_{var_name} <- model.matrix(~{var_name} - 1, data)\n'
-            dummy_creation_script += f'data <- cbind(data, dummies_{var_name})\n'
+            dummy_creation_script += f'dummies_{var_name} <- model.matrix(~{var_name} - 1, datahb)\n'
+            dummy_creation_script += f'datahb <- cbind(datahb, dummies_{var_name})\n'
             dummy_vars.append(f'colnames(dummies_{var_name})')
 
     # Gabungkan semua dummy variable ke formula
@@ -261,11 +261,11 @@ def generate_r_script(parent):
         dummy_vars_str = " + ".join([f'`{name}`' for name in dummy_names])
     
     
-    r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+    r_script = f'names(datahb) <- gsub(" ", "_", names(datahb)); #Replace space with underscore\n'
     r_script += dummy_creation_script
 
     # Build the formula in R after dummies are created
-    r_script += "all_vars <- names(data)\n"
+    r_script += "all_vars <- names(datahb)\n"
     if parent.as_factor_var:
         for var in parent.as_factor_var:
             var_name = var.split(" [")[0].replace(" ", "_")
@@ -291,9 +291,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=data)'
+        r_script += f'modelhb<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=datahb)'
     else:
-        r_script += f'model<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=data)'
+        r_script += f'modelhb<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=datahb)'
     return r_script
 
 def show_r_script(parent):
