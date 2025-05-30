@@ -52,7 +52,8 @@ class FileController:
         self.view.actionLoad_file.triggered.connect(self.load_file)
         self.view.actionSave_Data.triggered.connect(self.save_data)
         self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)
-        self.view.recent_data.triggered.connect(self.view.load_temp_data)  
+        self.view.recent_data.triggered.connect(self.view.load_temp_data)
+        self.view.load_secondary_data.triggered.connect(self.load_secondary_data)  
 
     def load_file(self):
         """Muat file CSV, Excel, atau Text ke model pertama."""
@@ -98,7 +99,56 @@ class FileController:
             self.view.update_table(1, self.model1)
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
+    
+    def load_secondary_data(self):
+        main_df = self.model1.get_data()
+        if main_df is None:
+            QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
+            return
+        file_path, selected_filter = QFileDialog.getOpenFileName(
+            self.view, "Open File", "",
+            "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt);;TSV Files (*.tsv);;JSON Files (*.json)"
+        )
 
+        if not file_path:  # Jika file tidak dipilih
+            return
+
+        try:
+            if selected_filter in ["CSV Files (*.csv)", "Text Files (*.txt)", "TSV Files (*.tsv)"]:
+                dialog = CSVOptionsDialog(self.view)
+                dialog.file_path = file_path
+                dialog.file_label.setText(f"Selected: {file_path}")
+                dialog.update_preview()
+                file_path, separator, header = dialog.get_csv_options()
+
+                if not file_path:  # Jika file tidak dipilih
+                    return
+                
+                if separator == r"\t":  # Jika input adalah string literal "\t"
+                    separator = "\t"
+
+                # Baca data dari CSV dengan atau tanpa header
+                if header:
+                    data = pl.read_csv(file_path, separator=separator, ignore_errors=True, has_header=True, null_values=["NA", "NULL", "na", "null"])
+                else:
+                    data = pl.read_csv(file_path, separator=separator, ignore_errors=True, has_header=False, null_values=["NA", "NULL", "na", "null"])
+                    data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            elif selected_filter == "Excel Files (*.xlsx)":
+                import pandas as pd
+                sheet_names = pd.ExcelFile(file_path).sheet_names
+                sheet_name, ok = QInputDialog.getItem(self.view, "Select Sheet", "Sheet:", sheet_names, 0, False)
+                if not ok:
+                    return
+                data = pl.read_excel(file_path, sheet_name=sheet_name)
+            elif selected_filter == "JSON Files (*.json)":
+                data = pl.read_json(file_path)
+
+            merged_data = pl.concat([main_df, data], how="horizontal")
+            self.model1.set_data(merged_data)
+            self.view.update_table(1, self.model1)
+        except Exception as e:
+            QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
+        
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(

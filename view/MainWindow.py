@@ -285,6 +285,11 @@ class MainWindow(QMainWindow):
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
+        self.load_secondary_data = QAction("Load File for Secondary Data", self)
+        self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
+        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.load_secondary_data.setStatusTip("Ctrl+2")
+        
         self.save_action = QAction("Save Data", self)
         self.save_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.save_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedata.svg')))
@@ -302,6 +307,7 @@ class MainWindow(QMainWindow):
 
         self.file_menu.addAction(self.recent_data)
         self.file_menu.addAction(self.load_action)
+        self.file_menu.addAction(self.load_secondary_data)
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
         self.file_menu.addAction(self.save_output_pdf)
