@@ -1,30 +1,10 @@
-from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication, QSpacerItem
+from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication, QSpacerItem, QFileDialog
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMessageBox
 import os
-from PyQt6.QtGui import QPixmap, QAction
+from PyQt6.QtGui import QPixmap, QAction,  QClipboard
 
 
-def copy_output_image(parent, card_frame):
-    """Menyalin gambar output ke clipboard"""
-    for child in card_frame.findChildren(QLabel):
-        pixmap = child.pixmap()
-        
-        if pixmap and not pixmap.isNull():
-            temp_folder = os.path.join(parent.path, 'temp')
-            temp_path = os.path.join(temp_folder, 'temp_image.png')
-
-            os.makedirs(temp_folder, exist_ok=True)
-
-            if pixmap.save(temp_path):
-                print(f"Gambar disimpan di: {temp_path}")
-                
-                clipboard = QApplication.clipboard()
-                clipboard.setPixmap(QPixmap(temp_path))
-
-                if os.path.exists(temp_path):  
-                    os.remove(temp_path)
-            break
 
 def delete_output_card(parent, card_frame):
     """Delete the selected output card"""
@@ -64,6 +44,49 @@ def show_context_menu(parent, pos, card_frame):
         delete_output_card(parent, card_frame)
     elif action == delete_all_action:
         delete_all_outputs(parent)
+
+
+def copy_output_image(parent, image_label):
+    """Menyalin gambar dari QLabel ke clipboard dengan simpan file sementara (tanpa loop)."""
+    pixmap = image_label.pixmap()
+    
+    if pixmap and not pixmap.isNull():
+        temp_folder = os.path.join(parent.path, 'temp')
+        temp_path = os.path.join(temp_folder, 'temp_image.png')
+
+        os.makedirs(temp_folder, exist_ok=True)
+
+        if pixmap.save(temp_path):
+            print(f"Gambar disimpan di: {temp_path}")
+            
+            clipboard = QApplication.clipboard()
+            clipboard.setPixmap(QPixmap(temp_path))
+
+            if os.path.exists(temp_path):  
+                os.remove(temp_path)
+        else:
+            print("Gagal menyimpan gambar sementara.")
+    else:
+        print("Tidak ada gambar untuk disalin.")
+
+
+def show_image_context_menu(parent, pos, image_label, image_path):
+    """Display right-click menu on image labels."""
+    menu = QMenu(parent)
+
+    copy_image_action = menu.addAction("Copy Image")
+    save_as_action = menu.addAction("Save Image As...")
+
+    action = menu.exec(image_label.mapToGlobal(pos))
+
+    if action == copy_image_action:
+        copy_output_image(parent, image_label)
+    elif action == save_as_action:
+        file_dialog = QFileDialog()
+        save_path, _ = file_dialog.getSaveFileName(parent, "Save Image", os.path.basename(image_path), "Images (*.png *.jpg *.bmp)")
+        if save_path:
+            image_label.pixmap().save(save_path)
+
 
 
 def check_script(r_script):
@@ -311,7 +334,16 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 label.setFixedSize(500, 350)
                 label.setScaledContents(True)
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
+
+                # Enable right-click menu on image
+                label.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                label.customContextMenuRequested.connect(
+                    lambda pos, l=label, p=plot_path: show_image_context_menu(parent, pos, l, p)
+                )
+
                 card_layout.addWidget(label)
+
+                # Simpan image ke path baru
                 dest_folder = os.path.join(parent.path, 'file-data', 'temp')
                 os.makedirs(dest_folder, exist_ok=True)
                 unique_id = uuid.uuid4().hex
