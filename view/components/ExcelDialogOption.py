@@ -4,7 +4,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 class ExcelOptionsDialog(QDialog):
     """
-    Dialog untuk memilih file Excel, sheet, dan preview data.
+    Dialog to select an Excel file, sheet, and preview data.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,7 +45,7 @@ class ExcelOptionsDialog(QDialog):
         self.setLayout(layout)
 
     def select_file(self):
-        """File picker untuk memilih file Excel."""
+        """File picker to select an Excel file."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Excel File", "", "Excel Files (*.xlsx *.xls)")
         if file_path:
             self.file_path = file_path
@@ -62,7 +62,7 @@ class ExcelOptionsDialog(QDialog):
                 self.file_label.setText(f"Error: {e}")
 
     def update_preview(self):
-        """Perbarui preview tabel berdasarkan sheet yang dipilih."""
+        """Update the preview table based on the selected sheet."""
         if not self.file_path:
             self.preview_table.setModel(None)
             return
@@ -81,7 +81,7 @@ class ExcelOptionsDialog(QDialog):
             self.preview_table.setModel(None)
     
     def get_excel_options(self):
-        """Mengembalikan path file dan nama sheet yang dipilih."""
+        """Return path file dan name selected sheet"""
         if self.exec()== QDialog.DialogCode.Accepted and self.file_path and self.sheet_combo.currentText():
             return self.file_path, self.sheet_combo.currentText()
         return None, None
