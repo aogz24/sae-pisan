@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
+from view.components.ExcelDialogOption import ExcelOptionsDialog
 from PyQt6.QtCore import Qt, QBuffer, QIODevice
 from PyQt6.QtWidgets import QInputDialog
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame, QTextEdit, QTableView
@@ -85,13 +86,23 @@ class FileController:
                 else:
                     data = pl.read_csv(file_path, separator=separator, ignore_errors=True, has_header=False, null_values=["NA", "NULL", "na", "null"])
                     data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            
             elif selected_filter == "Excel Files (*.xlsx)":
+                dialog = ExcelOptionsDialog(self.view)
+                dialog.file_path = file_path
                 import pandas as pd
-                sheet_names = pd.ExcelFile(file_path).sheet_names
-                sheet_name, ok = QInputDialog.getItem(self.view, "Select Sheet", "Sheet:", sheet_names, 0, False)
-                if not ok:
+                xls = pd.ExcelFile(file_path)
+                dialog.sheet_names = xls.sheet_names
+                dialog.sheet_combo.addItems(dialog.sheet_names)
+                dialog.file_label.setText(f"Selected: {file_path}")
+                dialog.update_preview()
+                
+                file_path, selected_sheet = dialog.get_excel_options()
+                
+                if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=sheet_name)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet)
+                
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)
             
@@ -102,8 +113,11 @@ class FileController:
     def load_file(self):
         """Load file CSV, Excel, atau Text to first model (Sheet 1) and update tabel."""
         data = self.open_file()
-        self.model1.set_data(data)
-        self.view.update_table(1, self.model1)
+        if data is None:
+            return
+        else:    
+            self.model1.set_data(data)
+            self.view.update_table(1, self.model1)
         
     
     def load_secondary_data(self):
@@ -115,6 +129,8 @@ class FileController:
             QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
             return
         data = self.open_file()
+        if data is None:
+            return
         merged_data = pl.concat([main_df, data], how="horizontal")
         self.model1.set_data(merged_data)
         self.view.update_table(1, self.model1)
