@@ -1466,6 +1466,7 @@ class MainWindow(QMainWindow):
         for output in output_data:
             r_script = output.get("r_script", "")
             results = output.get("result", {})
+            timestamp = output.get("timestamp", None)
             # Convert dict values to DataFrame if needed
             for key, value in results.items():
                 if isinstance(value, dict):
@@ -1476,9 +1477,9 @@ class MainWindow(QMainWindow):
                 else:
                     results[key] = value
             if "Plot" in results:
-                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamp=timestamp)
+                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamps=timestamp)
             else:
-                display_script_and_output(parent, r_script, results, plot_paths=None, timestamp=timestamp)
+                display_script_and_output(parent, r_script, results, plot_paths=None, timestamps=timestamp)
         
 
 

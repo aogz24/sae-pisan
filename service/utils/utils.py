@@ -182,6 +182,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
 
         # Add timestamp for generation
         timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y") if timestamps is None else timestamps
+        out["timestamp"] = timestamp
         timestamp_label = QLabel(f"<i>Generated at: {timestamp}</i>")
         timestamp_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         timestamp_label.setStyleSheet("font-size: 12px; color: #666; margin-top: 10px;")
@@ -190,6 +191,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
         for key, value in results.items():
             # Skip displaying if the key is "Model"
             if key == "Model":
+                continue
+            elif key=="Plot":
                 continue
 
             # Tambahkan header untuk setiap key
