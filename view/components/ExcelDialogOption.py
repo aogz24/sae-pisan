@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog, QComboBox
+import polars as pl
 import pandas as pd
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
@@ -11,6 +12,7 @@ class ExcelOptionsDialog(QDialog):
         self.setWindowTitle("Excel Options")
         self.file_path = None
         self.sheet_names = []
+        self.header = True
         self.init_ui()
 
     def init_ui(self):
@@ -29,6 +31,12 @@ class ExcelOptionsDialog(QDialog):
         self.sheet_combo.currentIndexChanged.connect(self.update_preview)
         layout.addWidget(QLabel("Select Sheet"))
         layout.addWidget(self.sheet_combo)
+        
+        # Header checkbox
+        self.header_checkbox = QCheckBox("First row as header")
+        self.header_checkbox.setChecked(True)  # Default header True
+        self.header_checkbox.toggled.connect(self.update_preview)
+        layout.addWidget(self.header_checkbox)
 
         # Preview Table
         self.preview_label = QLabel("Preview")
@@ -68,11 +76,12 @@ class ExcelOptionsDialog(QDialog):
             return
         
         sheet = self.sheet_combo.currentText()
+        hdr = True if self.header_checkbox.isChecked() else False
         try:
-            df = pd.read_excel(self.file_path, sheet_name=sheet, nrows=10)
+            df = pl.read_excel(source=self.file_path, sheet_name=sheet, has_header=hdr).head(10)
             model = QStandardItemModel()
-            model.setHorizontalHeaderLabels(df.columns.astype(str).tolist())
-            for row in df.itertuples(index=False):
+            model.setHorizontalHeaderLabels(df.columns)
+            for row in df.to_numpy():
                 items = [QStandardItem(str(cell)) for cell in row]
                 model.appendRow(items)
             self.preview_table.setModel(model)
@@ -83,5 +92,5 @@ class ExcelOptionsDialog(QDialog):
     def get_excel_options(self):
         """Return path file dan name selected sheet"""
         if self.exec()== QDialog.DialogCode.Accepted and self.file_path and self.sheet_combo.currentText():
-            return self.file_path, self.sheet_combo.currentText()
-        return None, None
+            return self.file_path, self.sheet_combo.currentText(), self.header_checkbox.isChecked()
+        return None, None, None

@@ -97,11 +97,11 @@ class FileController:
                 dialog.file_label.setText(f"Selected: {file_path}")
                 dialog.update_preview()
                 
-                file_path, selected_sheet = dialog.get_excel_options()
+                file_path, selected_sheet, hdr = dialog.get_excel_options()
                 
                 if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=selected_sheet)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr, ignore_errors=True)
                 
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)
