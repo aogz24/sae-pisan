@@ -1449,9 +1449,9 @@ class MainWindow(QMainWindow):
                 else:
                     results[key] = value
             if "Plot" in results:
-                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamp=timestamp)
+                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamps=timestamp)
             else:
-                display_script_and_output(parent, r_script, results, plot_paths=None, timestamp=timestamp)
+                display_script_and_output(parent, r_script, results, plot_paths=None, timestamps=timestamp)
         
     def show_header_icon_info(self):
         """
