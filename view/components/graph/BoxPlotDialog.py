@@ -279,7 +279,7 @@ class BoxPlotDialog(QDialog):
                 r_script += (
                     f"# Box plot for {col}\n"
                     f"boxplot_{clean_name} <- ggplot(data, aes(y = {col})) +\n"
-                    f"    geom_boxplot(fill = sample(colors(), 1)) +\n"
+                    f"    geom_boxplot(fill = 'darkorange3') +\n"
                     f"    ggtitle('Box Plot: {col.strip('`')}') +\n"
                     f"    ylab('{col.strip('`')}') +\n"
                     f"    theme_minimal()\n\n"

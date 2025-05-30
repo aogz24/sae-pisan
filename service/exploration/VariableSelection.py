@@ -1,9 +1,8 @@
 import polars as pl
 import rpy2.robjects as ro
-import rpy2_arrow.polars as rpy2polars
 from rpy2.robjects import pandas2ri
-import pandas as pd
 import re
+from service.convert_df import convert_df
 
 # Aktifkan converter pandas <-> R
 pandas2ri.activate()
@@ -150,10 +149,7 @@ def run_variable_selection(parent):
     # Gabungkan dan filter data kosong
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df
+    convert_df(df, parent)
 
     try:
         ro.r('suppressMessages(library(car))')

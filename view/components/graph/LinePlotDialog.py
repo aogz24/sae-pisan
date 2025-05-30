@@ -440,7 +440,8 @@ class LinePlotDialog(QDialog):
                 clean_var = re.sub(r"\W+", "_", var.strip("`"))  # Bersihkan nama untuk objek
                 r_script += (
                     f"lineplot_{clean_var} <- ggplot(data, aes(x = `{selected_var_horizontal}`, y = `{var}`)) +\n"
-                    f"    geom_line(color = sample(colors(), 1)) +\n"
+                    f"    geom_line(color = 'darkorange3') +\n"
+                    f"    geom_point() +\n"
                     f"    ggtitle(\"Line Plot: {selected_var_horizontal} vs. {var.strip('`')}\") +\n"
                     f"    xlab(\"{selected_var_horizontal}\") +\n"
                     f"    ylab(\"{var.strip('`')}\") +\n"
@@ -457,6 +458,7 @@ class LinePlotDialog(QDialog):
                 f"                        names_to = \"variable\", values_to = \"value\")\n\n"
                 f"lineplot_{clean_horizontal}_multiple <- ggplot(data_long, aes(x = `{selected_var_horizontal}`, y = value, color = variable)) +\n"
                 f"    geom_line() +\n"
+                f"    geom_point() +\n"
                 f"    ggtitle(\"Multiple Line Plot: {selected_var_horizontal} vs. {formatted_var_list}\") +\n"
                 f"    xlab(\"{selected_var_horizontal}\") +\n"
                 f"    ylab(\"Value\") +\n"

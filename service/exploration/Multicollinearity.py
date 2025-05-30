@@ -1,9 +1,7 @@
 import polars as pl
-from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
-import rpy2_arrow.polars as rpy2polars
 from rpy2.robjects import pandas2ri
-
+from service.convert_df import convert_df
 
 def run_multicollinearity(parent):
     """
@@ -32,11 +30,8 @@ def run_multicollinearity(parent):
     # Gabungkan data menggunakan Polars
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-
-    # Konversi Polars DataFrame ke R DataFrame
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df  # Simpan ke lingkungan global R
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
+    convert_df(df, parent)
 
     try:
         ro.r('suppressMessages(library(car))')
