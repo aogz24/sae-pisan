@@ -107,6 +107,9 @@ class FileController:
         
     
     def load_secondary_data(self):
+        """_summary_
+        Load file CSV, Excel, atau Text to first model (Sheet 2) for secondary data and update tabel.
+        """
         main_df = self.model1.get_data()
         if main_df is None:
             QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
