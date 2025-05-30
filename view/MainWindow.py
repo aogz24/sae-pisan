@@ -1407,6 +1407,32 @@ class MainWindow(QMainWindow):
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
+        
+        # ?? delete image wasnt used
+        temp_img_dir = os.path.join(temp_dir, 'temp')
+        if os.path.exists(temp_img_dir):
+            used_images = set()
+            for output in serializable_data:
+                result = output.get("result", {})
+                plot_path = result.get("Plot")
+                if plot_path and isinstance(plot_path, str):
+                    used_images.add(os.path.abspath(plot_path))
+            for output in self.data:
+                result = output.get("result", {})
+                plot_paths = result.get("Plot")
+                if isinstance(plot_paths, list):
+                    for p in plot_paths:
+                        used_images.add(os.path.abspath(p))
+                elif isinstance(plot_paths, str):
+                    used_images.add(os.path.abspath(plot_paths))
+            # Hapus file di temp yang tidak digunakan
+            for fname in os.listdir(temp_img_dir):
+                fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+                if fpath not in used_images:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
 
     def load_temp_data(self):
         """
