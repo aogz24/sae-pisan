@@ -311,7 +311,7 @@ class ModelingSaeUnitDialog(QDialog):
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():
-                parent.autosave_data()
+                self.parent.autosave_data()
                 if self.reply is None:
                     self.reply = QMessageBox(self)
                     self.reply.setWindowTitle('Run in Background')

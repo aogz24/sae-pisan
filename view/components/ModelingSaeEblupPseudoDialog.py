@@ -342,7 +342,7 @@ class ModelingSaePseudoDialog(QDialog):
 
         def check_run_time():
             if thread.is_alive():
-                parent.autosave_data()
+                self.parent.autosave_data()
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 1 minute. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
