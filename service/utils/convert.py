@@ -21,7 +21,6 @@ def get_data(parent):
     import rpy2.robjects as ro
     import rpy2_arrow.polars as rpy2polars
     df = parent.model.get_data()
-    df.columns = [col.replace(' ', '_') for col in df.columns]
     
     null_threshold = 0.3 * len(df)
     cols_to_drop = [col for col in df.columns if df[col].null_count() >= null_threshold]
