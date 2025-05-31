@@ -185,12 +185,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             padding: 10px;
             transition: all 0.3s;
         }
-
-        QFrame:hover {
-            background-color: #f0f0f0;
-            border: 1px solid #c35112;
-            box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
-        }
     """)
 
     # Layout vertikal untuk card
@@ -331,7 +325,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 pixmap = QPixmap(plot_path)
                 label = QLabel()
                 label.setPixmap(pixmap)
-                label.setFixedSize(500, 350)
+                label.setFixedSize(800, 600)
                 label.setScaledContents(True)
                 label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
 
