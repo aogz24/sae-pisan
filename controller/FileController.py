@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 from view.components.ExcelDialogOption import ExcelOptionsDialog
@@ -131,7 +131,53 @@ class FileController:
         data = self.open_file()
         if data is None:
             return
-        merged_data = pl.concat([main_df, data], how="horizontal")
+
+        class MergeOptionDialog(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle("Select Merge Method")
+                layout = QVBoxLayout(self)
+                label = QLabel("Select data merge method:", self)
+                self.combo = QComboBox(self)
+                self.combo.addItems(["Horizontal", "Diagonal"])
+                # Tambahkan penjelasan mengenai opsi horizontal dan diagonal
+                explanation = QLabel(
+                    "<b>Explanation:</b><br>"
+                    "<b>Horizontal (Merge Columns):</b> Combines data horizontally by adding columns from the second file to the main file. "
+                    "If there are columns with the same name, the columns from the second file will be suffixed with '_duplicate'.<br><br>"
+                    "<b>Diagonal (Merge ColRows):</b> Combines data diagonally by adding rows where column name same and column from the second file to the main file. "
+                    "If the number of columns is different, the columns will be automatically adjusted."
+                )
+                explanation.setWordWrap(True)
+                layout.addWidget(explanation)
+                ok_btn = QPushButton("OK", self)
+                ok_btn.clicked.connect(self.accept)
+                layout.addWidget(label)
+                layout.addWidget(self.combo)
+                layout.addWidget(ok_btn)
+                self.setLayout(layout)
+
+            def get_option(self):
+                return self.combo.currentIndex()
+
+        dialog = MergeOptionDialog(self.view)
+        if dialog.exec():
+            option = dialog.get_option()
+        else:
+            return
+        if option == 0:
+            common_cols = set(main_df.columns) & set(data.columns)
+            rename_map = {col: f"{col}_duplicate" for col in common_cols}
+            data = data.rename(rename_map)
+            merged_data = pl.concat([main_df, data], how="horizontal")
+        else:
+            for col in set(main_df.columns) & set(data.columns):
+                main_dtype = main_df[col].dtype
+                try:
+                    data = data.with_columns(pl.col(col).cast(main_dtype, strict=False))
+                except Exception as e:
+                    QMessageBox.critical(self.view, "Error", f"Failed to cast column '{col}': {e}")
+            merged_data = pl.concat([main_df, data], how="diagonal")
         self.model1.set_data(merged_data)
         self.view.update_table(1, self.model1)
         
