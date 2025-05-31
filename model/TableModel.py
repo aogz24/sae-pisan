@@ -243,7 +243,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addRowsBefore(self, index, count):
         if index.isValid() and count > 0:
             row = index.row()
-            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
+            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64, pl.Null] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count
@@ -254,7 +254,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addRowsAfter(self, index, count):
         if index.isValid() and count > 0:
             row = index.row() + 1
-            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
+            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64, pl.Null] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count

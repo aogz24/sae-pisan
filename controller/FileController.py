@@ -1,6 +1,7 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
+from view.components.ExcelDialogOption import ExcelOptionsDialog
 from PyQt6.QtCore import Qt, QBuffer, QIODevice
 from PyQt6.QtWidgets import QInputDialog
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame, QTextEdit, QTableView
@@ -52,10 +53,11 @@ class FileController:
         self.view.actionLoad_file.triggered.connect(self.load_file)
         self.view.actionSave_Data.triggered.connect(self.save_data)
         self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)
-        self.view.recent_data.triggered.connect(self.view.load_temp_data)  
+        self.view.recent_data.triggered.connect(self.view.load_temp_data)
+        self.view.load_secondary_data.triggered.connect(self.load_secondary_data)  
 
-    def load_file(self):
-        """Muat file CSV, Excel, atau Text ke model pertama."""
+    def open_file(self):
+        """Open file CSV, Excel, atau Text and load to first model"""
         file_path, selected_filter = QFileDialog.getOpenFileName(
             self.view, "Open File", "",
             "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt);;TSV Files (*.tsv);;JSON Files (*.json)"
@@ -84,21 +86,101 @@ class FileController:
                 else:
                     data = pl.read_csv(file_path, separator=separator, ignore_errors=True, has_header=False, null_values=["NA", "NULL", "na", "null"])
                     data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            
             elif selected_filter == "Excel Files (*.xlsx)":
+                dialog = ExcelOptionsDialog(self.view)
+                dialog.file_path = file_path
                 import pandas as pd
-                sheet_names = pd.ExcelFile(file_path).sheet_names
-                sheet_name, ok = QInputDialog.getItem(self.view, "Select Sheet", "Sheet:", sheet_names, 0, False)
-                if not ok:
+                xls = pd.ExcelFile(file_path)
+                dialog.sheet_names = xls.sheet_names
+                dialog.sheet_combo.addItems(dialog.sheet_names)
+                dialog.file_label.setText(f"Selected: {file_path}")
+                dialog.update_preview()
+                
+                file_path, selected_sheet, hdr = dialog.get_excel_options()
+                
+                if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=sheet_name)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr, ignore_errors=True)
+                
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)
-
-            self.model1.set_data(data)
-            self.view.update_table(1, self.model1)
+            
+            return data
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
+    
+    def load_file(self):
+        """Load file CSV, Excel, atau Text to first model (Sheet 1) and update tabel."""
+        data = self.open_file()
+        if data is None:
+            return
+        else:    
+            self.model1.set_data(data)
+            self.view.update_table(1, self.model1)
+        
+    
+    def load_secondary_data(self):
+        """_summary_
+        Load file CSV, Excel, atau Text to first model (Sheet 2) for secondary data and update tabel.
+        """
+        main_df = self.model1.get_data()
+        if main_df is None:
+            QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
+            return
+        data = self.open_file()
+        if data is None:
+            return
 
+        class MergeOptionDialog(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle("Select Merge Method")
+                layout = QVBoxLayout(self)
+                label = QLabel("Select data merge method:", self)
+                self.combo = QComboBox(self)
+                self.combo.addItems(["Horizontal", "Diagonal"])
+                explanation = QLabel(
+                    "<b>Explanation:</b><br>"
+                    "<b>Horizontal (Merge Columns):</b> Combines data horizontally by adding columns from the second file to the main file. "
+                    "If there are columns with the same name, the columns from the second file will be suffixed with '_duplicate'.<br><br>"
+                    "<b>Diagonal (Merge ColRows):</b> Combines data vertically by adding rows where column has same name and adding columns where column has different name from the second file to the main file. "
+                    "If the number of columns is different, the columns will be automatically adjusted."
+                )
+                explanation.setWordWrap(True)
+                ok_btn = QPushButton("OK", self)
+                ok_btn.clicked.connect(self.accept)
+                layout.addWidget(label)
+                layout.addWidget(self.combo)
+                layout.addWidget(ok_btn)
+                layout.addWidget(explanation)
+                layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+                self.setLayout(layout)
+
+            def get_option(self):
+                return self.combo.currentIndex()
+
+        dialog = MergeOptionDialog(self.view)
+        if dialog.exec():
+            option = dialog.get_option()
+        else:
+            return
+        if option == 0:
+            common_cols = set(main_df.columns) & set(data.columns)
+            rename_map = {col: f"{col}_duplicate" for col in common_cols}
+            data = data.rename(rename_map)
+            merged_data = pl.concat([main_df, data], how="horizontal")
+        else:
+            for col in set(main_df.columns) & set(data.columns):
+                main_dtype = main_df[col].dtype
+                try:
+                    data = data.with_columns(pl.col(col).cast(main_dtype, strict=False))
+                except Exception as e:
+                    QMessageBox.critical(self.view, "Error", f"Failed to cast column '{col}': {e}")
+            merged_data = pl.concat([main_df, data], how="diagonal")
+        self.model1.set_data(merged_data)
+        self.view.update_table(1, self.model1)
+        
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(

@@ -249,6 +249,7 @@ class ModelingSaeHBDialog(QDialog):
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "SAE HB" and thread.is_alive():
+                self.parent.autosave_data()
                 if self.reply is None:
                     self.reply = QMessageBox(self)
                     self.reply.setWindowTitle('Run in Background')

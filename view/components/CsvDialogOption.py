@@ -90,9 +90,6 @@ class CSVOptionsDialog(QDialog):
             preview_data = pl.read_csv(self.file_path, separator=sep, has_header=hdr, ignore_errors=True, null_values=["NA", "NULL", "na", "null"]).head(10)
             model = QStandardItemModel()
             
-            if not self.header_checkbox.isChecked():
-                preview_data.columns = [f"Column {i+1}" for i in range(preview_data.shape[1])]
-            
             model.setHorizontalHeaderLabels(preview_data.columns)
 
             for row in preview_data.to_numpy():

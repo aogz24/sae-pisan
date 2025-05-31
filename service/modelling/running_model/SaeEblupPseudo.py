@@ -64,21 +64,21 @@ def run_model_eblup_pseudo(parent):
     error = False
     try:
         ro.r('suppressMessages(library("emdi"))')
-        ro.r('data <- as.data.frame(r_df)')
+        ro.r('data_pseudo <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
             result = str(e)
             error = True
             return result, error, None
-        ro.r('estimated_value <- getResponse(model)\n mse <- model$MSE$FH \n domain<-model$MSE$Domain \n refvar<-model$refVar')
-        domain = ro.conversion.rpy2py(ro.globalenv['domain'])
-        result_str = ro.r('capture.output(print(model))')
+        ro.r('estimated_value_pseudo <- getResponse(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$FH \n domain_pseudo <-model_pseudo$MSE$Domain \n refvar_pseudo <-model_pseudo$refVar')
+        domain = ro.conversion.rpy2py(ro.globalenv['domain_pseudo'])
+        result_str = ro.r('capture.output(print(model_pseudo))')
         result = "\n".join(result_str)
         results = extract_output_results(result)
-        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value'])
-        mse = ro.conversion.rpy2py(ro.globalenv['mse'])
-        vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var'])
+        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_pseudo'])
+        mse = ro.conversion.rpy2py(ro.globalenv['mse_pseudo'])
+        vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var_pseudo'])
         estimated_value = estimated_value.flatten()
         vardir_var = vardir_var.to_numpy()[:, 0]
         rse = abs(mse**0.5/estimated_value*100)

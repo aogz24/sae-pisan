@@ -55,17 +55,17 @@ def run_model_projection(parent):
     error = False
     try:
         ro.r('suppressMessages(library(sae.projection))')
-        ro.r('data <- as.data.frame(r_df)')
+        ro.r('data_pe <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
             result = str(e)
             error = True
             return result, error, None
-        ro.r('summary <- model$model \n pred <-model$prediction')
-        summary = ro.globalenv['summary']
+        ro.r('summary_pe <- model_pe$model \n pred_pe <-model_pe$prediction')
+        summary = ro.globalenv['summary_pe']
         formula, coeff = extract_output2_results(str(summary))
-        pred = ro.conversion.rpy2py(ro.globalenv['pred'])
+        pred = ro.conversion.rpy2py(ro.globalenv['pred_pe'])
         pred = [float(value) for value in pred]
         pred_df = pl.DataFrame({
             "Index": range(1, len(pred) + 1),
@@ -77,8 +77,8 @@ def run_model_projection(parent):
             'Coefficients of Modelling': coeff,
             'Prediction': pred_df
         }
-        ro.r('projection <- model$projection')
-        proj = ro.conversion.rpy2py(ro.globalenv['projection'])
+        ro.r('projection_pe <- model_pe$projection')
+        proj = ro.conversion.rpy2py(ro.globalenv['projection_pe'])
         df = pl.from_pandas(proj)
         error = False
         return results, error, df
