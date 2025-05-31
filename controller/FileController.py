@@ -144,7 +144,7 @@ class FileController:
                     "<b>Explanation:</b><br>"
                     "<b>Horizontal (Merge Columns):</b> Combines data horizontally by adding columns from the second file to the main file. "
                     "If there are columns with the same name, the columns from the second file will be suffixed with '_duplicate'.<br><br>"
-                    "<b>Diagonal (Merge ColRows):</b> Combines data diagonally by adding rows where column name same and column from the second file to the main file. "
+                    "<b>Diagonal (Merge ColRows):</b> Combines data vertically by adding rows where column has same name and adding columns where column has different name from the second file to the main file. "
                     "If the number of columns is different, the columns will be automatically adjusted."
                 )
                 explanation.setWordWrap(True)
