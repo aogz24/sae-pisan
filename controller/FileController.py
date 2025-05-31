@@ -140,7 +140,6 @@ class FileController:
                 label = QLabel("Select data merge method:", self)
                 self.combo = QComboBox(self)
                 self.combo.addItems(["Horizontal", "Diagonal"])
-                # Tambahkan penjelasan mengenai opsi horizontal dan diagonal
                 explanation = QLabel(
                     "<b>Explanation:</b><br>"
                     "<b>Horizontal (Merge Columns):</b> Combines data horizontally by adding columns from the second file to the main file. "
@@ -149,12 +148,13 @@ class FileController:
                     "If the number of columns is different, the columns will be automatically adjusted."
                 )
                 explanation.setWordWrap(True)
-                layout.addWidget(explanation)
                 ok_btn = QPushButton("OK", self)
                 ok_btn.clicked.connect(self.accept)
                 layout.addWidget(label)
                 layout.addWidget(self.combo)
                 layout.addWidget(ok_btn)
+                layout.addWidget(explanation)
+                layout.setAlignment(Qt.AlignmentFlag.AlignTop)
                 self.setLayout(layout)
 
             def get_option(self):
