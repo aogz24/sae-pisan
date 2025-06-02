@@ -2,7 +2,7 @@ import os
 import polars as pl
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_normality_test(parent):
     """
@@ -33,7 +33,7 @@ def run_normality_test(parent):
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         ro.r('rm(list=ls()[ls() != "r_df"])')

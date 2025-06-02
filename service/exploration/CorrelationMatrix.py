@@ -3,7 +3,7 @@ import polars as pl
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 from rpy2.robjects import pandas2ri
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_correlation_matrix(parent):
     """
@@ -40,7 +40,7 @@ def run_correlation_matrix(parent):
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         # Memuat library R yang diperlukan
@@ -66,7 +66,8 @@ def run_correlation_matrix(parent):
                 # Ambil tabel korelasi
                 matrix_df = ro.r(f'as.data.frame({matrix_name})')
                 pandas_df = pandas2ri.rpy2py(matrix_df)
-                correlation_df = pl.from_pandas(pandas_df)
+                pandas_df_rounded = pandas_df.round(5)  # Round to 10 decimal places
+                correlation_df = pl.from_pandas(pandas_df_rounded)
                 result_tables[f"{method.title()} Correlation"] = correlation_df
 
             if ro.r(f'exists("{plot_name}")')[0]:

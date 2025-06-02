@@ -2,7 +2,7 @@ import polars as pl
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 import re
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 # Aktifkan converter pandas <-> R
 pandas2ri.activate()
@@ -66,8 +66,6 @@ def extract_formatted(r_output: str):
 
         i += 1
 
-
-
     def extract_residuals(residuals: list[str]) -> pl.DataFrame:
         labels = residuals[0].split()
         # Ubah nama kolom sesuai permintaan
@@ -94,11 +92,16 @@ def extract_formatted(r_output: str):
 
         for line in coef_lines[1:]:
             match = re.match(
-                r"^(\S+)\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+([<>=]*\s*[\d.eE+-]+)\s*(\*\*\*|\*\*|\*|\.|)?",
+                r"^(`[^`]+`|\S+)\s+"  
+                r"([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+"
+                r"([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+"
+                r"([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?|\d+)\s+"
+                r"([<>=]*\s*[\d.eE+-]+)\s*"
+                r"(\*\*\*|\*\*|\*|\.|)?",
                 line
             )
             if match:
-                variable = match.group(1)
+                variable = match.group(1).strip('`')
                 estimate = float(match.group(2))
                 std_error = float(match.group(3))
                 t_value = float(match.group(4))
@@ -149,7 +152,7 @@ def run_variable_selection(parent):
     # Gabungkan dan filter data kosong
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         ro.r('suppressMessages(library(car))')
@@ -165,10 +168,17 @@ def run_variable_selection(parent):
         # Daftar metode seleksi variabel
         methods = ["forward", "backward", "both"]
 
+        method_label_map = {
+            "forward": "Forward",
+            "backward": "Backward",
+            "both": "Stepwise"
+        }
+
         for method in methods:
             model_var = f"{method}_model"
             result_var = f"{method}_result"
-            prefix = method.capitalize() 
+            prefix = method_label_map[method]  
+
 
             if model_var in existing_objects:
                 # 1. ANOVA Table
@@ -177,6 +187,8 @@ def run_variable_selection(parent):
                     anova_pd = pandas2ri.rpy2py(anova_r)
                     if anova_pd.index.name and anova_pd.index.name not in anova_pd.columns:
                         anova_pd = anova_pd.reset_index()
+                    if 'Step' in anova_pd.columns:
+                        anova_pd['Step'] = anova_pd['Step'].astype(str).str.replace('`', '', regex=False)
                     result_dict[f"Anova {method.capitalize()} Selection"] = pl.from_pandas(anova_pd)
                 except Exception as e:
                     result_dict[f"Anova {method.capitalize()} Selection"] = f"[ERROR] {e}"

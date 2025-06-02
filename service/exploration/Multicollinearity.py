@@ -1,7 +1,7 @@
 import polars as pl
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_multicollinearity(parent):
     """
@@ -31,7 +31,7 @@ def run_multicollinearity(parent):
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         ro.r('suppressMessages(library(car))')
@@ -56,6 +56,9 @@ def run_multicollinearity(parent):
             ro.r('intercept_df <- tibble::rownames_to_column(as.data.frame(regression_model$coefficients), var = "Variable")')
             intercept_df = ro.r('intercept_df')
             intercept_polars = pl.from_pandas(pandas2ri.rpy2py(intercept_df))
+            intercept_polars = intercept_polars.with_columns(
+                pl.col("Variable").str.replace_all("`", "")
+            )
             intercept_polars = intercept_polars.rename({"regression_model$coefficients": "Coefficient"})
             result["Intercept"] = intercept_polars
 
@@ -63,6 +66,9 @@ def run_multicollinearity(parent):
         ro.r('vif_df <- tibble::rownames_to_column(as.data.frame(vif_values), var = "Variable")')
         vif_df = ro.r('vif_df')
         vif_polars_df = pl.from_pandas(pandas2ri.rpy2py(vif_df))
+        vif_polars_df = vif_polars_df.with_columns(
+            pl.col("Variable").str.replace_all("`", "")
+        )
         vif_polars_df = vif_polars_df.rename({"vif_values": "VIF"})
         result["VIF Table"] = vif_polars_df
 

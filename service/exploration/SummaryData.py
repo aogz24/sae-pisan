@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 import polars as pl
 import rpy2.robjects as ro
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def extract_formatted_single(r_output: str, r_script: str) -> pl.DataFrame:
 
@@ -147,7 +147,7 @@ def run_summary_data(parent):
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         # Set data in R
