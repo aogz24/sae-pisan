@@ -36,6 +36,7 @@ import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
+from pyqttoast import Toast, ToastPreset
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -1439,6 +1440,7 @@ class MainWindow(QMainWindow):
                         os.remove(fpath)
                     except Exception:
                         pass
+        
 
     def load_temp_data(self):
         """
@@ -1548,6 +1550,13 @@ class MainWindow(QMainWindow):
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)
             
+    def show_toast(self):
+        toast = Toast(self)
+        toast.setDuration(3000)
+        toast.setTitle('Saved')
+        toast.setText("Data, Data Output, and Output was saved")
+        toast.show()
+    
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
         reply = QMessageBox.question(self, 'Confirm Exit',
