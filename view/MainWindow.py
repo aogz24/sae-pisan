@@ -1414,6 +1414,7 @@ class MainWindow(QMainWindow):
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
+<<<<<<< HEAD
         
         # ?? delete image wasnt used
         temp_img_dir = os.path.join(temp_dir, 'temp')
@@ -1441,6 +1442,8 @@ class MainWindow(QMainWindow):
                     except Exception:
                         pass
         
+=======
+>>>>>>> d176e408ac5fd0d07359cca12357fb2463b4570d
 
     def load_temp_data(self):
         """
@@ -1474,8 +1477,7 @@ class MainWindow(QMainWindow):
         """
         for output in output_data:
             r_script = output.get("r_script", "")
-            results = output.get("result", {})
-            # Convert dict values to DataFrame if needed
+            results = output.get("result", "")
             for key, value in results.items():
                 if isinstance(value, dict):
                     df = pl.DataFrame(value)
