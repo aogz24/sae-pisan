@@ -36,7 +36,7 @@ import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
-from pyqttoast import Toast, ToastPreset, ToastPosition
+from view.components.CustomToast import CustomToast
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -1551,15 +1551,13 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "R Packages Used", msg)
             
     def show_toast(self):
-        toast = Toast(self)
-        toast.setDuration(3000)
-        toast.setBorderRadius(3)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.setTitleFont(QFont('Times', 9, QFont.Weight.Bold))
-        toast.setTextFont(QFont('Times', 7, QFont.Weight.Bold))
-        toast.applyPreset(ToastPreset.INFORMATION)
-        toast.setTitle('Saved')
-        toast.setText("Data, Data Output, and Output was saved")
+        toast = CustomToast(
+            parent=self,
+            title="Saved",
+            text="Data, Data Output, and Output was saved",
+            duration=3000,
+            position="top-right"
+        )
         toast.show()
     
     def closeEvent(self, event):
