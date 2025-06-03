@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
 )
 from PyQt6.QtCore import Qt, QSize, QTimer 
-from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -36,7 +36,7 @@ import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
-from pyqttoast import Toast, ToastPreset
+from pyqttoast import Toast, ToastPreset, ToastPosition
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -1414,7 +1414,6 @@ class MainWindow(QMainWindow):
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
-<<<<<<< HEAD
         
         # ?? delete image wasnt used
         temp_img_dir = os.path.join(temp_dir, 'temp')
@@ -1441,9 +1440,8 @@ class MainWindow(QMainWindow):
                         os.remove(fpath)
                     except Exception:
                         pass
+        self.show_toast()
         
-=======
->>>>>>> d176e408ac5fd0d07359cca12357fb2463b4570d
 
     def load_temp_data(self):
         """
@@ -1555,6 +1553,11 @@ class MainWindow(QMainWindow):
     def show_toast(self):
         toast = Toast(self)
         toast.setDuration(3000)
+        toast.setBorderRadius(3)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.setTitleFont(QFont('Times', 9, QFont.Weight.Bold))
+        toast.setTextFont(QFont('Times', 7, QFont.Weight.Bold))
+        toast.applyPreset(ToastPreset.INFORMATION)
         toast.setTitle('Saved')
         toast.setText("Data, Data Output, and Output was saved")
         toast.show()
