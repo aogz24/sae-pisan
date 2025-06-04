@@ -1558,6 +1558,7 @@ class MainWindow(QMainWindow):
             duration=3000,
             position="top-right"
         )
+        toast.set_border_radius(8)
         toast.show()
     
     def closeEvent(self, event):

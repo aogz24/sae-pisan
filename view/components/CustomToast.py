@@ -3,7 +3,23 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QFont
 
 class CustomToast(QWidget):
+    """
+    Custom Toast Notification Widget
+    This widget displays a toast notification with a title, text, icon, and a progress bar.
+    It can be customized with different positions, colors, and icons.
+    The toast will automatically close after a specified duration, but can be paused by hovering over it.
+    It supports various customization options such as border radius, icon size, background color, title color,
+    close button icon color, duration bar color, and text color.
+    Parameters:
+        parent (QWidget): The parent widget for the toast.
+        title (str): The title of the toast notification.
+        text (str): The text content of the toast notification.
+        duration (int): Duration in milliseconds before the toast automatically closes. Default is 3000 ms.
+        position (str): Position of the toast on the screen. Options are "top-right", "top-left", "bottom-right", "bottom-left". Default is "top-right".
+        icon_path (str): Path to the icon image to be displayed on the left side of the toast. Default is None, which uses a default icon.
+    """
     def __init__(self, parent=None, title="", text="", duration=3000, position="top-right", icon_path=None):
+        """Initialize the CustomToast widget."""
         super().__init__(parent)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
@@ -39,8 +55,8 @@ class CustomToast(QWidget):
             pixmap = QPixmap(icon_path)
             icon_label.setPixmap(pixmap.scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
-            icon_label.setText("ℹ️")
-            icon_label.setFont(QFont("Arial", 22))
+            pixmap = QPixmap("assets/information.svg")
+            icon_label.setPixmap(pixmap.scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         icon_label.setFixedSize(40, 40)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         icon_label.setStyleSheet("background: transparent;")
@@ -54,7 +70,7 @@ class CustomToast(QWidget):
 
         # Title kanan atas
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        self.title_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         self.title_label.setStyleSheet("color: #222; background: transparent;")
         self.title_label.setWordWrap(True)
         top_grid.addWidget(self.title_label, 0, 2, 1, 2, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
@@ -79,7 +95,7 @@ class CustomToast(QWidget):
 
         # Text kanan bawah
         self.text_label = QLabel(text)
-        self.text_label.setFont(QFont("Arial", 10))
+        self.text_label.setFont(QFont("Arial", 8))
         self.text_label.setStyleSheet("color: #333; background: transparent;")
         self.text_label.setWordWrap(True)
         self.text_label.setMinimumWidth(250)
@@ -87,13 +103,14 @@ class CustomToast(QWidget):
         top_grid.addWidget(self.text_label, 1, 2, 1, 3, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         card_layout.addLayout(top_grid)
+        card_layout.addSpacing(8)
 
         # Duration bar di paling bawah, tanpa space kosong
         self.progress = QProgressBar()
         self.progress.setMaximum(duration)
         self.progress.setValue(duration)
         self.progress.setTextVisible(False)
-        self.progress.setFixedHeight(7)
+        self.progress.setFixedHeight(9)
         self.progress.setStyleSheet("""
             QProgressBar {
                 border: none;
@@ -130,11 +147,19 @@ class CustomToast(QWidget):
         self.elapsed = 0
 
     def showEvent(self, event):
+        """Handle the show event to adjust size and position."""
         super().showEvent(event)
         self.adjustSize()
         self.move_to_position()
 
     def move_to_position(self):
+        """_summary_
+        Move the toast to the specified position relative to its parent widget.
+        If the parent widget is not set, it will center the toast on the screen.
+        If the parent widget is set, it will position the toast at the specified corner with a margin.
+        Supported positions are "top-right", "top-left", "bottom-right", "bottom-left", and "center".
+        If the position is not recognized, it defaults to centering the toast on the parent widget.
+        """
         parent = self.parentWidget()
         if parent:
             parent_rect = parent.geometry()
@@ -157,16 +182,19 @@ class CustomToast(QWidget):
             self.move(x, y)
 
     def enterEvent(self, event):
+        """Pause the toast when the mouse enters."""
         self.is_paused = True
         self.timer.stop()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+        """Resume the toast when the mouse leaves."""
         self.is_paused = False
         self.timer.start(15)
         super().leaveEvent(event)
 
     def update_progress(self):
+        """Update the progress bar and check if the toast should close."""
         if self.is_paused:
             return
         self.elapsed += 15
@@ -175,3 +203,81 @@ class CustomToast(QWidget):
         if self.elapsed >= self.duration:
             self.timer.stop()
             self.close()
+    
+    def set_border_radius(self, radius: int):
+        """
+        Set the border radius of the toast card.
+
+        Args:
+            radius (int): The desired border radius in pixels to be applied to the toast card.
+
+        This method updates the stylesheet of the widget named "toastCard" to reflect the specified border radius.
+        """
+        style = f"""
+            QWidget#toastCard {{
+                background: #eaf6fd;
+                border: 1.5px solid #90caf9;
+                border-radius: {radius}px;
+            }}
+        """
+        self.findChild(QWidget, "toastCard").setStyleSheet(style)
+        
+    def set_icon_size(self, width: int, height: int):
+        """Atur ukuran icon pada toast."""
+        icon_label = self.findChild(QLabel)
+        if icon_label:
+            pixmap = icon_label.pixmap()
+            if pixmap:
+                icon_label.setPixmap(pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            icon_label.setFixedSize(width, height)
+
+    def set_background_color(self, color: str):
+        """Atur warna background card toast."""
+        card = self.findChild(QWidget, "toastCard")
+        style = f"""
+            QWidget#toastCard {{
+                background: {color};
+                border: 1.5px solid #90caf9;
+                border-radius: 0px;
+            }}
+        """
+        card.setStyleSheet(style)
+
+    def set_title_color(self, color: str):
+        """Atur warna teks title."""
+        self.title_label.setStyleSheet(f"color: {color}; background: transparent;")
+
+    def set_close_button_icon_color(self, color: str):
+        """Atur warna icon tombol close."""
+        close_btn = self.findChildren(QPushButton)[0]
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                border: none;
+                background: transparent;
+                font-size: 16px;
+                color: {color};
+            }}
+            QPushButton:hover {{
+                color: #d00;
+                background: #e3f1fa;
+            }}
+        """)
+
+    def set_duration_bar_color(self, color: str):
+        """Atur warna progress bar durasi."""
+        self.progress.setStyleSheet(f"""
+            QProgressBar {{
+                border: none;
+                background: #e0e0e0;
+                border-radius: 3px;
+                margin-bottom: 5px;
+            }}
+            QProgressBar::chunk {{
+                background: {color};
+                border-radius: 3px;
+            }}
+        """)
+
+    def set_text_color(self, color: str):
+        """Atur warna teks isi toast."""
+        self.text_label.setStyleSheet(f"color: {color}; background: transparent;")
