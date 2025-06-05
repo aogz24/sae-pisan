@@ -184,6 +184,10 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             border-radius: 8px;
             padding: 10px;
         }
+        QFrame:hover {
+            background-color: #f0f0f0;
+            border: 1px solid #c35112;
+        }
     """)
 
     # Layout vertikal untuk card
