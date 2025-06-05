@@ -359,4 +359,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
     parent.data.append(out)
+    parent.autosave_data()
+    
 

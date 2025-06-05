@@ -970,7 +970,7 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table(self, sheet_number, model, add_data=True):
+    def update_table(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
@@ -995,9 +995,6 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
-        
-        if add_data:
-            self.autosave_data()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
@@ -1461,8 +1458,8 @@ class MainWindow(QMainWindow):
                 self.data2 = pl.read_parquet(data2_path)
                 self.model1.set_data(self.data1)
                 self.model2.set_data(self.data2)
-                self.update_table(1, self.model1, add_data=False)
-                self.update_table(2, self.model2, add_data=False)
+                self.update_table(1, self.model1)
+                self.update_table(2, self.model2)
                 with open(output_path, 'r') as file:
                     data = json.load(file)
                     self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
