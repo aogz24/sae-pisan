@@ -1,10 +1,17 @@
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
-from PyQt6.QtCore import Qt
+from view.components.ExcelDialogOption import ExcelOptionsDialog
+from PyQt6.QtCore import Qt, QBuffer, QIODevice
 from PyQt6.QtWidgets import QInputDialog
-from PyQt6.QtGui import QPainter, QPdfWriter
-from PyQt6.QtCore import QRectF
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QLabel, QFrame, QTextEdit, QTableView
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageTemplate, Frame
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.styles import ParagraphStyle
+import io
 
 class FileController:
     """
@@ -46,20 +53,21 @@ class FileController:
         self.view.actionLoad_file.triggered.connect(self.load_file)
         self.view.actionSave_Data.triggered.connect(self.save_data)
         self.view.save_output_pdf.triggered.connect(self.export_output_to_pdf)
-        self.view.recent_data.triggered.connect(self.view.load_temp_data)  
+        self.view.recent_data.triggered.connect(self.view.load_temp_data)
+        self.view.load_secondary_data.triggered.connect(self.load_secondary_data)  
 
-    def load_file(self):
-        """Muat file CSV atau Excel ke model pertama."""
+    def open_file(self):
+        """Open file CSV, Excel, atau Text and load to first model"""
         file_path, selected_filter = QFileDialog.getOpenFileName(
             self.view, "Open File", "",
-            "CSV Files (*.csv);;Excel Files (*.xlsx)"
+            "CSV Files (*.csv);;Excel Files (*.xlsx);;Text Files (*.txt);;TSV Files (*.tsv);;JSON Files (*.json)"
         )
 
         if not file_path:  # Jika file tidak dipilih
             return
 
         try:
-            if selected_filter == "CSV Files (*.csv)":
+            if selected_filter in ["CSV Files (*.csv)", "Text Files (*.txt)", "TSV Files (*.tsv)"]:
                 dialog = CSVOptionsDialog(self.view)
                 dialog.file_path = file_path
                 dialog.file_label.setText(f"Selected: {file_path}")
@@ -68,6 +76,9 @@ class FileController:
 
                 if not file_path:  # Jika file tidak dipilih
                     return
+                
+                if separator == r"\t":  # Jika input adalah string literal "\t"
+                    separator = "\t"
 
                 # Baca data dari CSV dengan atau tanpa header
                 if header:
@@ -75,19 +86,103 @@ class FileController:
                 else:
                     data = pl.read_csv(file_path, separator=separator, ignore_errors=True, has_header=False, null_values=["NA", "NULL", "na", "null"])
                     data.columns = [f"Column {i+1}" for i in range(data.shape[1])]
+            
             elif selected_filter == "Excel Files (*.xlsx)":
+                dialog = ExcelOptionsDialog(self.view)
+                dialog.file_path = file_path
                 import pandas as pd
-                sheet_names = pd.ExcelFile(file_path).sheet_names
-                sheet_name, ok = QInputDialog.getItem(self.view, "Select Sheet", "Sheet:", sheet_names, 0, False)
-                if not ok:
+                xls = pd.ExcelFile(file_path)
+                dialog.sheet_names = xls.sheet_names
+                dialog.sheet_combo.addItems(dialog.sheet_names)
+                dialog.file_label.setText(f"Selected: {file_path}")
+                dialog.update_preview()
+                
+                file_path, selected_sheet, hdr = dialog.get_excel_options()
+                
+                if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=sheet_name)
-
-            self.model1.set_data(data)
-            self.view.update_table(1, self.model1)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr, ignore_errors=True)
+                
+            elif selected_filter == "JSON Files (*.json)":
+                data = pl.read_json(file_path)
+            
+            return data
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
+    
+    def load_file(self):
+        """Load file CSV, Excel, atau Text to first model (Sheet 1) and update tabel."""
+        data = self.open_file()
+        if data is None:
+            return
+        else:    
+            self.model1.set_data(data)
+            self.view.update_table(1, self.model1)
+            self.view.autosave_data()
+        
+    
+    def load_secondary_data(self):
+        """_summary_
+        Load file CSV, Excel, atau Text to first model (Sheet 2) for secondary data and update tabel.
+        """
+        main_df = self.model1.get_data()
+        if main_df is None:
+            QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
+            return
+        data = self.open_file()
+        if data is None:
+            return
 
+        class MergeOptionDialog(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle("Select Merge Method")
+                layout = QVBoxLayout(self)
+                label = QLabel("Select data merge method:", self)
+                self.combo = QComboBox(self)
+                self.combo.addItems(["Horizontal", "Diagonal"])
+                explanation = QLabel(
+                    "<b>Explanation:</b><br>"
+                    "<b>Horizontal (Merge Columns):</b> Combines data horizontally by adding columns from the second file to the main file. "
+                    "If there are columns with the same name, the columns from the second file will be suffixed with '_duplicate'.<br><br>"
+                    "<b>Diagonal (Merge ColRows):</b> Combines data vertically by adding rows where column has same name and adding columns where column has different name from the second file to the main file. "
+                    "If the number of columns is different, the columns will be automatically adjusted."
+                )
+                explanation.setWordWrap(True)
+                ok_btn = QPushButton("OK", self)
+                ok_btn.clicked.connect(self.accept)
+                layout.addWidget(label)
+                layout.addWidget(self.combo)
+                layout.addWidget(ok_btn)
+                layout.addWidget(explanation)
+                layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+                self.setLayout(layout)
+
+            def get_option(self):
+                return self.combo.currentIndex()
+
+        dialog = MergeOptionDialog(self.view)
+        if dialog.exec():
+            option = dialog.get_option()
+        else:
+            return
+        if option == 0:
+            common_cols = set(main_df.columns) & set(data.columns)
+            rename_map = {col: f"{col}_duplicate" for col in common_cols}
+            data = data.rename(rename_map)
+            merged_data = pl.concat([main_df, data], how="horizontal")
+        else:
+            for col in set(main_df.columns) & set(data.columns):
+                main_dtype = main_df[col].dtype
+                try:
+                    data = data.with_columns(pl.col(col).cast(main_dtype, strict=False))
+                except Exception as e:
+                    QMessageBox.critical(self.view, "Error", f"Failed to cast column '{col}': {e}")
+            merged_data = pl.concat([main_df, data], how="diagonal")
+        self.model1.set_data(merged_data)
+        self.view.update_table(1, self.model1)
+        self.view.autosave_data()
+        
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(
@@ -153,72 +248,133 @@ class FileController:
         """Simpan data sebagai file teks."""
         data = model.get_data()
         data.write_csv(file_path, separator="\t")
-    
+
+
     def export_output_to_pdf(self):
-        """Export the content of all widgets in the output layout to a PDF file."""
+        """Export the content of all widgets in the output layout to a PDF file (menggunakan reportlab untuk tabel)."""
         file_path, _ = QFileDialog.getSaveFileName(
             self.view, "Save PDF", "", "PDF Files (*.pdf)"
         )
 
         if not file_path:
             return
-
-        pdf_writer = QPdfWriter(file_path)
-        painter = QPainter(pdf_writer)
-
-        # Convert cm to points (1 cm = 28.3465 points)
-        top_margin = 4 * 28.3465
-        side_margin = 3 * 28.3465
-
-        y_offset = top_margin
-        page_height = pdf_writer.height()
-        page_width = pdf_writer.width()
-
-        def draw_text_multiline(text, y_offset):
-            """Helper function to split text and draw it across multiple pages if needed."""
-            font_metrics = painter.fontMetrics()
-            line_height = font_metrics.lineSpacing()
-            lines = text.splitlines()
-            for line in lines:
-                if y_offset + line_height > page_height - top_margin:
-                    pdf_writer.newPage()
-                    y_offset = top_margin
-                painter.drawText(QRectF(side_margin, y_offset, page_width - 2 * side_margin, line_height),
-                                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, line)
-                y_offset += line_height
-            return y_offset
-
+        
+        def add_footer(canvas, doc):
+            canvas.saveState()
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S %d-%m-%Y")
+            footer_text = f"Generated by saePisan at {timestamp}"
+            canvas.setFont("Helvetica-Oblique", 8)
+            width, height = A4
+            canvas.drawRightString(width - 30, 20, footer_text)
+            canvas.restoreState()
+        
+        doc = SimpleDocTemplate(
+            file_path, pagesize=A4, leftMargin=30, rightMargin=30, topMargin=40, bottomMargin=40
+        )
+        frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+        doc.addPageTemplates([PageTemplate(id='footer', frames=frame, onPage=add_footer)])
+        
+        elements = []
+        styles = getSampleStyleSheet()
+        normal_style = styles["Normal"]
+        
         for i in range(self.view.output_layout.count()):
-            widget = self.view.output_layout.itemAt(i).widget()
+            item = self.view.output_layout.itemAt(i)
+            widget = item.widget()
+            if widget is None:
+                continue
+
             if isinstance(widget, QFrame):
                 for j in range(widget.layout().count()):
                     sub_widget = widget.layout().itemAt(j).widget()
-                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
+                    if isinstance(sub_widget, QLabel) and "<b>R Script:</b>" in sub_widget.text():
                         script_box = widget.layout().itemAt(j + 1).widget()
                         text = script_box.toPlainText()
-                        y_offset = draw_text_multiline(text, y_offset)
-                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
+                        elements.append(Paragraph("R Script:", styles["Heading4"]))
+                        script_style = ParagraphStyle(
+                            name="ScriptStyle",
+                            parent=styles["Normal"],
+                            fontName="Courier",
+                            fontSize=9,
+                            leading=12,
+                        )
+                        elements.append(Paragraph(text.replace("\n", "<br/>"), script_style))
+                        elements.append(Spacer(1, 12))
+                    elif isinstance(sub_widget, QLabel) and "Output" in sub_widget.text():
                         result_box = widget.layout().itemAt(j + 1).widget()
-                        text = result_box.toPlainText()
-                        y_offset = draw_text_multiline(text, y_offset)
+                        if isinstance(result_box, QTextEdit):
+                            text = result_box.toPlainText()
+                            elements.append(Paragraph("Output:", styles["Heading4"]))
+                            elements.append(Paragraph(text.replace("\n", "<br/>"), normal_style))
+                            elements.append(Spacer(1, 12))
+                        else:
+                            elements.append(Paragraph("Output:", styles["Heading4"]))
+                            elements.append(Spacer(1, 12))
+                    elif isinstance(sub_widget, QTableView):
+                        model = sub_widget.model()
+                        if model:
+                            columns = [model.headerData(col, Qt.Orientation.Horizontal) for col in range(model.columnCount())]
+                            data_rows = []
+                            for row in range(model.rowCount()):
+                                row_data = []
+                                for col in range(model.columnCount()):
+                                    index = model.index(row, col)
+                                    row_data.append(str(model.data(index)))
+                                data_rows.append(row_data)
+                            if data_rows:
+                                table_data = [columns] + data_rows
+                                table = Table(table_data, repeatRows=1)
+                                table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                ]))
+                                elements.append(table)
+                                elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel) and "<b>Plot:</b>" in sub_widget.text():
                         for k in range(j + 1, widget.layout().count()):
                             plot_label = widget.layout().itemAt(k).widget()
                             if isinstance(plot_label, QLabel):
-                                image = plot_label.pixmap().toImage()
-                                image_height = image.height() * (page_width - 2 * side_margin) / image.width()
-                                if y_offset + image_height > page_height - top_margin:
-                                    pdf_writer.newPage()
-                                    y_offset = top_margin
-                                rect = QRectF(side_margin, y_offset, page_width - 2 * side_margin, image_height)
-                                painter.drawImage(rect, image)
-                                y_offset += image_height
+                                pixmap = plot_label.pixmap()
+                                if pixmap:
+                                    buffer = QBuffer()
+                                    buffer.open(QIODevice.OpenModeFlag.ReadWrite)
+                                    pixmap.toImage().save(buffer, "PNG")
+                                    buffer.seek(0)
+                                    img = Image(io.BytesIO(buffer.data()), width=400, height=250)
+                                    elements.append(img)
+                                    elements.append(Spacer(1, 12))
+                    elif isinstance(sub_widget, QLabel):
+                        text = sub_widget.text().replace("<b>", "").replace("</b>", "")
+                        text = text.replace("<i>", "").replace("</i>", "")
+                        if "Summary of" in sub_widget.text():
+                            summary_style = ParagraphStyle(
+                                name="SummaryHeading",
+                                parent=styles["Heading1"],
+                                alignment=TA_CENTER,
+                                fontName="Helvetica-Bold"
+                            )
+                            elements.append(Paragraph(text, summary_style))
+                            elements.append(Spacer(1, 12))
+                        elif "Generated on" in sub_widget.text():
+                            generated_style = ParagraphStyle(
+                                name="GeneratedHeading",
+                                parent=styles["Normal"],
+                                alignment=2,  # TA_RIGHT is 2
+                                fontName="Helvetica-Oblique",  # Italic
+                                fontSize=10,
+                                textColor=colors.black
+                            )
+                            elements.append(Paragraph(text, generated_style))
+                            elements.append(Spacer(1, 12))
+                        else:
+                            elements.append(Paragraph(text, normal_style))
+                            elements.append(Spacer(1, 12))
 
-            # Check if y_offset exceeds page height for next widget
-            if y_offset > page_height - top_margin:
-                pdf_writer.newPage()
-                y_offset = top_margin
-
-        painter.end()
-
+        doc.build(elements)
         QMessageBox.information(self.view, "Success", "PDF exported successfully!")

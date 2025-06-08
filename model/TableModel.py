@@ -77,7 +77,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
             value = self._data[index.row(), index.column()]
-            return str(value)
+            return "" if value is None else str(value)
 
     def rowCount(self, _):
         return self.loaded_rows
@@ -101,6 +101,8 @@ class TableModel(QtCore.QAbstractTableModel):
                     dtype = self._data[column_name].dtype
                     if dtype == pl.Utf8:
                         return QtGui.QIcon("assets/nominal.svg")
+                    elif dtype == pl.Null:
+                        return QtGui.QIcon("assets/null.svg")
                     else:
                         return QtGui.QIcon("assets/numeric.svg")
         return None
@@ -121,13 +123,37 @@ class TableModel(QtCore.QAbstractTableModel):
             dtype = self._data[column_name].dtype
 
             old_value = self._data[row, column]
+            
+            if dtype == pl.Null:
+                if isinstance(value, str):
+                    val_strip = value.strip()
+                    val_dot = val_strip.replace(',', '.')
+                    try:
+                        float_val = float(val_dot)
+                        if '.' in val_dot:
+                            new_dtype = pl.Float64
+                            value = float_val
+                        else:
+                            new_dtype = pl.Int64
+                            value = int(float_val)
+                    except ValueError:
+                        new_dtype = pl.Utf8
+                elif isinstance(value, float):
+                    new_dtype = pl.Float64
+                elif isinstance(value, int):
+                    new_dtype = pl.Int64
+                else:
+                    new_dtype = pl.Utf8
+                self._data = self._data.with_columns([pl.col(column_name).cast(new_dtype)])
+                dtype = new_dtype
 
             if dtype == pl.Float64:
                 try:
                     if isinstance(value, str):
                         if value.count(',') == 1 and value.replace(',', '').isdigit():
                             value = value.replace(',', '.')
-                        value = float(value)
+                        value = float(value) if value is not None else None
+                        
                 except ValueError:
                     error_dialog = QtWidgets.QMessageBox()
                     error_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
@@ -147,7 +173,7 @@ class TableModel(QtCore.QAbstractTableModel):
             if dtype == pl.Int64:
                 try:
                     if isinstance(value, str):
-                        value = int(value)
+                        value = int(value) if value is not None else None
                 except ValueError:
                     error_dialog = QtWidgets.QMessageBox()
                     error_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
@@ -216,9 +242,8 @@ class TableModel(QtCore.QAbstractTableModel):
     
     def addRowsBefore(self, index, count):
         if index.isValid() and count > 0:
-            print("Adding rows before")
             row = index.row()
-            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
+            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64, pl.Null] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count
@@ -229,7 +254,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addRowsAfter(self, index, count):
         if index.isValid() and count > 0:
             row = index.row() + 1
-            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64] else "" for col in self._data.columns} for _ in range(count)]
+            new_rows = [{col: None if self._data[col].dtype in [pl.Int64, pl.Float64, pl.Null] else "" for col in self._data.columns} for _ in range(count)]
             self.beginInsertRows(QtCore.QModelIndex(), row, row + count - 1)
             self._data = pl.concat([self._data[:row], pl.DataFrame(new_rows), self._data[row:]])
             self.loaded_rows += count
@@ -240,7 +265,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addColumnBefore(self, index, count):
         if index.isValid() and count > 0:
             column = index.column()
-            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            new_columns = {f"new_col_{i}": [None] * self._data.shape[0] for i in range(count)}
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()
@@ -252,7 +277,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def addColumnAfter(self, index, count):
         if index.isValid() and count > 0:
             column = index.column() + 1
-            new_columns = {f"new_col_{i}": [""] * self._data.shape[0] for i in range(count)}
+            new_columns = {f"new_col_{i}": [None] * self._data.shape[0] for i in range(count)}
             self.beginResetModel()
             self._data = pl.concat([self._data[:, :column], pl.DataFrame(new_columns), self._data[:, column:]], how="horizontal")
             self.endResetModel()

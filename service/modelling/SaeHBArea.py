@@ -110,7 +110,7 @@ def assign_vardir(parent):
 
 def assign_as_factor(parent):
     """
-    Assigns selected variables as factors and updates the parent object's factor variable list and model.
+    Assigns selected variables as factors (only variables of type String) and updates the parent object's factor variable list and model.
     Args:
         parent: An object that contains the following attributes:
             - variables_list: A QListView or similar widget that holds the list of variables.
@@ -118,19 +118,33 @@ def assign_as_factor(parent):
             - as_factor_model: A QStringListModel or similar model that represents the factor variables.
     The function performs the following steps:
         1. Retrieves the selected indexes from the variables_list.
-        2. Extracts the data from the selected indexes and adds them to the as_factor_var list, ensuring no duplicates.
-        3. Updates the as_factor_model with the new list of factor variables.
-        4. Removes the selected variables from the variables_list.
-        5. Calls the show_r_script function to update the R script display.
+        2. Filters only variables of type "String".
+        3. Adds them to the as_factor_var list, ensuring no duplicates.
+        4. Updates the as_factor_model with the new list of factor variables.
+        5. Removes the selected variables from the variables_list.
+        6. Calls the show_r_script function to update the R script display.
     """
-    
+
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
-        last_index = selected_indexes[-1]  # Get the last selected index
-        new_var = last_index.data()  # Get the data of the last selected variable
-        parent.as_factor_var = [new_var]  # Assign only the last variable
+        new_vars = []
+        rows_to_remove = []
+        for index in selected_indexes:
+            type_of_var = index.data().split(" [")[1].replace("]", "")
+            if type_of_var == "String":
+                new_vars.append(index.data())
+                rows_to_remove.append(index.row())
+        if not new_vars:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setText("No valid string variables selected. Please select at least one variable of type String.")
+            msg.setWindowTitle("Warning")
+            msg.exec()
+            return
+        parent.as_factor_var = list(set(parent.as_factor_var + new_vars))
         parent.as_factor_model.setStringList(parent.as_factor_var)
-        parent.variables_list.model().removeRow(last_index.row())  # Remove the last selected variable from the list
+        for row in sorted(rows_to_remove, reverse=True):
+            parent.variables_list.model().removeRow(row)
         show_r_script(parent)
 
 def unassign_variable(parent):
@@ -225,27 +239,61 @@ def generate_r_script(parent):
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
-    as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     
-    if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
-        formula = f'{of_interest_var} ~ 1'
-    elif as_factor_var=='""':
-        formula = f'{of_interest_var} ~ {auxilary_vars}'
-    elif auxilary_vars=='""':
-        formula = f'{of_interest_var} ~ {as_factor_var}'
-    else:
-        formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
+    dummy_vars = []
+    dummy_creation_script = ""
+    if parent.as_factor_var:
+        for var in parent.as_factor_var:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            dummy_creation_script += f'dummies_{var_name} <- model.matrix(~{var_name} - 1, datahb)\n'
+            dummy_creation_script += f'datahb <- cbind(datahb, dummies_{var_name})\n'
+            dummy_vars.append(f'colnames(dummies_{var_name})')
 
-    r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
-    r_script += f'formula <- {formula}\n'
+    # Gabungkan semua dummy variable ke formula
+    dummy_vars_str = ""
+    if dummy_vars:
+        dummy_names = []
+        for var in parent.as_factor_var:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            # You don't know the levels in Python, so use a placeholder for R to expand
+            dummy_names.append(f'colnames(dummies_{var_name})')
+        # Instead of using paste() in formula, expand in R before formula creation
+        dummy_vars_str = " + ".join([f'`{name}`' for name in dummy_names])
+    
+    
+    r_script = f'names(datahb) <- gsub(" ", "_", names(datahb)); #Replace space with underscore\n'
+    r_script += dummy_creation_script
+
+    # Build the formula in R after dummies are created
+    r_script += "all_vars <- names(datahb)\n"
+    if parent.as_factor_var:
+        for var in parent.as_factor_var:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            r_script += f'all_vars <- c(all_vars, colnames(dummies_{var_name}))\n'
+
+    # Build the formula string in R
+    r_script += "rhs_vars <- c()"
+    if auxilary_vars != '""':
+        r_script += f'\nrhs_vars <- c(rhs_vars, "{auxilary_vars}")'
+    if parent.as_factor_var:
+        for var in parent.as_factor_var:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            r_script += f'\nrhs_vars <- c(rhs_vars, colnames(dummies_{var_name}))'
+    r_script += '\nformula_str <- paste('
+    if of_interest_var != '""':
+        r_script += f'"{of_interest_var}", "~", paste(rhs_vars, collapse = " + "))\n'
+    else:
+        r_script += '"", "~", paste(rhs_vars, collapse = " + "))\n'
+    r_script += "formula <- as.formula(formula_str)\n"
+    
     if parent.selection_method=="Stepwise":
         parent.selection_method = "both"
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=data)'
+        r_script += f'modelhb<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=datahb)'
     else:
-        r_script += f'model<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=data)'
+        r_script += f'modelhb<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=datahb)'
     return r_script
 
 def show_r_script(parent):

@@ -43,7 +43,7 @@ class CSVOptionsDialog(QDialog):
         layout.addWidget(self.file_button)
 
         # Separator input
-        layout.addWidget(QLabel("Separator (e.g., , or ;)"))
+        layout.addWidget(QLabel("Separator (e.g. , or ; For tab use \\t)"))
         self.separator_input = QLineEdit(",")
         self.separator_input.textChanged.connect(self.update_preview)
         layout.addWidget(self.separator_input)
@@ -83,13 +83,12 @@ class CSVOptionsDialog(QDialog):
             return
 
         sep = self.separator_input.text()
+        if sep == r"\t":  # Jika input adalah string literal "\t"
+            sep = "\t"
         hdr = True if self.header_checkbox.isChecked() else False
         try:
             preview_data = pl.read_csv(self.file_path, separator=sep, has_header=hdr, ignore_errors=True, null_values=["NA", "NULL", "na", "null"]).head(10)
             model = QStandardItemModel()
-            
-            if not self.header_checkbox.isChecked():
-                preview_data.columns = [f"Column {i+1}" for i in range(preview_data.shape[1])]
             
             model.setHorizontalHeaderLabels(preview_data.columns)
 

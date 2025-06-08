@@ -1,14 +1,41 @@
+import re
 import polars as pl
-from PyQt6.QtWidgets import QMessageBox
-from service.modelling.running_model.convert_df import convert_df
-from rpy2.rinterface_lib.embedded import RRuntimeError
+
+# Mengubah r_output
+r_output = """
+Linear mixed model fit by REML ['lmerMod']
+Formula: ys ~ -1 + Xs + (1 | dom)
+
+REML criterion at convergence: 322
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.9288 -0.5711  0.1041  0.5953  1.5333 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ dom      (Intercept)  63.31    7.957  
+ Residual             297.71   17.254  
+Number of obs: 37, groups:  dom, 12
+
+Fixed effects:
+                Estimate Std. Error t value
+XsXs(Intercept) 17.96398   30.97450   0.580
+XsXsCornPix      0.36634    0.06496   5.640
+XsXsSoyBeansPix -0.03036    0.06758  -0.449
+
+Correlation of Fixed Effects:
+            XsX(I) XsXsCP
+XsXsCornPix -0.947       
+XsXsSyBnsPx -0.897  0.734 
+boundary (singular) fit: see hel
+"""
 
 def extract_formatted(output):
-    import re
     # Fungsi untuk mengekstrak metode
     def extract_method(output):
         match = re.search(r'Linear mixed model fit by (.*?)\s+(\[.*?\])', output)
-        return f"Linear mixed model fit by {match.group(1).strip()} {match.group(2).strip()}" if match else None
+        return {"method": match.group(1).strip(), "details": match.group(2).strip()} if match else None
 
     # Fungsi untuk mengekstrak formula
     def extract_formula(output):
@@ -17,8 +44,8 @@ def extract_formatted(output):
 
     # Fungsi untuk mengekstrak metode dan kriterianya
     def extract_criterion(output):
-        match = re.search(r'criterion at convergence:\s+([\d.-]+)', output)
-        return float(match.group(1)) if match else None
+        match = re.search(r'Linear mixed model fit by (.*?)\s+\[.*?\]\s+.*?criterion at convergence:\s+([\d.-]+)', output, re.S)
+        return {"method": match.group(1).strip(), "criterion": int(match.group(2))} if match else None
 
     # Fungsi untuk mengekstrak jumlah observasi
     def number_of_obs(output):
@@ -27,8 +54,8 @@ def extract_formatted(output):
 
     # Fungsi untuk mengekstrak kelompok
     def extract_groups(output):
-        match = re.search(r'Number of obs:\s+(\d+),\s+groups:\s+(.*?),\s+(\d+)', output)
-        return f"Number of obs: {match.group(1)}, groups: {match.group(2)}, {match.group(3)}" if match else None
+        match = re.search(r'groups:\s+(.*?),\s+(\d+)', output)
+        return {"group name": match.group(1).strip(), "group count": int(match.group(2))} if match else None
 
     # Fungsi untuk mengekstrak dataframe antara Scaled residuals dan Random effects
     def extract_summary(output):
@@ -100,68 +127,53 @@ def extract_formatted(output):
 
     # Menggabungkan hasil ekstraksi menjadi string yang user-friendly
     results = {
-        "Model": "EBLUP Unit Level",
-        "Method": extract_method(output),
-        "Formula": extract_formula(output),
-        "Criterion of Convergence": extract_criterion(output),
-        "Number of Observation": number_of_obs(output),
-        "Groups": extract_groups(output),
-        "Summary of Modelling": extract_summary(output),
-        "Fixed Effects": extract_fixed_effects(output),
-        "Random Effects": extract_random_effects(output),
-        "Correlation of Fixed Effect": correlation_fixed_effects(output)
+        "method": extract_method(output),
+        "formula": extract_formula(output),
+        "criterion": extract_criterion(output),
+        "number_of_obs": number_of_obs(output),
+        "groups": extract_groups(output),
+        "summary": extract_summary(output),
+        "fixed_effects": extract_fixed_effects(output),
+        "random_effects": extract_random_effects(output),
+        "correlation_fixed_effects": correlation_fixed_effects(output)
     }
-    return results
 
-def run_model_eblup_unit(parent):
-    """
-    Runs the EBLUP (Empirical Best Linear Unbiased Prediction) model using R through rpy2.
-    Parameters:
-    parent (object): An object that contains the necessary methods and attributes to run the model.
-                     It should have the following methods and attributes:
-                     - activate_R(): Method to activate the R environment.
-                     - model1.get_data(): Method to get the data for the model.
-                     - r_script: An R script to be executed.
-    Returns:
-    tuple: A tuple containing:
-           - result (str): The result of the model execution or error message.
-           - error (bool): A flag indicating whether an error occurred.
-           - df (polars.DataFrame or None): A DataFrame containing the model results with columns 'Domain', 'Eblup', 'Sample size', and 'MSE'.
-                                            None if an error occurred.
-    """
+    formatted = []
+
+    if results["method"]:
+        formatted.append(f"Linear mixed model fit by {results['method']['method']} {results['method']['details']}")
+
+    if results["formula"]:
+        formatted.append(f"Formula: {results['formula']}")
+
+    if results["criterion"]:
+        formatted.append(f"{results['criterion']['method']} criterion at convergence: {results['criterion']['criterion']}")
+
+    if results["summary"] is not None:
+        formatted.append("Summary of Scaled Residuals")
+        formatted.append(results["summary"].__str__())
+
+    if results["fixed_effects"] is not None:
+        formatted.append("Fixed Effects")
+        formatted.append(results["fixed_effects"].__str__())
+
+    if results["random_effects"] is not None:
+        formatted.append("Random Effects")
+        formatted.append(results["random_effects"].__str__())
     
-    import rpy2.robjects as ro
-    parent.activate_R()
-    df = parent.model1.get_data()
-    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
-    result = ""
-    error = False
-    try:
-        ro.r('suppressMessages(library(sae))')
-        ro.r('data_unit <- as.data.frame(r_df)')
-        try:
-            ro.r(parent.r_script)  # Menjalankan skrip R
-        except RRuntimeError as e:
-            result = str(e)
-            error = True
-            return result, error, None
-        ro.r('domain_unit <- model_unit$est$eblup$domain\n estimated_value_unit <- model_unit$est$eblup$eblup\n n_size_unit <- model_unit$est$eblup$sampsize \n mse_unit <- model_unit$mse$mse')
-        result_str = ro.r('model_unit$est$fit$summary')
-        result = str(result_str)
-        results = extract_formatted(result)
-        domain = ro.r('domain_unit')
-        estimated_value = ro.r('estimated_value_unit')
-        n_size = ro.r('n_size_unit')
-        mse = ro.r('mse_unit')
-        df = pl.DataFrame({
-            'Domain': domain,
-            'Eblup': estimated_value,
-            'Sample size': n_size,
-            'MSE': mse})
-        error = False
-        return results, error, df
-        
-    except Exception as e:
-        error = True
-        return str(e), error, None
+    if results["number_of_obs"]:
+        formatted.append(f"Number of Observations: {results['number_of_obs']}")
+
+    if results["groups"]:
+        formatted.append(f"Groups: {results['groups']['group name']} ({results['groups']['group count']})")
+
+    if results["correlation_fixed_effects"] is not None:
+        formatted.append("Correlation of Fixed Effects")
+        formatted.append(results["correlation_fixed_effects"].__str__())
+
+    return "\n\n".join(formatted)
+
+# Mengubah hasil menjadi string yang user-friendly
+hasil_str = extract_formatted(r_output)
+print(hasil_str)
+

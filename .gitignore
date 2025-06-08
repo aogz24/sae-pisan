@@ -13,3 +13,7 @@ main.build
 main.dist
 *.json
 data-coba*
+*.pdf
+bangkitan
+*.parquet
+file-data/temp

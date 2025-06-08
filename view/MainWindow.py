@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
 )
 from PyQt6.QtCore import Qt, QSize, QTimer 
-from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -35,6 +35,8 @@ from PyQt6.QtWidgets import QLabel
 import threading
 import json
 import datetime
+from service.utils.utils import display_script_and_output
+from view.components.CustomToast import CustomToast
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -129,18 +131,20 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.3.0")
         columns = [f"Column {i+1}" for i in range(100)]
-        self.data1 = pl.DataFrame({col: [""] * 100 for col in columns})
+        self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
-            "Estimated Value": [""] * 100,
-            "Standar Error": [""] * 100,
-            "CV": [""] * 100
+            "Estimated Value": [None] * 100,
+            "Standar Error": [None] * 100,
+            "RSE (%)": [None] * 100
         })
 
         # Model untuk Sheet 2
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
-        self.font_size = 14
+        self.font_size = 12
+        self.set_font_size(self.font_size)
+        self.data = []
 
         # Inisialisasi UI
         self.init_ui()
@@ -282,6 +286,11 @@ class MainWindow(QMainWindow):
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
+        self.load_secondary_data = QAction("Load File for Secondary Data", self)
+        self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
+        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.load_secondary_data.setStatusTip("Ctrl+2")
+        
         self.save_action = QAction("Save Data", self)
         self.save_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
         self.save_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedata.svg')))
@@ -299,6 +308,7 @@ class MainWindow(QMainWindow):
 
         self.file_menu.addAction(self.recent_data)
         self.file_menu.addAction(self.load_action)
+        self.file_menu.addAction(self.load_secondary_data)
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
         self.file_menu.addAction(self.save_output_pdf)
@@ -416,6 +426,17 @@ class MainWindow(QMainWindow):
         action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
         menu_about.addAction(action_about_info)
         
+        action_header_icon_info = QAction("Header Icon Info", self)
+        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_header_icon_info.triggered.connect(self.show_header_icon_info)
+        menu_about.addAction(action_header_icon_info)
+        
+        # Add R Packages Used menu
+        action_r_packages_info = QAction("R Packages Used", self)
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_r_packages_info.triggered.connect(self.show_r_packages_info)
+        menu_about.addAction(action_r_packages_info)
+        
 
         # Tool Bar
         self.toolBar = QToolBar(self)
@@ -489,6 +510,7 @@ class MainWindow(QMainWindow):
         self.actionSetting.setText("Setting")
         self.actionSetting.triggered.connect(self.change_font_size)
         self.toolBar.addAction(self.actionSetting)
+        
 
         # Menu "Settings"
         menu_settings = self.menu_bar.addMenu("Settings")
@@ -523,7 +545,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 14, "Big": 22}
+        sizes = {"Small": 10, "Medium": 12, "Big": 16}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
@@ -585,7 +607,8 @@ class MainWindow(QMainWindow):
         if os.path.exists(stylesheet_path):
             with open(stylesheet_path, 'r') as file:
                 stylesheet = file.read()
-                stylesheet = stylesheet.replace("font-size: 14px;", f"font-size: {size}px;")
+                # stylesheet = stylesheet.replace("font-size: 12px;", f"font-size: {size}px;")
+                stylesheet = stylesheet.replace("__FONT_SIZE__", f"{size}px")
                 return stylesheet
         else:
             print(f"Stylesheet tidak ditemukan di {stylesheet_path}")
@@ -954,7 +977,6 @@ class MainWindow(QMainWindow):
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
-            self.autosave_data()
             if self.show_modeling_sae_dialog:
                 self.show_modeling_sae_dialog.set_model(model)
             if self.show_modeling_saeHB_dialog:
@@ -973,7 +995,6 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
-            self.autosave_data()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
@@ -1356,76 +1377,187 @@ class MainWindow(QMainWindow):
 
     def autosave_data(self):
         """
-        Save the current state of data1, data2, and output to a temporary file.
+        Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
+        temp_dir = os.path.join(self.path, 'file-data')
+        os.makedirs(temp_dir, exist_ok=True)
+        # Save data1 and data2 as parquet
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        self.model1.get_data().write_parquet(data1_path)
+        self.model2.get_data().write_parquet(data2_path)
+        # Save output as JSON
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        import numpy as np
+
+        def make_json_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(v) for v in obj]
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif hasattr(obj, 'tolist'):
+                return obj.tolist()
+            elif isinstance(obj, (int, float, str, type(None), bool)):
+                return obj
+            else:
+                return str(obj)
+
+        serializable_data = make_json_serializable(self.data)
         data = {
             'timestamp': datetime.datetime.now().isoformat(),
-            'data1': self.model1.get_data().to_dicts(),
-            'data2': self.model2.get_data().to_dicts(),
-            'output': self.get_output_data()
+            'output': serializable_data
         }
-        with open(temp_file, 'w') as file:
+        with open(output_path, 'w') as file:
             json.dump(data, file)
+        
+        # ?? delete image wasnt used
+        temp_img_dir = os.path.join(temp_dir, 'temp')
+        if os.path.exists(temp_img_dir):
+            used_images = set()
+            for output in serializable_data:
+                result = output.get("result", {})
+                plot_path = result.get("Plot")
+                if plot_path and isinstance(plot_path, str):
+                    used_images.add(os.path.abspath(plot_path))
+            for output in self.data:
+                result = output.get("result", {})
+                plot_paths = result.get("Plot")
+                if isinstance(plot_paths, list):
+                    for p in plot_paths:
+                        used_images.add(os.path.abspath(p))
+                elif isinstance(plot_paths, str):
+                    used_images.add(os.path.abspath(plot_paths))
+            # Hapus file di temp yang tidak digunakan
+            for fname in os.listdir(temp_img_dir):
+                fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+                if fpath not in used_images:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
+        self.show_toast()
+        
 
     def load_temp_data(self):
         """
-        Load data from the temporary file if it exists and is recent.
+        Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        temp_file = os.path.join(self.path, 'file-data', 'sae_pisan_autosave.json')
-        if os.path.exists(temp_file):
+        temp_dir = os.path.join(self.path, 'file-data')
+        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+        if os.path.exists(data1_path) and os.path.exists(data2_path) and os.path.exists(output_path):
             reply = QMessageBox.question(self, 'Load Temporary Data',
                                          'Temporary data was found. Do you want to load it?',
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                with open(temp_file, 'r') as file:
+                self.data1 = pl.read_parquet(data1_path)
+                self.data2 = pl.read_parquet(data2_path)
+                self.model1.set_data(self.data1)
+                self.model2.set_data(self.data2)
+                self.update_table(1, self.model1)
+                self.update_table(2, self.model2)
+                with open(output_path, 'r') as file:
                     data = json.load(file)
-                    self.data1 = pl.DataFrame(data['data1'])
-                    self.data2 = pl.DataFrame(data['data2'])
-                    self.model1.set_data(self.data1)
-                    self.model2.set_data(self.data2)
-                    self.update_table(1, self.model1)
-                    self.update_table(2, self.model2)
-                    self.set_output_data(data['output'])
+                    self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
         else:
             QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
 
-    def get_output_data(self):
+    def set_output_data(parent, output_data, timestamp=None):
         """
-        Get the current state of the output layout.
+        Menampilkan kembali output card dari data hasil get_output_data.
         """
-        output_data = []
-        for i in range(self.output_layout.count()):
-            widget = self.output_layout.itemAt(i).widget()
-            if isinstance(widget, QFrame):
-                data = {}
-                for j in range(widget.layout().count()):
-                    sub_widget = widget.layout().itemAt(j).widget()
-                    if isinstance(sub_widget, QLabel) and "<b>Script R:</b>" in sub_widget.text():
-                        script_box = widget.layout().itemAt(j + 1).widget()
-                        data['script_text'] = script_box.toPlainText()
-                    elif isinstance(sub_widget, QLabel) and "<b>Output:</b>" in sub_widget.text():
-                        result_box = widget.layout().itemAt(j + 1).widget()
-                        data['result_text'] = result_box.toPlainText()
-                    elif isinstance(sub_widget, QLabel) and "<b>Error:</b>" in sub_widget.text():
-                        error_box = widget.layout().itemAt(j + 1).widget()
-                        data['error_text'] = error_box.toPlainText()
-                output_data.append(data)
-        return output_data
-
-    def set_output_data(self, output_data):
+        for output in output_data:
+            r_script = output.get("r_script", "")
+            results = output.get("result", "")
+            for key, value in results.items():
+                if isinstance(value, dict):
+                    df = pl.DataFrame(value)
+                    results[key] = df
+                else:
+                    results[key] = value
+            if "Plot" in results:
+                display_script_and_output(parent, r_script, results, plot_paths=results["Plot"], timestamps=timestamp)
+            else:
+                display_script_and_output(parent, r_script, results, plot_paths=None, timestamps=timestamp)
+        
+    def show_header_icon_info(self):
         """
-        Set the output layout from the saved state.
+        Show a dialog explaining the meaning of header icons in the data table.
         """
-        for data in output_data:
-            self.add_output(
-                script_text=data.get('script_text', ''),
-                result_text=data.get('result_text', ''),
-                plot_paths=None,
-                error_text=data.get('error_text', '')
-            )
+        msg = (
+            "<b>Header Icon Legend:</b><br><br>"
+            "<div style='display:flex; flex-direction:column; gap:8px;'>"
+            "<div><img src='assets/nominal.svg' width='24' height='24' style='vertical-align:middle;'> <b>Nominal/String</b></div>"
+            "<div><img src='assets/null.svg' width='24' height='24' style='vertical-align:middle;'> <b>Null/Empty</b></div>"
+            "<div><img src='assets/numeric.svg' width='24' height='24' style='vertical-align:middle;'> <b>Numeric</b></div>"
+            "</div><br>"
+            "<div style='max-width:350px;'>"
+            "These icons indicate the data type of each column in the table. "
+            "Nominal/String columns are represented by the nominal icon, "
+            "Null/Empty columns are represented by the null icon, and "
+            "Numeric columns are represented by the numeric icon."
+            "</div>"
+        )
+        QMessageBox.information(self, "Header Icon Info", msg)
+    
+    def show_r_packages_info(self):
+        """
+        Show a dialog listing the R packages used and their versions in a styled table.
+        """
+        try:
+            import rpy2.robjects as ro
+            packages = [
+                "sae", "saeHB", "rjags", "ggplot2", "MASS"
+            ]
+            versions = []
+            for pkg in packages:
+                try:
+                    ver = ro.r(f"as.character(packageVersion('{pkg}'))")[0]
+                except Exception:
+                    ver = "Not Installed"
+                versions.append((pkg, ver))
+            msg = """
+            <b>R Packages Used:</b><br><br>
+            <table style="
+                border-collapse: collapse;
+                min-width: 320px;
+                font-size: 13px;
+                ">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>
+                        <th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for pkg, ver in versions:
+                msg += (
+                    f"<tr>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{pkg}</td>"
+                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{ver}</td>"
+                    f"</tr>"
+                )
+            msg += "</tbody></table>"
+        except Exception as e:
+            msg = f"Could not retrieve R package versions.<br>Error: {e}"
+        QMessageBox.information(self, "R Packages Used", msg)
             
+    def show_toast(self):
+        toast = CustomToast(
+            parent=self,
+            title="Saved",
+            text="Data, Data Output, and Output was saved",
+            duration=3000,
+            position="top-right"
+        )
+        toast.set_border_radius(8)
+        toast.show()
+    
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
         reply = QMessageBox.question(self, 'Confirm Exit',

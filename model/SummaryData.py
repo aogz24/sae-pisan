@@ -44,11 +44,10 @@ class SummaryData:
     Activates the R environment for data processing using rpy2.
     """
     
-    def __init__(self, model1, model2, view):
+    def __init__(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
-        self.view = view
-        self.result =""
+        self.result = None
         self.error = False
 
     def run_model(self, r_script):

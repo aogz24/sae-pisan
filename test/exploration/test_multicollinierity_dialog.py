@@ -54,16 +54,16 @@ def test_get_column_with_dtype(multicollinearity_dialog):
     expected_output = ["A [Numeric]", "B [Numeric]", "C [Numeric]"]
     assert multicollinearity_dialog.get_column_with_dtype(mock_model) == expected_output
 
-def test_add_variable_dependent_variable(multicollinearity_dialog, qtbot):
+def test_add_dependent_variable(multicollinearity_dialog, qtbot):
     multicollinearity_dialog.data_editor_model.setStringList(["A [Numeric]", "B [Numeric]"])
     multicollinearity_dialog.data_editor_list.setCurrentIndex(multicollinearity_dialog.data_editor_model.index(0))
-    multicollinearity_dialog.add_variable_dependent_variable()
+    multicollinearity_dialog.add_dependent_variable()
     assert multicollinearity_dialog.dependent_variable_model.stringList() == ["A [Numeric]"]
 
-def test_add_variable_independent_variables(multicollinearity_dialog, qtbot):
+def test_add_independent_variables(multicollinearity_dialog, qtbot):
     multicollinearity_dialog.data_editor_model.setStringList(["A [Numeric]", "B [Numeric]"])
     multicollinearity_dialog.data_editor_list.setCurrentIndex(multicollinearity_dialog.data_editor_model.index(1))
-    multicollinearity_dialog.add_variable_independent_variables()
+    multicollinearity_dialog.add_independent_variables()
     assert multicollinearity_dialog.independent_variable_model.stringList() == ["B [Numeric]"]
 
 def test_remove_variable(multicollinearity_dialog, qtbot):

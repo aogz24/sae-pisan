@@ -27,10 +27,9 @@ class NormalityTest:
         Activates the R environment for running the normality test.
     """
     
-    def __init__(self, model1, model2, selected_columns, view):
+    def __init__(self, model1, model2, selected_columns):
         self.model1 = model1
         self.model2 = model2
-        self.view = view
         self.selected_columns = selected_columns
         self.result =""
         self.plot = None

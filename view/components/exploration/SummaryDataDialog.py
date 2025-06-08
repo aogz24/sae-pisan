@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QSpacerItem, QSizePolicy, QMessageBox
+    QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QTextEdit, QSpacerItem, QSizePolicy, QMessageBox, QToolButton
 )
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
 from model.SummaryData import SummaryData
 from controller.Eksploration.EksplorationController import SummaryDataController
+from service.utils.utils import display_script_and_output, check_script
 
 class SummaryDataDialog(QDialog):
     """
@@ -59,7 +60,7 @@ class SummaryDataDialog(QDialog):
         self.selected_status = {}
 
         # Main layout
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         content_layout = QHBoxLayout()
 
         # Left layout for Data Editor and Data Output
@@ -112,7 +113,7 @@ class SummaryDataDialog(QDialog):
         right_layout.addWidget(self.selected_list)
 
         content_layout.addLayout(right_layout)
-        main_layout.addLayout(content_layout)
+        self.main_layout.addLayout(content_layout)
 
         # Horizontal layout for label and icon
         script_layout = QHBoxLayout()
@@ -124,30 +125,58 @@ class SummaryDataDialog(QDialog):
 
         # Spacer to keep the icon_label on the right end
         spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        
+        self.toggle_script_button = QToolButton()
+        self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+        self.toggle_script_button.setIconSize(QSize(16, 16))
+        self.toggle_script_button.setCheckable(True)
+        self.toggle_script_button.setChecked(False)
+        self.toggle_script_button.clicked.connect(self.toggle_r_script_visibility)
 
-        # Add widgets to the horizontal layout
-        script_layout.addWidget(self.script_label)
-        script_layout.addItem(spacer)  # Add flexible space
-        script_layout.addWidget(self.icon_label)
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.script_label)
+        self.button_layout.addWidget(self.toggle_script_button)
+        self.button_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
+        self.button_layout.setAlignment(self.toggle_script_button, Qt.AlignmentFlag.AlignLeft)
+
+        self.script_layout = QHBoxLayout()
+        self.script_layout.addLayout(self.button_layout)
+        self.script_layout.addStretch()
+        self.script_layout.addWidget(self.icon_label)
         self.icon_label.setVisible(False)
-        # Box to display script
-        self.script_box = QTextEdit(self)
+        self.script_layout.setAlignment(self.script_label, Qt.AlignmentFlag.AlignLeft)
 
-        # Add to the main layout
-        main_layout.addLayout(script_layout)  # Add horizontal layout to main layout
-        main_layout.addWidget(self.script_box)
+        self.main_layout.addLayout(self.script_layout)
 
-        # Run button
+        self.script_box = QTextEdit()
+        self.script_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.script_box.setReadOnly(False)
+        self.script_box.setVisible(False)
+        self.main_layout.addWidget(self.script_box)
+
+        # Tombol Run
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
         button_row_layout.addWidget(self.run_button, alignment=Qt.AlignmentFlag.AlignRight)
-        main_layout.addLayout(button_row_layout)
+        self.main_layout.addLayout(button_row_layout)
 
+        # Mode seleksi untuk list view
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
+    def toggle_r_script_visibility(self):
+        """
+        Toggles the visibility of the R script text edit area and updates the toggle button text.
+        """
+        is_visible = self.script_box.isVisible()
+        self.script_box.setVisible(not is_visible)
+        if not is_visible:
+            self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
+        else:
+            self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+    
     def set_model(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
@@ -228,7 +257,8 @@ class SummaryDataDialog(QDialog):
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)
-        summary_data = SummaryData(self.model1, self.model2, self.parent)
+        summary_data = SummaryData(self.model1, self.model2)
+
         controller = SummaryDataController(summary_data)
         controller.run_model(r_script)
 
@@ -237,7 +267,9 @@ class SummaryDataDialog(QDialog):
         else:
             QMessageBox.critical(self, "Summary Data", summary_data.result)
             
-        self.parent.add_output(r_script, summary_data.result)
+        # self.parent.add_output(r_script, summary_data.result)
+        print(r_script)
+        display_script_and_output(self.parent, r_script, summary_data.result)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)
         self.icon_label.setVisible(False)
         self.run_button.setText("Run")

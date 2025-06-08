@@ -3,6 +3,7 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
+from service.convert_df import convert_df
 
 def run_box_plot(parent):
     """
@@ -31,12 +32,8 @@ def run_box_plot(parent):
     df1 = parent.model1.get_data()
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
-    df = df.drop_nulls()  # Remove null values
-
-    # Convert Polars DataFrame to R DataFrame
-    with rpy2polars.converter.context() as cv_ctx:
-        r_df = rpy2polars.converter.py2rpy(df)
-        ro.globalenv['r_df'] = r_df
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
+    convert_df(df, parent)
 
     try:
         # Load required R libraries

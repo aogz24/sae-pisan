@@ -477,6 +477,8 @@ def set_selection_method(parent, dialog):
 
 
 import unittest
+from unittest.mock import MagicMock
+import sys
 
 class MockParent:
     def __init__(self):
@@ -539,6 +541,621 @@ class TestGenerateRScript(unittest.TestCase):
         r_script = generate_r_script(self.parent)
         self.assertIn("boost_tree(", r_script)
         self.assertIn("var1 ~ var2 + var3 + var4", r_script)
+    
+    def test_assign_of_interest_with_numeric(self):
+
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.of_interest_model = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().removeRow = MagicMock()
+        self.parent.projection_method = "Linear"
+        self.parent.of_interest_var = []
+        self.parent.r_script_edit = MagicMock()
+        self.parent.of_interest_model.setStringList = MagicMock()
+        
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        assign_of_interest(self.parent)
+
+        self.assertEqual(self.parent.of_interest_var, ["variable1 [Numeric]"])
+        self.parent.of_interest_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_of_interest_with_string(self):
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.projection_method = "Linear"
+        self.parent.of_interest_var = []
+        
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        msg_box_instance = MagicMock()
+        msg_box_class = MagicMock(return_value=msg_box_instance)
+        original_qmessagebox = QMessageBox
+        sys.modules[__name__].QMessageBox = msg_box_class
+
+        assign_of_interest(self.parent)
+
+        msg_box_instance.setIcon.assert_called_once()
+        msg_box_instance.setText.assert_called_once_with("All selected variables are of type String. Variable of interest must be of type Numeric.")
+        msg_box_instance.setWindowTitle.assert_called_once_with("Warning")
+        msg_box_instance.exec.assert_called_once()
+
+        sys.modules[__name__].QMessageBox = original_qmessagebox
+        
+    def test_assign_auxilary(self):
+        # Setup mocks
+        index1 = MagicMock()
+        index1.data.return_value = "variable2 [Numeric]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+        self.parent.auxilary_model = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().removeRow = MagicMock()
+        self.parent.auxilary_vars = []
+        self.parent.r_script_edit = MagicMock()
+        self.parent.auxilary_model.setStringList = MagicMock()
+
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        assign_auxilary(self.parent)
+
+        self.assertEqual(self.parent.auxilary_vars, ["variable2 [Numeric]"])
+        self.parent.auxilary_model.setStringList.assert_called_with(["variable2 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called()
+    
+    def test_assign_auxilary_no_numeric(self):
+        # Setup mocks
+        index1 = MagicMock()
+        index1.data.return_value = "variable2 [String]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index1]
+        self.parent.auxilary_vars = []
+        
+        msg_box_instance = MagicMock()
+        msg_box_class = MagicMock(return_value=msg_box_instance)
+        original_qmessagebox = QMessageBox
+        sys.modules[__name__].QMessageBox = msg_box_class
+
+        assign_auxilary(self.parent)
+
+        msg_box_instance.setIcon.assert_called_once()
+        msg_box_instance.setText.assert_called_once_with("No valid numeric variables selected. Please select at least one numeric variable.")
+        msg_box_instance.setWindowTitle.assert_called_once_with("Warning")
+        msg_box_instance.exec.assert_called_once()
+
+        sys.modules[__name__].QMessageBox = original_qmessagebox
+    
+    def test_assign_index(self):
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable5 [Numeric]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.index_model = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().removeRow = MagicMock()
+        self.parent.index_var = []
+        self.parent.r_script_edit = MagicMock()
+        self.parent.index_model.setStringList = MagicMock()
+
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        assign_index(self.parent)
+
+        self.assertEqual(self.parent.index_var, ["variable5 [Numeric]"])
+        self.parent.index_model.setStringList.assert_called_with(["variable5 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_strata(self):
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable8 [Numeric]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.strata_model = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().removeRow = MagicMock()
+        self.parent.strata_var = []
+        self.parent.r_script_edit = MagicMock()
+        self.parent.strata_model.setStringList = MagicMock()
+
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        assign_strata(self.parent)
+
+        self.assertEqual(self.parent.strata_var, ["variable8 [Numeric]"])
+        self.parent.strata_model.setStringList.assert_called_with(["variable8 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_weight(self):
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable7 [Numeric]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.weight_model = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().removeRow = MagicMock()
+        self.parent.weight_var = []
+        self.parent.r_script_edit = MagicMock()
+        self.parent.weight_model.setStringList = MagicMock()
+
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        assign_weight(self.parent)
+
+        self.assertEqual(self.parent.weight_var, ["variable7 [Numeric]"])
+        self.parent.weight_model.setStringList.assert_called_with(["variable7 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_weight_string(self):
+        # Setup mocks
+        index = MagicMock()
+        index.data.return_value = "variable7 [String]"
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        self.parent.weight_var = []
+        
+        msg_box_instance = MagicMock()
+        msg_box_class = MagicMock(return_value=msg_box_instance)
+        original_qmessagebox = QMessageBox
+        sys.modules[__name__].QMessageBox = msg_box_class
+
+        assign_weight(self.parent)
+
+        msg_box_instance.setIcon.assert_called_once()
+        msg_box_instance.setText.assert_called_once_with("All selected variables are of type String. Weight variable must be of type Numeric.")
+        msg_box_instance.setWindowTitle.assert_called_once_with("Warning")
+        msg_box_instance.exec.assert_called_once()
+
+        sys.modules[__name__].QMessageBox = original_qmessagebox
+    
+    def test_unassign_variable(self):
+        # Setup mocks
+        self.parent.of_interest_list = MagicMock()
+        self.parent.of_interest_list.selectedIndexes.return_value = [MagicMock(data=MagicMock(return_value="variable1 [Numeric]"))]
+        self.parent.variables_list = MagicMock()
+        self.parent.variables_list.model = MagicMock(return_value=MagicMock())
+        self.parent.variables_list.model().insertRow = MagicMock()
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.of_interest_model = MagicMock()
+        self.parent.of_interest_model.setStringList = MagicMock()
+
+        sys.modules[__name__].show_r_script = MagicMock()
+
+        unassign_variable(self.parent)
+
+        self.assertEqual(self.parent.of_interest_var, [])
+        self.parent.of_interest_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+    
+    def test_generate_r_script(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variable1 ~ variable2 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variable4, variable1, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_empty_interest_of_var(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <-  ~ variable2 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variable4, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_multiple_of_interest(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]", "variabel y [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variable1 ~ variable2 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variable4, variable1, variabel_y, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_multiple_auxalary(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def generate_r_script_multiple_as_factor(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.as_factor_var = ["variabel5 [Numeric]", "variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_no_as_factor(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variabley, domain1, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+        
+    def generate_r_script_with_no_index(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = []
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_multiple_index(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]", "index2 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, index2, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_multiple_domain(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]", "domain2 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, domain2, index1, strata1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_no_weight(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = []
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, strata1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+        
+    def test_generate_r_script_with_multiple_weight(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]", "weight2 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, strata1, weight1, weight2);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_no_strata(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = []
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+    
+    def test_generate_r_script_with_multiple_strata(self):
+        self.parent.of_interest_var = ["variabley [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variabel5 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        self.parent.index_var = ["index1 [Numeric]"]
+        self.parent.domain_var = ["domain1 [Numeric]"]
+        self.parent.weight_var = ["weight1 [Numeric]"]
+        self.parent.strata_var = ["strata1 [Numeric]", "strata2 [Numeric]"]
+        self.parent.projection_method = "Linear"
+        self.parent.var_position = "After"
+        self.parent.selection_method = "None"
+        self.parent.metric = "yardstick::metric_set()"
+        self.parent.k_fold = "3"
+        self.parent.grid = "10"
+        self.parent.epoch = "10"
+        self.parent.hidden_unit = "5"
+        self.parent.learning_rate = "0.01"
+        self.parent.model_name = "model"
+        self.parent.projection_name = "projection"
+        self.parent.separator = "_"
+
+        r_script = generate_r_script(self.parent)
+
+        # Cek bagian-bagian penting dari skrip
+        self.assertIn('formula <- variabley ~ variable2 + variabel5 + variable4', r_script)
+        self.assertIn('linear_reg()', r_script)
+        self.assertIn('data_model <- data.frame(variable2, variabel5, variable4, variabley, domain1, index1, strata1, strata2, weight1);', r_script)
+        self.assertIn('model <- projection(formula', r_script)
+        self.assertIn('model_metric=yardstick::metric_set()', r_script)
+        self.assertIn('kfold=3', r_script)
+        self.assertIn('grid=10', r_script)
+        
 
 if __name__ == '__main__':
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    app = QApplication(sys.argv)
     unittest.main()

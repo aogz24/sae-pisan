@@ -234,6 +234,146 @@ class TestSaeEblupArea(unittest.TestCase):
         # self.parent.auxilary_model.setStringList.assert_not_called()
         self.parent.variables_list.model().removeRow.assert_not_called()
         self.assertFalse(self.parent.show_r_script.called)
+    
+    def test_assign_vardir_with_numeric(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        
+        assign_vardir(self.parent)
+        
+        self.assertEqual(self.parent.vardir_var, ["variable1 [Numeric]"])
+        self.parent.vardir_model.setStringList.assert_called_with(["variable1 [Numeric]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_assign_vardir_with_string(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        
+        assign_vardir(self.parent)
+        
+        self.assertEqual(self.parent.vardir_var, [])
+        self.parent.vardir_model.setStringList.assert_not_called()
+        self.parent.variables_list.model().removeRow.assert_not_called()
+        self.assertFalse(self.parent.show_r_script.called)
+    
+    def test_assign_as_factor(self):
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.variables_list.selectedIndexes.return_value = [index]
+        
+        assign_as_factor(self.parent)
+        
+        self.assertEqual(self.parent.as_factor_var, ["variable1 [String]"])
+        self.parent.as_factor_model.setStringList.assert_called_with(["variable1 [String]"])
+        self.parent.variables_list.model().removeRow.assert_called_once()
+    
+    def test_unassign_variable_of_interest(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.of_interest_model.setStringList(["variable1 [Numeric]"])
+        self.parent.variables_list.model().insertRow = MagicMock()
+        
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.of_interest_list.selectedIndexes.return_value = [index]
+        
+        unassign_variable(self.parent)
+        
+        self.assertEqual(self.parent.of_interest_var, [])
+        self.parent.of_interest_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called_with(
+            self.parent.variables_list.model().index(0), "variable1 [Numeric]"
+        )
+    
+    def test_unassign_variable_auxilary(self):
+        self.parent.auxilary_vars = ["variable1 [Numeric]"]
+        self.parent.auxilary_model.setStringList(["variable1 [Numeric]"])
+        self.parent.variables_list.model().insertRow = MagicMock()
+        self.parent.variables_list.model().setData = MagicMock()
+        self.parent.variables_list.model().index = MagicMock(return_value=0)
+
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.auxilary_list.selectedIndexes.return_value = [index]
+
+        # Patch selectedIndexes for other lists to return empty
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.vardir_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+
+        unassign_variable(self.parent)
+
+        self.assertEqual(self.parent.auxilary_vars, [])
+        self.parent.auxilary_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called_with(
+            self.parent.variables_list.model().index(0), "variable1 [Numeric]"
+        )
+        
+    def test_unassign_variable_vardir(self):
+        self.parent.vardir_var = ["variable1 [Numeric]"]
+        self.parent.vardir_model.setStringList(["variable1 [Numeric]"])
+        self.parent.variables_list.model().insertRow = MagicMock()
+        self.parent.variables_list.model().setData = MagicMock()
+        self.parent.variables_list.model().index = MagicMock(return_value=0)
+
+        index = MagicMock()
+        index.data.return_value = "variable1 [Numeric]"
+        self.parent.vardir_list.selectedIndexes.return_value = [index]
+
+        # Patch selectedIndexes for other lists to return empty
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+
+        unassign_variable(self.parent)
+
+        self.assertEqual(self.parent.vardir_var, [])
+        self.parent.vardir_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called_with(
+            self.parent.variables_list.model().index(0), "variable1 [Numeric]"
+        )
+    
+    def test_unassign_variable_as_factor(self):
+        self.parent.as_factor_var = ["variable1 [String]"]
+        self.parent.as_factor_model.setStringList(["variable1 [String]"])
+        self.parent.variables_list.model().insertRow = MagicMock()
+        self.parent.variables_list.model().setData = MagicMock()
+        self.parent.variables_list.model().index = MagicMock(return_value=0)
+
+        index = MagicMock()
+        index.data.return_value = "variable1 [String]"
+        self.parent.as_factor_list.selectedIndexes.return_value = [index]
+
+        # Patch selectedIndexes for other lists to return empty
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.vardir_list.selectedIndexes.return_value = []
+
+        unassign_variable(self.parent)
+
+        self.assertEqual(self.parent.as_factor_var, [])
+        self.parent.as_factor_model.setStringList.assert_called_with([])
+        self.parent.variables_list.model().insertRow.assert_called_once()
+        self.parent.variables_list.model().setData.assert_called_with(
+            self.parent.variables_list.model().index(0), "variable1 [String]"
+        )
+    
+    def test_get_selected_variables(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.vardir_var = ["variable3 [Numeric]"]
+        self.parent.as_factor_var = ["variable4 [String]"]
+        
+        of_interest, auxilary, vardir, as_factor = get_selected_variables(self.parent)
+        
+        self.assertEqual(of_interest, ["variable1 [Numeric]"])
+        self.assertEqual(auxilary, ["variable2 [Numeric]"])
+        self.assertEqual(vardir, ["variable3 [Numeric]"])
+        self.assertEqual(as_factor, ["variable4 [String]"])
 
     def test_generate_r_script(self):
         self.parent.of_interest_var = ["variable1 [Numeric]"]
@@ -247,6 +387,134 @@ class TestSaeEblupArea(unittest.TestCase):
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- variable1 ~ variable2 + as.factor(variable4)\n'
             'vardir_var <- data["variable3"]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_with_empty_vars(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'vardir_var <- data[""""]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+        
+    def test_generate_r_script_only_of_interest(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- variable1 ~ 1\n'
+            'vardir_var <- data[""""]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_only_auxilary(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = ["variable2 [Numeric]"]
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ variable2\n'
+            'vardir_var <- data[""""]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_only_vardir(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["variable3 [Numeric]"]
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'vardir_var <- data["variable3"]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_only_as_factor(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = ["variable4 [String]"]
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ as.factor(variable4)\n'
+            'vardir_var <- data[""""]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_multiple_auxilary_and_as_factor(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = ["variable2 [Numeric]", "variable3 [Numeric]"]
+        self.parent.vardir_var = ["variable4 [Numeric]"]
+        self.parent.as_factor_var = ["variable5 [String]", "variable6 [String]"]
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- variable1 ~ variable2 + variable3 + as.factor(variable5) + as.factor(variable6)\n'
+            'vardir_var <- data["variable4"]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_multi_of_interest(self):
+        self.parent.of_interest_var = ["variable1 [Numeric]", "variable2 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = []
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- variable1 ~ 1\n'
+            'vardir_var <- data[""""]\n'
+            'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
+        )
+        self.assertEqual(r_script, expected_script)
+    
+    def test_generate_r_script_multi_vardir(self):
+        self.parent.of_interest_var = []
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["variable1 [Numeric]", "variable2 [Numeric]"]
+        self.parent.as_factor_var = []
+        
+        r_script = generate_r_script(self.parent)
+        
+        expected_script = (
+            'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+            'formula <- "" ~ 1\n'
+            'vardir_var <- data["variable1"]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
         self.assertEqual(r_script, expected_script)

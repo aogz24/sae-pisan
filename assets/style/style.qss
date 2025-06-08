@@ -3,8 +3,8 @@ QMainWindow {
     background-color: #EAEAEA; /* light-gray */
 }
 
-QTableView {
-    font-size: 14px;
+QWidget {
+    font-size: __FONT_SIZE__;
 }
 
 /* Tab widget */
@@ -28,8 +28,8 @@ QTabBar::tab:selected {
 
 /* Toolbar */
 QToolBar {
-    background: #EAEAEA; /* light-gray */
-    border: none;
+    background: #FFFFFF; /* light-gray */
+
 }
 
 /* Menu bar */
@@ -101,7 +101,6 @@ QDialog {
 
 /* Dialog title (if using QLabel) */
 QDialog QLabel {
-    font-size: 14px;
     font-weight: bold;
     color: #5A5759; /* primary-gray */
     padding: 5px 0;
@@ -114,7 +113,6 @@ QDialog QPushButton {
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
-    font-size: 12px;
     font-weight: bold;
 }
 
@@ -181,7 +179,6 @@ QDialog QTextEdit {
     color: #5A5759; /* primary-gray */
     padding: 5px;
     font-family: "Courier New", monospace;
-    font-size: 12px;
 }
 
 /* Generate R Script Button */
@@ -191,7 +188,6 @@ QPushButton#generate_r_script_button {
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
-    font-size: 12px;
     width: auto; /* set the width of the button to fit the text */
 }
 

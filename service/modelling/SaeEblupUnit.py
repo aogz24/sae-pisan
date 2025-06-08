@@ -361,10 +361,10 @@ def generate_r_script(parent):
     else:
         formula = f'{of_interest_var} ~ {auxilary_vars} + {as_factor_var}'
 
-    r_script = f'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
+    r_script = f'names(data_unit) <- gsub(" ", "_", names(data_unit)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
-    r_script += f'Xmeans <- with(data, data.frame({index_var},{aux_mean_vars}))\n'
-    r_script += f'Popn <- with(data, data.frame({index_var},{population_sample_size_var}))\n'
+    r_script += f'Xmeans <- with(data_unit, data.frame({index_var},{aux_mean_vars}))\n'
+    r_script += f'Popn <- with(data_unit, data.frame({index_var},{population_sample_size_var}))\n'
     r_script += f'Xmeans <- na.omit(Xmeans)\n'
     r_script += f'Popn <- na.omit(Popn)\n'
     r_script += f'Popn <- Popn[complete.cases(Popn), ]\n'
@@ -376,9 +376,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model<-pbmseBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data)'
+        r_script += f'model_unit<-pbmseBHF(final_formula, dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data_unit)'
     else:
-        r_script += f'model<-pbmseBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data)'
+        r_script += f'model_unit<-pbmseBHF(formula,dom={domain_var}, selectdom=domains, meanxpop=Xmeans, popnsize=Popn, B={parent.bootstrap}, method = "{parent.method}", data=data_unit)'
     return r_script
 
 def show_r_script(parent):
