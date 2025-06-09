@@ -213,6 +213,7 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
+        show_r_script()
 
 def get_selected_variables(parent):
     """
