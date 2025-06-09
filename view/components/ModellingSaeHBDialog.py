@@ -6,6 +6,7 @@ from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, show_options, get_script
 from controller.modelling.SaeHBcontroller import SaeHBController
+from view.components.DragDropListView import DragDropListView
 from model.SaeHB import SaeHB
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
@@ -86,7 +87,7 @@ class ModelingSaeHBDialog(QDialog):
         # Layout kiri untuk daftar variabel
         self.left_layout = QVBoxLayout()
         self.variables_label = QLabel("Select Variables:")
-        self.variables_list = QListView()
+        self.variables_list = DragDropListView(parent=self)
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
         self.variables_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -122,7 +123,7 @@ class ModelingSaeHBDialog(QDialog):
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         self.right_layout = QVBoxLayout()
         self.of_interest_label = QLabel("Variable of interest:")
-        self.of_interest_list = QListView()
+        self.of_interest_list = DragDropListView(parent=self)
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -131,7 +132,7 @@ class ModelingSaeHBDialog(QDialog):
         self.right_layout.addWidget(self.of_interest_list)
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
-        self.auxilary_list = QListView()
+        self.auxilary_list = DragDropListView(parent=self)
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -140,7 +141,7 @@ class ModelingSaeHBDialog(QDialog):
         self.right_layout.addWidget(self.auxilary_list)
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
-        self.as_factor_list = QListView()
+        self.as_factor_list = DragDropListView(parent=self)
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -148,7 +149,7 @@ class ModelingSaeHBDialog(QDialog):
         self.right_layout.addWidget(self.as_factor_list)
         
         self.vardir_label = QLabel("Direct Variance:")
-        self.vardir_list = QListView()
+        self.vardir_list = DragDropListView(parent=self)
         self.vardir_model = QStringListModel()
         self.vardir_list.setModel(self.vardir_model)
         self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -280,6 +281,99 @@ class ModelingSaeHBDialog(QDialog):
         self.iter_update="3"
         self.iter_mcmc="2000"
         self.burn_in="1000"
+    
+    def handle_drop(self, target_list, items):
+        from PyQt6.QtCore import QItemSelectionModel
+        mapping = {
+            self.variables_list: "variables",
+            self.of_interest_list: "of_interest",
+            self.auxilary_list: "auxilary",
+            self.as_factor_list: "as_factor",
+            self.vardir_list: "vardir"
+        }
+        source_list = None
+        for lst in mapping:
+            if any(item in lst.model().stringList() for item in items):
+                source_list = lst
+                break
+
+        # Drag dari variables_list ke kanan (assign)
+        if source_list == self.variables_list:
+            if target_list == self.of_interest_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.vardir_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_vardir(self)
+
+        # Drag dari kanan ke variables_list (unassign)
+        elif target_list == self.variables_list:
+            if source_list == self.of_interest_list:
+                self.of_interest_list.clearSelection()
+                for idx, val in enumerate(self.of_interest_model.stringList()):
+                    if val in items:
+                        self.of_interest_list.selectionModel().select(
+                            self.of_interest_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.auxilary_list:
+                self.auxilary_list.clearSelection()
+                for idx, val in enumerate(self.auxilary_model.stringList()):
+                    if val in items:
+                        self.auxilary_list.selectionModel().select(
+                            self.auxilary_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.as_factor_list:
+                self.as_factor_list.clearSelection()
+                for idx, val in enumerate(self.as_factor_model.stringList()):
+                    if val in items:
+                        self.as_factor_list.selectionModel().select(
+                            self.as_factor_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.vardir_list:
+                self.vardir_list.clearSelection()
+                for idx, val in enumerate(self.vardir_model.stringList()):
+                    if val in items:
+                        self.vardir_list.selectionModel().select(
+                            self.vardir_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
     
     def accept(self):
         if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
