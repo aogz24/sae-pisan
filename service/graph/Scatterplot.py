@@ -3,7 +3,7 @@ import polars as pl
 
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_scatterplot(parent):
     """
@@ -36,7 +36,7 @@ def run_scatterplot(parent):
     # Merge the data into one dataframe
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
 
@@ -57,7 +57,7 @@ def run_scatterplot(parent):
         r_objects = ro.r("ls()")  
 
         # Find scatterplot objects
-        scatterplot_vars = [obj for obj in r_objects if obj.startswith("scatterplot_")]
+        scatterplot_vars = [obj for obj in r_objects if obj.startswith("scatterplot")]
 
         plot_paths = []
 
