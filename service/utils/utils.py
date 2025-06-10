@@ -183,7 +183,10 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 10px;
-            transition: all 0.3s;
+        }
+        QFrame:hover {
+            background-color: #f0f0f0;
+            border: 1px solid #c35112;
         }
     """)
 
@@ -359,4 +362,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
     parent.data.append(out)
+    parent.autosave_data()
+    
 

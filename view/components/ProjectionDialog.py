@@ -6,6 +6,7 @@ from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 from service.modelling.ProjectionService import assign_as_factor, assign_auxilary, assign_domains, assign_index, assign_of_interest, assign_strata, assign_weight, get_script, show_options, unassign_variable
 from controller.modelling.ProjectionController import ProjectionController
+from view.components.DragDropListView import DragDropListView
 from model.ProjectionModel import Projection
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
@@ -110,7 +111,7 @@ class ProjectionDialog(QDialog):
         # Layout kiri untuk daftar variabel
         self.left_layout = QVBoxLayout()
         self.variables_label = QLabel("Select Variables:")
-        self.variables_list = QListView()
+        self.variables_list = DragDropListView(parent=self)
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
         self.variables_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -162,7 +163,7 @@ class ProjectionDialog(QDialog):
         self.right_layout = QVBoxLayout()
         # right_layout.minimumSize(0, 650)
         self.of_interest_label = QLabel("Variable of interest:")
-        self.of_interest_list = QListView()
+        self.of_interest_list = DragDropListView(parent=self)
         self.of_interest_list.setMinimumHeight(100)
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
@@ -172,7 +173,7 @@ class ProjectionDialog(QDialog):
         self.right_layout.addWidget(self.of_interest_list)
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
-        self.auxilary_list = QListView()
+        self.auxilary_list = DragDropListView(parent=self)
         self.auxilary_list.setMinimumHeight(100)
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
@@ -182,7 +183,7 @@ class ProjectionDialog(QDialog):
         self.right_layout.addWidget(self.auxilary_list)
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
-        self.as_factor_list = QListView()
+        self.as_factor_list = DragDropListView(parent=self)
         self.as_factor_list.setMinimumHeight(100)
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
@@ -191,7 +192,7 @@ class ProjectionDialog(QDialog):
         self.right_layout.addWidget(self.as_factor_list)
         
         self.domain_label = QLabel("Domain:")
-        self.domain_list = QListView()
+        self.domain_list = DragDropListView(parent=self)
         self.domain_list.setMinimumHeight(100)
         self.domain_model = QStringListModel()
         self.domain_list.setModel(self.domain_model)
@@ -200,7 +201,7 @@ class ProjectionDialog(QDialog):
         self.right_layout.addWidget(self.domain_list)
         
         self.index_label = QLabel("Index number of Area:")
-        self.index_list = QListView()
+        self.index_list = DragDropListView(parent=self)
         self.index_list.setMinimumHeight(100)
         self.index_model = QStringListModel()
         self.index_list.setModel(self.index_model)
@@ -210,7 +211,7 @@ class ProjectionDialog(QDialog):
         
 
         self.weight_label = QLabel("Weight:")
-        self.weight_list = QListView()
+        self.weight_list = DragDropListView(parent=self)
         self.weight_list.setMinimumHeight(100)
         self.weight_model = QStringListModel()
         self.weight_list.setModel(self.weight_model)
@@ -219,7 +220,7 @@ class ProjectionDialog(QDialog):
         self.right_layout.addWidget(self.weight_list)
 
         self.strata_label = QLabel("Strata:")
-        self.strata_list = QListView()
+        self.strata_list = DragDropListView(parent=self)
         self.strata_list.setMinimumHeight(100)
         self.strata_model = QStringListModel()
         self.strata_list.setModel(self.strata_model)
@@ -440,6 +441,111 @@ class ProjectionDialog(QDialog):
         self.hidden_unit = "5"
         self.learning_rate = "0.01"
         
+    def handle_drop(self, target_list, items):
+        from PyQt6.QtCore import QItemSelectionModel
+        # Mirip dengan handle_drop di dialog lain, sesuaikan mapping dan aksi assign/unassign
+        mapping = {
+            self.variables_list: "variables",
+            self.of_interest_list: "of_interest",
+            self.auxilary_list: "auxilary",
+            self.as_factor_list: "as_factor",
+            self.domain_list: "domain",
+            self.index_list: "index",
+            self.weight_list: "weight",
+            self.strata_list: "strata"
+        }
+        source_list = None
+        for lst in mapping:
+            if any(item in lst.model().stringList() for item in items):
+                source_list = lst
+                break
+
+        # Drag dari variables_list ke kanan (assign)
+        if source_list == self.variables_list:
+            if target_list == self.of_interest_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.domain_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_domains(self)
+            elif target_list == self.index_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_index(self)
+            elif target_list == self.weight_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_weight(self)
+            elif target_list == self.strata_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_strata(self)
+
+        # Drag dari kanan ke variables_list (unassign)
+        elif target_list == self.variables_list:
+            for lst, model in [
+                (self.of_interest_list, self.of_interest_model),
+                (self.auxilary_list, self.auxilary_model),
+                (self.as_factor_list, self.as_factor_model),
+                (self.domain_list, self.domain_model),
+                (self.index_list, self.index_model),
+                (self.weight_list, self.weight_model),
+                (self.strata_list, self.strata_model)
+            ]:
+                if source_list == lst:
+                    lst.clearSelection()
+                    for idx, val in enumerate(model.stringList()):
+                        if val in items:
+                            lst.selectionModel().select(
+                                model.index(idx),
+                                QItemSelectionModel.SelectionFlag.Select
+                            )
+                    unassign_variable(self)
     
     def accept(self):
         if not self.of_interest_var or self.of_interest_var == [""]:

@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
 )
 from PyQt6.QtCore import Qt, QSize, QTimer 
-from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -36,6 +36,7 @@ import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
+from view.components.CustomToast import CustomToast
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -128,7 +129,7 @@ class MainWindow(QMainWindow):
         
         super().__init__()
 
-        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.3.0")
+        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.4.0")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -969,7 +970,7 @@ class MainWindow(QMainWindow):
         elif sheet_number == 2:
             pass  # Tidak digunakan untuk Sheet 2
     
-    def update_table(self, sheet_number, model, add_data=True):
+    def update_table(self, sheet_number, model):
         """Memperbarui tabel pada sheet tertentu dengan model baru"""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
@@ -994,9 +995,6 @@ class MainWindow(QMainWindow):
             self.table_view2.setModel(model)
             self.model2 = model
             self.table_view2.resizeColumnsToContents()
-        
-        if add_data:
-            self.autosave_data()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for copy, paste, undo, and redo."""
@@ -1413,6 +1411,34 @@ class MainWindow(QMainWindow):
         }
         with open(output_path, 'w') as file:
             json.dump(data, file)
+        
+        # ?? delete image wasnt used
+        temp_img_dir = os.path.join(temp_dir, 'temp')
+        if os.path.exists(temp_img_dir):
+            used_images = set()
+            for output in serializable_data:
+                result = output.get("result", {})
+                plot_path = result.get("Plot")
+                if plot_path and isinstance(plot_path, str):
+                    used_images.add(os.path.abspath(plot_path))
+            for output in self.data:
+                result = output.get("result", {})
+                plot_paths = result.get("Plot")
+                if isinstance(plot_paths, list):
+                    for p in plot_paths:
+                        used_images.add(os.path.abspath(p))
+                elif isinstance(plot_paths, str):
+                    used_images.add(os.path.abspath(plot_paths))
+            # Hapus file di temp yang tidak digunakan
+            for fname in os.listdir(temp_img_dir):
+                fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+                if fpath not in used_images:
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
+        self.show_toast()
+        
 
     def load_temp_data(self):
         """
@@ -1432,8 +1458,8 @@ class MainWindow(QMainWindow):
                 self.data2 = pl.read_parquet(data2_path)
                 self.model1.set_data(self.data1)
                 self.model2.set_data(self.data2)
-                self.update_table(1, self.model1, add_data=False)
-                self.update_table(2, self.model2, add_data=False)
+                self.update_table(1, self.model1)
+                self.update_table(2, self.model2)
                 with open(output_path, 'r') as file:
                     data = json.load(file)
                     self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
@@ -1521,6 +1547,17 @@ class MainWindow(QMainWindow):
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)
             
+    def show_toast(self):
+        toast = CustomToast(
+            parent=self,
+            title="Saved",
+            text="Data, Data Output, and Output was saved",
+            duration=3000,
+            position="top-right"
+        )
+        toast.set_border_radius(8)
+        toast.show()
+    
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
         reply = QMessageBox.question(self, 'Confirm Exit',

@@ -118,6 +118,7 @@ class FileController:
         else:    
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
+            self.view.autosave_data()
         
     
     def load_secondary_data(self):
@@ -180,6 +181,7 @@ class FileController:
             merged_data = pl.concat([main_df, data], how="diagonal")
         self.model1.set_data(merged_data)
         self.view.update_table(1, self.model1)
+        self.view.autosave_data()
         
     def save_data(self):
         """Simpan data dari model pertama (Sheet 1)."""
