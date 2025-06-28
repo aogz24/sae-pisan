@@ -63,7 +63,9 @@ def run_scatterplot(parent):
 
         # Save scatterplots as images
         for plot_name in scatterplot_vars:
-            plot_path = f"{plot_name}.png"
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(appdata_dir, exist_ok=True)
+            plot_path = os.path.join(appdata_dir, f"{plot_name}.png")
             
             # Specify the output file for the image
             grdevices.png(file=plot_path, width=800, height=600)

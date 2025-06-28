@@ -61,7 +61,9 @@ def run_lineplot(parent):
         plot_paths = []
 
         for plot_name in lineplot_vars:
-            plot_path = f"{plot_name}.png"
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(appdata_dir, exist_ok=True)
+            plot_path = os.path.join(appdata_dir, f"{plot_name}.png")
             grdevices.png(file=plot_path, width=800, height=600)
             ro.r(f"print({plot_name})")
             grdevices.dev_off()

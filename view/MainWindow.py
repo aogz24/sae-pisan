@@ -1379,7 +1379,9 @@ class MainWindow(QMainWindow):
         """
         Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        temp_dir = os.path.join(self.path, 'file-data')
+        app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+        os.makedirs(app_data_dir, exist_ok=True)
+        temp_dir = os.path.join(app_data_dir, 'file-data')
         os.makedirs(temp_dir, exist_ok=True)
         # Save data1 and data2 as parquet
         data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
@@ -1444,7 +1446,8 @@ class MainWindow(QMainWindow):
         """
         Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        temp_dir = os.path.join(self.path, 'file-data')
+        app_path = os.path.join(os.getenv("APPDATA"), "saePisan")
+        temp_dir = os.path.join(app_path, 'file-data')
         data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
         data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
         output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
