@@ -22,9 +22,9 @@ for i in range(num_datasets):
     y_all = []
     rse_all = []
     vardir_all = []
-    popn_segments_list = []
-    meanx1_list = []
-    meanx2_list = []
+    
+    # For domain-level dataframe
+    domain_info = []
 
     for d in range(1, num_domains + 1):
         n_d = np.random.randint(4, 16)  # Jumlah unit acak antara 4-15
@@ -48,13 +48,18 @@ for i in range(num_datasets):
         rse_all.extend(rse)
         vardir_all.extend(vardir)
 
-        # Untuk kolom meanxpop dan popnSegments
+        # Collect domain-level information
         popn_segments = np.random.randint(5, 20)
-        popn_segments_list.extend([popn_segments] * n_d)
-        meanx1 = np.mean(x1)
-        meanx2 = np.mean(x2)
-        meanx1_list.extend([meanx1] * n_d)
-        meanx2_list.extend([meanx2] * n_d)
+        meanx1 = np.mean(x1) + np.random.normal(0, 2)  # Tambahkan noise kecil
+        meanx2 = np.mean(x2) + np.random.normal(0, 0.5)  # Tambahkan noise kecil
+        
+        domain_info.append({
+            "Domain": d,
+            "DomainName": f"Domain_{d}",
+            "PopnSegments": popn_segments,
+            "MeanX1Pop": meanx1,
+            "MeanX2Pop": meanx2
+        })
 
     df = pd.DataFrame({
         "Domain": domain_ids,
@@ -64,12 +69,17 @@ for i in range(num_datasets):
         "u_d": u_d_list,  # ground truth efek area (tidak dipakai dalam model fitting)
         "e": e_all,       # ground truth error (tidak dipakai dalam model fitting)
         "RSE (%)": rse_all,
-        "vardir": vardir_all,
-        "PopnSegments": popn_segments_list,
-        "MeanX1Pop": meanx1_list,
-        "MeanX2Pop": meanx2_list
+        "vardir": vardir_all
     })
     
+    # Create domain-level dataframe
+    df_domain = pd.DataFrame(domain_info)
+    
     print(f"Dataset {i+1} generated with {num_domains} domains and {len(df)} units.")
+    print(f"Domain info dataset {i+1} generated with {len(df_domain)} domains.")
 
+    # Save unit-level data
     df.to_csv(f"bangkitan/eblup_unit/dataset_{i+1}.csv", index=False)
+    
+    # Save domain-level data
+    df_domain.to_csv(f"bangkitan/eblup_unit/domain_info_{i+1}.csv", index=False)
