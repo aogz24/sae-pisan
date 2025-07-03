@@ -1,6 +1,5 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog, QComboBox
 import polars as pl
-import pandas as pd
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 class ExcelOptionsDialog(QDialog):
@@ -59,6 +58,7 @@ class ExcelOptionsDialog(QDialog):
             self.file_path = file_path
             self.file_label.setText(f"Selected: {file_path}")
             try:
+                import pandas as pd
                 xls = pd.ExcelFile(file_path)
                 self.sheet_names = xls.sheet_names
                 self.sheet_combo.clear()
