@@ -7,10 +7,12 @@ from PyQt6.QtCore import Qt, QStringListModel, QSize
 from model.Multicollinearity import Multicollinearity
 from controller.Eksploration.EksplorationController import MulticollinearityController
 from service.utils.utils import display_script_and_output
+from view.components.DragDropListView import DragDropListView
 
 class MulticollinearityDialog(QDialog):
     """
     A dialog for handling multicollinearity analysis in a dataset.
+    
     Attributes:
         parent (QWidget): The parent widget.
         model1 (Any): The first data model.
@@ -38,6 +40,7 @@ class MulticollinearityDialog(QDialog):
         icon_label (QLabel): Label to show running icon.
         script_box (QTextEdit): Text edit box to display the generated R script.
         run_button (QPushButton): Button to run the analysis.
+    
     Methods:
         __init__(self, parent): Initializes the dialog with the given parent.
         set_model(self, model1, model2): Sets the data models for the dialog.
@@ -62,22 +65,22 @@ class MulticollinearityDialog(QDialog):
 
         self.setWindowTitle("Multicollinearity")
 
-        # Menyimpan status variabel yang dipilih
+        # Store the status of selected variables
         self.selected_status = {}
 
-        # Layout utama
+        # Main layout
         self.main_layout = QVBoxLayout(self)
 
-        # Layout konten utama
+        # Main content layout
         content_layout = QHBoxLayout()
 
-        # Layout kiri: Data Editor dan Data Output
+        # Left layout: Data Editor and Data Output
         left_layout = QVBoxLayout()
 
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list = DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -87,7 +90,7 @@ class MulticollinearityDialog(QDialog):
         # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list = DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -112,12 +115,10 @@ class MulticollinearityDialog(QDialog):
         self.add_dependent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_dependent_variable_button.setFixedSize(50,35)
 
-
         self.add_independent_variable_button = QPushButton("🡆", self)  
         self.add_independent_variable_button.clicked.connect(self.add_independent_variables)
         self.add_independent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_independent_variable_button.setFixedSize(50,35)
-
 
         button_layout2.addStretch(1)
         button_layout2.addWidget(self.add_dependent_variable_button)
@@ -125,23 +126,22 @@ class MulticollinearityDialog(QDialog):
         button_layout2.addWidget(self.add_independent_variable_button)
         button_layout2.addStretch(6)
 
-
-        # Menambahkan kedua layout tombol ke content_layout
+        # Add both button layouts to content_layout
         content_layout.addLayout(button_layout1)
         content_layout.addLayout(button_layout2)
 
-        # Layout kanan: Variabel yang dipilih, metode, dan grafik
+        # Right layout: Selected variables, methods, and graphs
         right_layout = QVBoxLayout()
 
-        # dependent_variable Axis
+        # Dependent variable Axis
         dependent_variable_layout = QVBoxLayout()
         self.dependent_variable_label = QLabel("Dependent Variable", self)
         self.dependent_variable_model = QStringListModel()
-        self.dependent_variable_list = QListView(self)
+        self.dependent_variable_list = DragDropListView(parent=self)
         self.dependent_variable_list.setModel(self.dependent_variable_model)
         self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
 
-        # Batasi tinggi 
+        # Limit height 
         item_height = 30  
         self.dependent_variable_list.setFixedHeight(item_height + 4)  
 
@@ -149,20 +149,18 @@ class MulticollinearityDialog(QDialog):
         dependent_variable_layout.addWidget(self.dependent_variable_list)
         right_layout.addLayout(dependent_variable_layout)
 
-
-        # independent_variable Axis
+        # Independent variable Axis
         independent_variable_layout = QVBoxLayout()
         self.independent_variable_label = QLabel("Independent Variable", self)
         self.independent_variable_model = QStringListModel()
-        self.independent_variable_list = QListView(self)
+        self.independent_variable_list = DragDropListView(parent=self)
         self.independent_variable_list.setModel(self.independent_variable_model)
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         independent_variable_layout.addWidget(self.independent_variable_label)
         independent_variable_layout.addWidget(self.independent_variable_list)
         right_layout.addLayout(independent_variable_layout, 1)  # Set stretch factor to 1 to fill remaining space
 
-
-        # Grup grafik
+        # Model options group
         model_options_group = QGroupBox("Model Options")  # Change the name of the model options group
         model_options_layout = QVBoxLayout()
         self.regression_line_checkbox = QCheckBox("Show Regression Model", self)  # New checkbox for regression line
@@ -213,7 +211,7 @@ class MulticollinearityDialog(QDialog):
         self.script_box.setVisible(False)
         self.main_layout.addWidget(self.script_box)
 
-        # Tombol Run
+        # Run button
         button_row_layout = QHBoxLayout()
         self.run_button = QPushButton("Run", self)
         self.run_button.clicked.connect(self.accept)
@@ -224,6 +222,69 @@ class MulticollinearityDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+
+    def handle_drop(self, target_widget, items):
+        # Peta widget ke model dan daftar kolom asal
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.dependent_variable_list: (self.dependent_variable_model, None),
+            self.independent_variable_list: (self.independent_variable_model, None),
+        }
+
+        if target_widget not in widget_model_map:
+            return
+
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
+
+        # Validasi: hanya 1 variabel untuk dependent
+        if target_widget == self.dependent_variable_list:
+            if len(items) > 1 or len(current_items) >= 1:
+                QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
+                return
+
+        filtered_items = []
+
+        for item in items:
+            column_name = item.split(" ")[0]
+
+            if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
+                filtered_items.append(item)
+            elif allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
+                filtered_items.append(item)
+
+        # Hapus dari semua model lain
+        for widget, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Tambahkan ke target jika belum ada
+        for item in filtered_items:
+            if item not in current_items:
+                current_items.append(item)
+
+        # Urutkan kembali jika editor atau output
+        if target_widget in [self.data_editor_list, self.data_output_list]:
+            if target_widget == self.data_editor_list:
+                original_order = self.all_columns_model1
+            else:
+                original_order = self.all_columns_model2
+
+            # Cocokkan berdasarkan string penuh (bukan hanya nama kolom)
+            reference_map = {col: i for i, col in enumerate(original_order)}
+            current_items = sorted(
+                current_items,
+                key=lambda x: reference_map.get(x, float('inf'))
+            )
+
+        target_model.setStringList(current_items)
+        self.generate_r_script()
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -251,7 +312,6 @@ class MulticollinearityDialog(QDialog):
         ]
         return self.columns 
     
-
     def add_dependent_variable(self):
         # Check if there is already a variable in the dependent_variable axis
         if len(self.dependent_variable_model.stringList()) >= 1:
@@ -262,7 +322,7 @@ class MulticollinearityDialog(QDialog):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        # Jika tidak ada yang dipilih
+        # If nothing is selected
         if not selected_items:
             QMessageBox.warning(self, "Warning", "Please select a variable first!")
             return
@@ -277,7 +337,7 @@ class MulticollinearityDialog(QDialog):
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
-        # Pindahkan item dari data_editor atau data_output
+        # Move item from data_editor or data_output
         if item in self.data_editor_model.stringList():
             editor_list = self.data_editor_model.stringList()
             editor_list.remove(item)
@@ -287,14 +347,13 @@ class MulticollinearityDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Masukkan ke dependent_variable_model
+        # Insert into dependent_variable_model
         self.dependent_variable_model.setStringList([item])
 
-        # Generate R script setelah variabel ditambahkan
+        # Generate R script after variable is added
         self.generate_r_script()
     
     def add_independent_variables(self):
-
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.independent_variable_model.stringList()
@@ -302,7 +361,6 @@ class MulticollinearityDialog(QDialog):
         contains_string = any("[String]" in item for item in selected_items)
         selected_items = [item for item in selected_items if "[String]" not in item]
 
-        
         if contains_string:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
@@ -322,54 +380,50 @@ class MulticollinearityDialog(QDialog):
         self.independent_variable_model.setStringList(selected_list)
         self.generate_r_script()
 
-
     def remove_variable(self):
-        # Ambil indeks yang dipilih dari daftar variabel dependent_variable dan independent_variable
+        # Get selected indexes from dependent and independent lists
         selected_dependent_variable_indexes = self.dependent_variable_list.selectedIndexes()
         selected_independent_variable_indexes = self.independent_variable_list.selectedIndexes()
 
-        # Ambil nama variabel yang dipilih
-        selected_dependent_variable_items = [index.data() for index in selected_dependent_variable_indexes]
-        selected_independent_variable_items = [index.data() for index in selected_independent_variable_indexes]
+        # Get selected items
+        selected_items = [index.data() for index in selected_dependent_variable_indexes + selected_independent_variable_indexes]
 
-        # Gabungkan kedua daftar variabel yang dipilih
-        selected_items = selected_dependent_variable_items + selected_independent_variable_items
-
-        # Ambil daftar semua variabel yang sedang dipilih
+        # Get current variable lists
         dependent_variable_list = self.dependent_variable_model.stringList()
         independent_variable_list = self.independent_variable_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
 
-        # Periksa apakah variabel dikembalikan ke data editor atau data output
         for item in selected_items:
-            column_name = item.split(' ')[0]  # Ambil nama kolom sebelum spasi
+            # Check if it comes from model1 or model2 based on column name only (without type)
+            column_name = item.split(" ")[0]
 
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                editor_list = self.data_editor_model.stringList()
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
                 if item not in editor_list:
                     editor_list.append(item)
-                    self.data_editor_model.setStringList(editor_list)
-
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                output_list = self.data_output_model.stringList()
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
                 if item not in output_list:
                     output_list.append(item)
-                    self.data_output_model.setStringList(output_list)
 
-            # Hapus item dari daftar dependent_variable atau independent_variable jika ada
+            # Remove from dependent and independent lists if present
             if item in dependent_variable_list:
                 dependent_variable_list.remove(item)
-
             if item in independent_variable_list:
                 independent_variable_list.remove(item)
+            
+        # Sort ulang agar urutannya konsisten seperti semula
+        editor_list.sort(key=lambda x: self.all_columns_model1.index(x) if x in self.all_columns_model1 else float('inf'))
+        output_list.sort(key=lambda x: self.all_columns_model2.index(x) if x in self.all_columns_model2 else float('inf'))
 
-        # Perbarui daftar variabel yang dipilih
+        # Update model-model
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
         self.dependent_variable_model.setStringList(dependent_variable_list)
         self.independent_variable_model.setStringList(independent_variable_list)
 
-        # Perbarui script R setelah perubahan
+        # Perbarui script
         self.generate_r_script()
 
-    
     def get_selected_dependent_variable(self):
         return [
             item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0]
