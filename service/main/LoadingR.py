@@ -15,22 +15,8 @@ def loadR(splash):
     
     splash.update_message()
     pandas2ri.activate()
-    r_script = """
-            suppressPackageStartupMessages({
-                r_home <- Sys.getenv("R_HOME")
-                packages <- c("sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR", "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest", "tidyr", "carData", "ggplot2", "ggcorrplot", "dplyr", "tseries")
-                installed <- rownames(installed.packages(lib.loc=r_home))
-                for (pkg in packages) {
-                    if (!(pkg %in% installed)) {
-                        install.packages(pkg, lib=r_home)
-                    }
-                }
-                if (!("polars" %in% installed)) {
-                    install.packages("polars", repos = "https://community.r-multiverse.org", lib=r_home)
-                }
-            })
-            """
-    ro.r(r_script)
+    from rpy2.robjects.packages import importr, isinstalled
+    utils = importr('utils')
     r_home = str(ro.r('Sys.getenv("R_HOME")')[0])
     os.environ['R_LIBS_USER'] = r_home
     # Initialize rpy2 with the new library location
@@ -38,7 +24,19 @@ def loadR(splash):
     lib_path = str(ro.r('.libPaths()[1]')[0])
     os.environ['R_LIBS_USER'] = lib_path
     ro.r(f'.libPaths("{lib_path}")')
-    from rpy2.robjects.packages import importr
+    packages = [
+        "sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR",
+        "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest",
+        "tidyr", "carData", "dplyr", "tseries"
+    ]
+    # Install CRAN packages if not installed
+    for pkg in packages:
+        if not isinstalled(pkg):
+            utils.install_packages(pkg, lib=lib_path)
+    # Install 'polars' from R-multiverse if not installed
+    if not isinstalled("polars"):
+        utils.install_packages("polars", repos="https://community.r-multiverse.org", lib=lib_path)
+    splash.update_message()
     importr('sae', lib_loc=lib_path)
     importr('saeHB', lib_loc=lib_path)
     importr('emdi', lib_loc=lib_path)
