@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont, QIcon
 from service.modelling.ProjectionService import assign_as_factor, assign_auxilary, assign_domains, assign_index, assign_of_interest, assign_strata, assign_weight, get_script, show_options, unassign_variable
 from controller.modelling.ProjectionController import ProjectionController
 from view.components.DragDropListView import DragDropListView
+from view.components.ConsoleDialog import ConsoleDialog
 from model.ProjectionModel import Projection
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
@@ -14,6 +15,17 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+
+import sys
+
+class ConsoleStream:
+    def __init__(self, signal):
+        self.signal = signal
+    def write(self, text):
+        if text.strip():
+            self.signal.emit(text)
+    def flush(self):
+        pass
 
 class ProjectionDialog(QDialog):
     """
@@ -86,6 +98,7 @@ class ProjectionDialog(QDialog):
     """
     
     run_model_finished = pyqtSignal(object, object, object, object)
+    update_console = pyqtSignal(str)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -313,6 +326,13 @@ class ProjectionDialog(QDialog):
         self.stop_thread = threading.Event()
         self.reply=None
         
+        self.console_dialog = None
+        self.update_console.connect(self._append_console)
+
+    def _append_console(self, text):
+        if self.console_dialog:
+            self.console_dialog.append_text(text)
+        
     def toggle_r_script_visibility(self):
         """
         Toggles the visibility of the R script text edit area and updates the toggle button text.
@@ -325,6 +345,8 @@ class ProjectionDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
     def closeEvent(self, event):
+        if self.console_dialog:
+            self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Projection" and thread.is_alive():
@@ -564,12 +586,18 @@ class ProjectionDialog(QDialog):
         sae_model = Projection(self.model, self.model2, view)
         controller = ProjectionController(sae_model)
         
+        self.console_dialog = ConsoleDialog(self)
+        self.console_dialog.show()
+        
         current_context = contextvars.copy_context()
         
         def run_model_thread():
             result, error, df = None, None, None
             try:
+                old_stdout = sys.stdout
+                sys.stdout = ConsoleStream(self.update_console)
                 result, error, df = current_context.run(controller.run_model, r_script)
+                sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -598,6 +626,9 @@ class ProjectionDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
+        if self.console_dialog:
+            self.console_dialog.stop_loading()
+            self.console_dialog.close()
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:
