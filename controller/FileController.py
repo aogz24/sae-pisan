@@ -106,7 +106,6 @@ class FileController:
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)
             
-            QMessageBox.information(self.view, "Success", "File loaded successfully!")
             return data
         except Exception as e:
             QMessageBox.critical(self.view, "Error", f"Failed to load file: {str(e)}")
@@ -119,6 +118,7 @@ class FileController:
         else:    
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
+            QMessageBox.information(self.view, "Success", "File loaded successfully!")
             self.view.autosave_data()
         
     
