@@ -184,7 +184,7 @@ class FileController:
         self.view.autosave_data()
         
     def save_data(self):
-        """Simpan data dari model pertama (Sheet 1)."""
+        """Save data from the first model (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.view, "Save File", "",
             "CSV Files (*.csv);;Excel Files (*.xlsx);;JSON Files (*.json);;Text Files (*.txt)"
@@ -207,7 +207,7 @@ class FileController:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
 
     def save_data_output(self):
-        """Simpan data dari model kedua (Sheet 2)."""
+        """Save data from the first model (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.view, "Save Output Data", "",
             "CSV Files (*.csv);;Excel Files (*.xlsx);;JSON Files (*.json);;Text Files (*.txt)"
@@ -230,22 +230,22 @@ class FileController:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
 
     def save_as_csv(self, file_path, model):
-        """Simpan data sebagai CSV."""
+        """Save data as CSV."""
         data = model.get_data()
         data.write_csv(file_path)
 
     def save_as_excel(self, file_path, model):
-        """Simpan data sebagai Excel."""
+        """Save data as Excel."""
         data = model.get_data()
         data.write_excel(file_path)
 
     def save_as_json(self, file_path, model):
-        """Simpan data sebagai JSON."""
+        """Save data as JSON."""
         data = model.get_data()
         data.write_json(file_path, orient="records", lines=True)
 
     def save_as_txt(self, file_path, model):
-        """Simpan data sebagai file teks."""
+        """Save data as file teks."""
         data = model.get_data()
         data.write_csv(file_path, separator="\t")
 
