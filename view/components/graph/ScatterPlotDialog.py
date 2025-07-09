@@ -326,7 +326,7 @@ class ScatterPlotDialog(QDialog):
 
         # Start creating R script for scatterplot matrix
         r_script = "data_plot <- data[, c(" + ", ".join(f'"{col}"' for col in selected_columns) + ")]\n\n"
-        r_script += "scatterplot_ <- ggpairs(\n"
+        r_script += "scatterplot <- ggpairs(\n"
         r_script += "    data_plot,\n"
         r_script += "    lower = list(continuous = " + ('wrap("smooth", method="lm")' if show_regression else '"points"') + "),\n"
         r_script += "    upper = list(continuous = " + ('"cor"' if show_correlation else '"blank"') + "),\n"

@@ -3,7 +3,7 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_histogram(parent):
     """
@@ -36,7 +36,7 @@ def run_histogram(parent):
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         # Load required R libraries

@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt, QStringListModel, QSize
 from service.utils.utils import display_script_and_output
 from model.VariableSelection import VariableSelection
 from controller.Eksploration.EksplorationController import VariableSelectionController
-
+from view.components.DragDropListView import DragDropListView
 
 class VariableSelectionDialog(QDialog):
     """
@@ -81,7 +81,7 @@ class VariableSelectionDialog(QDialog):
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list = DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -91,7 +91,7 @@ class VariableSelectionDialog(QDialog):
         # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list = DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -138,7 +138,7 @@ class VariableSelectionDialog(QDialog):
         dependent_variable_layout = QVBoxLayout()
         self.dependent_variable_label = QLabel("Dependent Variable", self)
         self.dependent_variable_model = QStringListModel()
-        self.dependent_variable_list = QListView(self)
+        self.dependent_variable_list = DragDropListView(parent=self)
         self.dependent_variable_list.setModel(self.dependent_variable_model)
         self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
 
@@ -155,7 +155,7 @@ class VariableSelectionDialog(QDialog):
         independent_variable_layout = QVBoxLayout()
         self.independent_variable_label = QLabel("Independent Variable", self)
         self.independent_variable_model = QStringListModel()
-        self.independent_variable_list = QListView(self)
+        self.independent_variable_list = DragDropListView(parent=self)
         self.independent_variable_list.setModel(self.independent_variable_model)
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         independent_variable_layout.addWidget(self.independent_variable_label)
@@ -233,6 +233,81 @@ class VariableSelectionDialog(QDialog):
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
+    def handle_drop(self, source_widget, items):
+        target_widget = self.sender() or source_widget
+
+        if target_widget == self.data_editor_list:
+            target_model = self.data_editor_model
+            target_origin = "model1"
+            other_models = [self.data_output_model, self.dependent_variable_model, self.independent_variable_model]
+            original_order = self.all_columns_model1
+
+        elif target_widget == self.data_output_list:
+            target_model = self.data_output_model
+            target_origin = "model2"
+            other_models = [self.data_editor_model, self.dependent_variable_model, self.independent_variable_model]
+            original_order = self.all_columns_model2
+
+        elif target_widget == self.dependent_variable_list:
+            target_model = self.dependent_variable_model
+            other_models = [self.data_editor_model, self.data_output_model, self.independent_variable_model]
+            original_order = []  # Tidak perlu sorting untuk dependent
+
+            if len(items) > 1 or len(target_model.stringList()) >= 1:
+                QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
+                return
+
+        elif target_widget == self.independent_variable_list:
+            target_model = self.independent_variable_model
+            other_models = [self.data_editor_model, self.data_output_model, self.dependent_variable_model]
+            original_order = []  # Tidak perlu sorting untuk independent
+
+        else:
+            return
+
+        current_items = target_model.stringList()
+
+        for item in items:
+            column_name = item.split(" ")[0]
+
+            # Validasi asal jika dikembalikan ke editor/output
+            if target_widget == self.data_editor_list:
+                if column_name not in [col.split(" ")[0] for col in self.all_columns_model1]:
+                    continue
+            elif target_widget == self.data_output_list:
+                if column_name not in [col.split(" ")[0] for col in self.all_columns_model2]:
+                    continue
+
+            # Untuk dependent: hanya boleh 1 item
+            if target_widget == self.dependent_variable_list and len(current_items) >= 1:
+                break
+
+            if item not in current_items:
+                if original_order:
+                    # Sisipkan sesuai urutan asli
+                    insert_index = next(
+                        (i for i, col in enumerate(original_order) if col.split(" ")[0] == column_name), len(current_items)
+                    )
+                    # Cari indeks insert di current_items berdasarkan original_order
+                    insert_pos = next(
+                        (i for i, curr_item in enumerate(current_items)
+                        if original_order.index(curr_item) > insert_index),
+                        len(current_items)
+                    )
+                    current_items.insert(insert_pos, item)
+                else:
+                    current_items.append(item)
+
+                # Hapus dari model lain
+                for model in other_models:
+                    other_list = model.stringList()
+                    if item in other_list:
+                        other_list.remove(item)
+                        model.setStringList(other_list)
+
+        target_model.setStringList(current_items)
+        self.generate_r_script()
+
     def set_model(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
@@ -302,7 +377,6 @@ class VariableSelectionDialog(QDialog):
         self.generate_r_script()
 
 
-    
     def independent_variables(self):
 
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
@@ -333,51 +407,49 @@ class VariableSelectionDialog(QDialog):
 
 
     def remove_variable(self):
-        # Ambil indeks yang dipilih dari daftar variabel dependent_variable dan independent_variable
+        # Get selected indexes from dependent and independent lists
         selected_dependent_variable_indexes = self.dependent_variable_list.selectedIndexes()
         selected_independent_variable_indexes = self.independent_variable_list.selectedIndexes()
 
-        # Ambil nama variabel yang dipilih
-        selected_dependent_variable_items = [index.data() for index in selected_dependent_variable_indexes]
-        selected_independent_variable_items = [index.data() for index in selected_independent_variable_indexes]
+        # Get selected items
+        selected_items = [index.data() for index in selected_dependent_variable_indexes + selected_independent_variable_indexes]
 
-        # Gabungkan kedua daftar variabel yang dipilih
-        selected_items = selected_dependent_variable_items + selected_independent_variable_items
-
-        # Ambil daftar semua variabel yang sedang dipilih
+        # Get current variable lists
         dependent_variable_list = self.dependent_variable_model.stringList()
         independent_variable_list = self.independent_variable_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
 
-        # Periksa apakah variabel dikembalikan ke data editor atau data output
         for item in selected_items:
-            column_name = item.split(' ')[0]  # Ambil nama kolom sebelum spasi
+            # Check if it comes from model1 or model2 based on column name only (without type)
+            column_name = item.split(" ")[0]
 
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                editor_list = self.data_editor_model.stringList()
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
                 if item not in editor_list:
                     editor_list.append(item)
-                    self.data_editor_model.setStringList(editor_list)
-
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                output_list = self.data_output_model.stringList()
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
                 if item not in output_list:
                     output_list.append(item)
-                    self.data_output_model.setStringList(output_list)
 
-            # Hapus item dari daftar dependent_variable atau independent_variable jika ada
+            # Remove from dependent and independent lists if present
             if item in dependent_variable_list:
                 dependent_variable_list.remove(item)
-
             if item in independent_variable_list:
                 independent_variable_list.remove(item)
 
-        # Perbarui daftar variabel yang dipilih
+        # Re-sort to maintain the original order
+        editor_list.sort(key=lambda x: self.all_columns_model1.index(x) if x in self.all_columns_model1 else float('inf'))
+        output_list.sort(key=lambda x: self.all_columns_model2.index(x) if x in self.all_columns_model2 else float('inf'))
+
+        # Update models
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
         self.dependent_variable_model.setStringList(dependent_variable_list)
         self.independent_variable_model.setStringList(independent_variable_list)
 
-        # Perbarui script R setelah perubahan
+        # Update script
         self.generate_r_script()
-
+        
     def get_selected_dependent_variable(self):
         return [
             item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0]
