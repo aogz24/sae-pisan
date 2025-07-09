@@ -77,7 +77,6 @@ def run_model_hb_area(parent):
                 ro.r(f"{plot_name}()")
             plot_paths.append(plot_path)
         
-        print("Saved plots:", plot_paths)
             
         ro.r('estimated_value_hb <- modelhb$Est')
         ro.r('sd_hb <- modelhb$sd')
