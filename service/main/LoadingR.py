@@ -31,17 +31,16 @@ def loadR(splash):
             })
             """
     ro.r(r_script)
-    r_home = ro.r('Sys.getenv("R_HOME")')[0]
+    r_home = str(ro.r('Sys.getenv("R_HOME")')[0])
     os.environ['R_LIBS_USER'] = r_home
     # Initialize rpy2 with the new library location
     ro.r(f'.libPaths("{r_home}")')
-    r_script2= """
-            suppressPackageStartupMessages({
-                library(sae)
-                library(saeHB)
-                library(sae.projection)
-                library(emdi)
-            })
-    """
-    ro.r(r_script2)
+    lib_path = str(ro.r('.libPaths()[1]')[0])
+    os.environ['R_LIBS_USER'] = lib_path
+    ro.r(f'.libPaths("{lib_path}")')
+    from rpy2.robjects.packages import importr
+    importr('sae', lib_loc=lib_path)
+    importr('saeHB', lib_loc=lib_path)
+    importr('emdi', lib_loc=lib_path)
+    importr('sae.projection', lib_loc=lib_path)
     splash.update_message()

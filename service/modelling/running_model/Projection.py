@@ -54,7 +54,6 @@ def run_model_projection(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library(sae.projection))')
         ro.r('data_pe <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
