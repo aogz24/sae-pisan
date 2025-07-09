@@ -1,8 +1,5 @@
-import sys
-import time
-from PyQt6.QtWidgets import QApplication, QSplashScreen, QLabel, QVBoxLayout, QWidget, QProgressBar
-from PyQt6.QtGui import QPixmap, QMovie
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtWidgets import QApplication, QSplashScreen, QLabel, QVBoxLayout
+from PyQt6.QtCore import Qt
 
 class SplashScreen(QSplashScreen):
     """
@@ -30,7 +27,7 @@ class SplashScreen(QSplashScreen):
         self.layout.addWidget(self.label)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
-        self.messages = ["Checking environment...", "Loading R an R Package...", "Setup Environment...", "Loading Completed!"]
+        self.messages = ["Checking environment...", "Checking and Loading R...", "Loading R Packages...", "Setup Environment...", "Loading Completed!"]
         self.current_message_index = 0
 
     def update_message(self):
