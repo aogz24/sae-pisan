@@ -3,10 +3,13 @@ polars
 matplotlib
 fastexcel
 openpyxl
-rpy2
-XlsxWriter
+rpy2==3.5.16
+xlsxwriter
 pyinstaller
-fastexcel
 pyspread
-Jinja2
+jinja2
 pandas
+python-dateutil
+pythreadkiller
+pyarrow
+reportlab

@@ -19,7 +19,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('assets', 'assets'), ('R', 'R'), ('file-data', 'file-data'), ('temp', 'temp')],
-    hiddenimports=['rpy2.robjects', "openpyxl", "fastexcel"],
+    hiddenimports=[
+        'rpy2.robjects', "openpyxl", "fastexcel",
+        'numpy', 'numpy.core._methods', 'numpy.lib.format'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
