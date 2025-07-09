@@ -101,7 +101,7 @@ class FileController:
                 
                 if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr, ignore_errors=True)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr)
                 
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)

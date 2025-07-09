@@ -44,7 +44,7 @@ class ComputeVariableDialog(QDialog):
 
     def load_templates(self):
         app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
-        os.makedirs(app_data_dir, exist_ok=False)
+        os.makedirs(app_data_dir, exist_ok=True)
         templates = {}
         template_file = os.path.join(self.parent.path, 'file-data', 'template.dat')
         appdata_template_file = os.path.join(app_data_dir, 'template.dat')

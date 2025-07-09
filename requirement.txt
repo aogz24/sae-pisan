@@ -13,3 +13,4 @@ python-dateutil
 pythreadkiller
 pyarrow
 reportlab
+rpy2_arrow
