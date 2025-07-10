@@ -252,8 +252,11 @@ class ModelingSaeHBDialog(QDialog):
         self.update_console.connect(self._append_console)
         
     def _append_console(self, text):
-        if self.console_dialog:
-            self.console_dialog.append_text(text)
+        import re
+        if re.search(r'\d+\s*%', text):
+            clean_text = text.replace('\r', '').strip()
+            if self.console_dialog:
+                self.console_dialog.append_text(clean_text)
         
     def toggle_r_script_visibility(self):
         """

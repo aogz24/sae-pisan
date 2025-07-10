@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit
 from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QTextCursor
 
 class ConsoleDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("R Console Output")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(500)
         layout = QVBoxLayout(self)
         self.console = QTextEdit()
         self.console.setReadOnly(True)
@@ -20,7 +21,17 @@ class ConsoleDialog(QDialog):
         layout.addWidget(self.console)
 
     def append_text(self, text):
-        self.console.append(text)
+        doc = self.console.document()
+        block_count = doc.blockCount()
+        if block_count > 1:
+            cursor = self.console.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.deletePreviousChar()
+            cursor.insertText(text)
+        else:
+            self.console.setPlainText(text)
 
     def stop_loading(self):
         self.loading_movie.stop()
