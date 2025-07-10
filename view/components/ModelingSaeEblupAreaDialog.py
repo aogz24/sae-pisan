@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton, QStyle
+    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton, QCheckBox
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal, QItemSelectionModel
 from PyQt6.QtGui import QIcon
@@ -207,6 +207,11 @@ class ModelingSaeDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         self.option_button.clicked.connect(lambda: show_options(self))
         
@@ -424,14 +429,15 @@ class ModelingSaeDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
-        self.console_dialog = ConsoleDialog(self)
-        self.console_dialog.show()
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
         
         def run_model_thread():
             result, error, df = None, None, None
             try:
                 import sys
-                import io
                 old_stdout = sys.stdout
                 sys.stdout = ConsoleStream(self.update_console)
                 result, error, df = current_context.run(controller.run_model, r_script)

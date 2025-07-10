@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
+    QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget, QToolButton
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QIcon
 from view.components.DragDropListView import DragDropListView
 from service.modelling.SaeEblupUnit import *
 from controller.modelling.SaeEblupUnitController import SaeEblupUnitController
@@ -272,6 +272,11 @@ class ModelingSaeUnitDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         self.option_button.clicked.connect(lambda : show_options(self))
         
@@ -543,9 +548,11 @@ class ModelingSaeUnitDialog(QDialog):
         controller = SaeEblupUnitController(sae_model)
         
         current_context = contextvars.copy_context()
-        # Tampilkan dialog console
-        self.console_dialog = ConsoleDialog(self)
-        self.console_dialog.show()
+        
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
         
         def run_model_thread():
             results, error, df = None, None, None

@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton
+    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton, QCheckBox
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
@@ -210,6 +210,11 @@ class ModelingSaeHBDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         
         # Area teks untuk menampilkan dan mengedit skrip R
@@ -448,9 +453,10 @@ class ModelingSaeHBDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
-        # Tampilkan dialog console
-        self.console_dialog = ConsoleDialog(self)
-        self.console_dialog.show()
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
         
         def run_model_thread():
             import sys
