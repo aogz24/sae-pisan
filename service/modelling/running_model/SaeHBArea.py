@@ -51,10 +51,11 @@ def run_model_hb_area(parent):
         
         script_png = """
         sae_autocorr <- function() {
-            coda::autocorr.plot(modelhb$plot[[3]], col='brown2', lwd=2)
+            coda::autocorr.plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
         }
+
         sae_plot <- function() {
-            plot(modelhb$plot[[3]], col='brown2', lwd=2)
+            plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
         }
         """
         
