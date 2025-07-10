@@ -32,6 +32,8 @@ def main():
     # Cek dan siapkan lingkungan R
     path = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
     original_path = os.path.dirname(__file__)
+    import warnings
+    warnings.filterwarnings("ignore", message="The symbol 'quartz' is not in this R namespace/package.")
     check_environment(path, original_path)
     
     from service.main.LoadingR import loadR  # Load modul R setelah check_environment
