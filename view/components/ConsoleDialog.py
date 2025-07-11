@@ -32,6 +32,7 @@ class ConsoleDialog(QDialog):
             cursor.insertText(text)
         else:
             self.console.setPlainText(text)
+        self.console.moveCursor(QTextCursor.MoveOperation.End)
 
     def stop_loading(self):
         self.loading_movie.stop()

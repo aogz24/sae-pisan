@@ -456,13 +456,14 @@ class ModelingSaeHBDialog(QDialog):
         
         def run_model_thread():
             import sys
-            import io
             results, error, df = None, None, None
             try:
-                old_stdout = sys.stdout
-                sys.stdout = ConsoleStream(self.update_console)
+                if self.console_dialog:
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 result, error, df, plot_paths = current_context.run(controller.run_model, r_script)
-                sys.stdout = old_stdout
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:

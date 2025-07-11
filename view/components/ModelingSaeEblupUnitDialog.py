@@ -558,12 +558,13 @@ class ModelingSaeUnitDialog(QDialog):
         def run_model_thread():
             results, error, df = None, None, None
             try:
-                import sys
-                import io
-                old_stdout = sys.stdout
-                sys.stdout = ConsoleStream(self.update_console)
+                if self.console_dialog:
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 results, error, df = current_context.run(controller.run_model, r_script)
-                sys.stdout = old_stdout
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
