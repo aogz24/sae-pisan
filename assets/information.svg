@@ -1,4 +1,10 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none">
-  <circle cx="64" cy="64" r="56" stroke="#1976D2" stroke-width="8" fill="none"/>
-  <text x="64" y="92" text-anchor="middle" font-size="64" fill="#1976D2" font-family="Times" font-weight="bold" dominant-baseline="middle">i</text>
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lingkaran outline biru dengan fill transparan -->
+  <circle cx="12" cy="12" r="10" fill="none" stroke="#1976D2" stroke-width="2"/>
+  
+  <!-- Titik di atas "i" -->
+  <circle cx="12" cy="8" r="1.2" fill="#1976D2"/>
+  
+  <!-- Batang "i" -->
+  <rect x="11.4" y="11" width="1.2" height="6" fill="#1976D2"/>
 </svg>

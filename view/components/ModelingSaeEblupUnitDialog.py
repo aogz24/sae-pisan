@@ -319,6 +319,8 @@ class ModelingSaeUnitDialog(QDialog):
         
     def _append_console(self, text):
         if self.console_dialog:
+            if any(char.isdigit() for char in text):
+                text = f"Bootstrap={text}"
             self.console_dialog.append_text(text)
     
     def toggle_r_script_visibility(self):
@@ -489,7 +491,6 @@ class ModelingSaeUnitDialog(QDialog):
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
-        self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():

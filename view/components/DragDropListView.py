@@ -18,6 +18,9 @@ class DragDropListView(QListView):
             event.acceptProposedAction()
         else:
             super().dragEnterEvent(event)
+    
+    def edit(self, index, trigger, event):
+        return False
 
     def dragMoveEvent(self, event):
         if event.mimeData().hasText():
