@@ -217,6 +217,7 @@ class SummaryDataDialog(QDialog):
             target_model.setStringList(ordered)
         else:
             target_model.setStringList(current_items)
+        self.generate_r_script()
 
     def toggle_r_script_visibility(self):
         """

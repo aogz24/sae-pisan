@@ -8,6 +8,7 @@ import re
 from model.BoxPlot import BoxPlot
 from controller.Graph.GraphController import BoxPlotController
 from service.utils.utils import display_script_and_output
+from view.components.DragDropListView import DragDropListView
 
 class BoxPlotDialog(QDialog):
     """
@@ -70,7 +71,7 @@ class BoxPlotDialog(QDialog):
 
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list = DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -79,7 +80,7 @@ class BoxPlotDialog(QDialog):
 
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list = DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -108,7 +109,7 @@ class BoxPlotDialog(QDialog):
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variabel", self)
         self.selected_model = QStringListModel()
-        self.selected_list = QListView(self)
+        self.selected_list = DragDropListView(parent=self)
         self.selected_list.setModel(self.selected_model)
         self.selected_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         right_layout.addWidget(self.selected_label)
@@ -178,6 +179,58 @@ class BoxPlotDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
+    def handle_drop(self, target_widget, items):
+        # Mapping widget to model
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.selected_list: (self.selected_model, None),  # selected_list can accept all
+        }
+
+        if target_widget not in widget_model_map:
+            return
+
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
+
+        filtered_items = []
+
+        for item in items:
+            # If dropped to selected, accept all
+            if target_widget == self.selected_list:
+                filtered_items.append(item)
+            else:
+                # Dropped to editor/output? Only accept those from its own column
+                column_name = item.split(" ")[0]
+                if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
+                    filtered_items.append(item)
+
+        # Add to target_model
+        for item in filtered_items:
+            if item not in current_items:
+                current_items.append(item)
+
+        # Remove from other models (except target)
+        for other_widget, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Add & sort according to initial position (if editor/output)
+        if target_widget == self.data_editor_list:
+            ordered = [col for col in self.all_columns_model1 if col in current_items]
+            target_model.setStringList(ordered)
+        elif target_widget == self.data_output_list:
+            ordered = [col for col in self.all_columns_model2 if col in current_items]
+            target_model.setStringList(ordered)
+        else:
+            target_model.setStringList(current_items)
+        self.generate_r_script()
+        
     def toggle_r_script_visibility(self):
         """
         Toggles the visibility of the R script text edit area and updates the toggle button text.
@@ -203,7 +256,6 @@ class BoxPlotDialog(QDialog):
             for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
         ]
         return self.columns  
-
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
@@ -235,25 +287,39 @@ class BoxPlotDialog(QDialog):
         self.generate_r_script()
 
     def remove_variable(self):
+        """
+        Removes selected variables from the selected list and generates the R script.
+        """
         selected_indexes = self.selected_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
+
         selected_list = self.selected_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
 
         for item in selected_items:
-            column_name = item.split(' ')[0]
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                editor_list = self.data_editor_model.stringList()
-                editor_list.append(item)
-                self.data_editor_model.setStringList(editor_list)
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                output_list = self.data_output_model.stringList()
-                output_list.append(item)
-                self.data_output_model.setStringList(output_list)
+            column_name = item.split(" ")[0]
 
+            # Check if the item belongs to model1 (editor) or model2 (output)
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
+                if item not in editor_list:
+                    editor_list.append(item)
+                    # Re-sort according to all_columns_model1
+                    editor_list = [col for col in self.all_columns_model1 if col in editor_list]
+
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
+                if item not in output_list:
+                    output_list.append(item)
+                    # Re-sort according to all_columns_model2
+                    output_list = [col for col in self.all_columns_model2 if col in output_list]
+
+            # Remove from selected
             if item in selected_list:
                 selected_list.remove(item)
 
         self.selected_model.setStringList(selected_list)
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
         self.generate_r_script()
 
     def get_selected_columns(self):

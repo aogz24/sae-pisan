@@ -11,7 +11,7 @@ from view.components.DragDropListView import DragDropListView
 
 
 class NormalityTestDialog(QDialog):
-    """
+    """z
     A dialog for performing normality tests on selected variables from two data models.
     
     Attributes:
@@ -255,6 +255,7 @@ class NormalityTestDialog(QDialog):
             target_model.setStringList(ordered)
         else:
             target_model.setStringList(current_items)
+        self.generate_r_script()
 
     def toggle_r_script_visibility(self):
         """

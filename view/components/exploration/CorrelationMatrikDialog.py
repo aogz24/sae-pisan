@@ -242,6 +242,7 @@ class CorrelationMatrixDialog(QDialog):
             target_model.setStringList(ordered)
         else:
             target_model.setStringList(current_items)
+        self.generate_r_script()
 
     def set_model(self, model1, model2):
         self.model1 = model1
