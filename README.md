@@ -12,6 +12,10 @@ pip install -r requirement.txt
 python3 __main__.py
 ```
 
+3. Install R dan R package ke dalam folder R
+
+4. versi
+
 ## Penulisan Commit 💬
 
 Penulisan pesan commit menggunakan standar dari [European Commission](https://ec.europa.eu/component-library/v1.15.0/eu/docs/conventions/git/) dengan beberapa penyesuaian dengan format:
