@@ -278,7 +278,7 @@ class MainWindow(QMainWindow):
         
         self.recent_data = QAction("Open Recent data", self)
         self.recent_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_D))
-        self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'recentdata.svg')))
         self.recent_data.setStatusTip("Ctrl+D")
         
         self.load_action = QAction("Load File", self)
@@ -288,7 +288,7 @@ class MainWindow(QMainWindow):
         
         self.load_secondary_data = QAction("Load File for Secondary Data", self)
         self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
-        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
         
         self.save_action = QAction("Save Data", self)
