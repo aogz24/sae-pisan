@@ -4,7 +4,6 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtCore import Qt
 import sys
 import os
-import pyuac
 from controller.FileController import FileController
 from service.main.CheckEnviroment import check_environment
 
@@ -33,8 +32,10 @@ def main():
     # Cek dan siapkan lingkungan R
     path = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
     original_path = os.path.dirname(__file__)
+    import warnings
+    warnings.filterwarnings("ignore", message="The symbol 'quartz' is not in this R namespace/package.")
     check_environment(path, original_path)
-
+    
     from service.main.LoadingR import loadR  # Load modul R setelah check_environment
 
     loadR(splash)
@@ -82,8 +83,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if not pyuac.isUserAdmin():
-        # pyuac.runAsAdmin()
-        main()
-    else:
-        main()
+    main()

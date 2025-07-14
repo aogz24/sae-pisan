@@ -427,13 +427,13 @@ class MainWindow(QMainWindow):
         menu_about.addAction(action_about_info)
         
         action_header_icon_info = QAction("Header Icon Info", self)
-        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'information.svg')))
         action_header_icon_info.triggered.connect(self.show_header_icon_info)
         menu_about.addAction(action_header_icon_info)
         
         # Add R Packages Used menu
         action_r_packages_info = QAction("R Packages Used", self)
-        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'Rinfo.svg')))
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
         
@@ -1509,12 +1509,14 @@ class MainWindow(QMainWindow):
     
     def show_r_packages_info(self):
         """
-        Show a dialog listing the R packages used and their versions in a styled table.
+        Show a dialog listing the R packages used and their versions in a single table with 6 columns (3 pairs of Package/Version side by side).
         """
         try:
             import rpy2.robjects as ro
             packages = [
-                "sae", "saeHB", "rjags", "ggplot2", "MASS"
+                "sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR",
+                "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest",
+                "tidyr", "carData", "dplyr", "tseries", "FSelector", "rjags", "saeHB"
             ]
             versions = []
             for pkg in packages:
@@ -1523,29 +1525,36 @@ class MainWindow(QMainWindow):
                 except Exception:
                     ver = "Not Installed"
                 versions.append((pkg, ver))
-            msg = """
-            <b>R Packages Used:</b><br><br>
-            <table style="
-                border-collapse: collapse;
-                min-width: 320px;
-                font-size: 13px;
-                ">
-                <thead>
-                    <tr style="background-color:#f2f2f2;">
-                        <th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>
-                        <th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>
-                    </tr>
-                </thead>
-                <tbody>
-            """
-            for pkg, ver in versions:
-                msg += (
-                    f"<tr>"
-                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{pkg}</td>"
-                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{ver}</td>"
-                    f"</tr>"
-                )
-            msg += "</tbody></table>"
+
+            # Arrange into 3 columns (each column is Package/Version pair)
+            n_cols = 3
+            n_rows = (len(versions) + n_cols - 1) // n_cols
+            table_cells = []
+            for i in range(n_rows):
+                row = []
+                for j in range(n_cols):
+                    idx = i + j * n_rows
+                    if idx < len(versions):
+                        row.extend(versions[idx])
+                    else:
+                        row.extend(("", ""))
+                table_cells.append(row)
+
+            msg = "<b>R Packages Used:</b><br><br>"
+            msg += "<table style='border-collapse:collapse;font-size:13px;'>"
+            # Header
+            msg += "<tr style='background-color:#f2f2f2;'>"
+            for i in range(n_cols):
+                msg += "<th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>"
+                msg += "<th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>"
+            msg += "</tr>"
+            # Rows
+            for row in table_cells:
+                msg += "<tr>"
+                for cell in row:
+                    msg += f"<td style='border:1px solid #bbb; padding:6px 16px;'>{cell}</td>"
+                msg += "</tr>"
+            msg += "</table>"
         except Exception as e:
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)

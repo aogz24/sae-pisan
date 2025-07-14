@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
-    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton
+    QAbstractItemView, QTextEdit, QSizePolicy, QToolButton, QCheckBox
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 from service.modelling.SaeHBArea import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, show_options, get_script
 from controller.modelling.SaeHBcontroller import SaeHBController
 from view.components.DragDropListView import DragDropListView
+from view.components.ConsoleDialog import ConsoleDialog
 from model.SaeHB import SaeHB
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
@@ -14,6 +15,17 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+
+import sys
+
+class ConsoleStream:
+    def __init__(self, signal):
+        self.signal = signal
+    def write(self, text):
+        if text.strip():
+            self.signal.emit(text)
+    def flush(self):
+        pass
 
 class ModelingSaeHBDialog(QDialog):
     """
@@ -67,6 +79,7 @@ class ModelingSaeHBDialog(QDialog):
     """
     
     run_model_finished = pyqtSignal(object, object, object, object, object)
+    update_console = pyqtSignal(str)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -197,6 +210,11 @@ class ModelingSaeHBDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         
         # Area teks untuk menampilkan dan mengedit skrip R
@@ -235,6 +253,12 @@ class ModelingSaeHBDialog(QDialog):
         self.reply=None
         self.finnish = False
         
+        self.console_dialog = None
+        self.update_console.connect(self._append_console)
+        
+    def _append_console(self, text):
+        self.console_dialog.append_text(text)
+        
     def toggle_r_script_visibility(self):
         """
         Toggles the visibility of the R script text edit area and updates the toggle button text.
@@ -247,6 +271,8 @@ class ModelingSaeHBDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
     def closeEvent(self, event):
+        if self.console_dialog:
+            self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "SAE HB" and thread.is_alive():
@@ -375,6 +401,16 @@ class ModelingSaeHBDialog(QDialog):
                         )
                 unassign_variable(self)
     
+    import sys
+    class ConsoleStream:
+        def __init__(self, signal):
+            self.signal = signal
+        def write(self, text):
+            if text.strip():
+                self.signal.emit(text)
+        def flush(self):
+            pass
+    
     def accept(self):
         if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
             QMessageBox.warning(self, "Warning", "Varians Direct and variable of interest cannot be empty.")
@@ -413,10 +449,21 @@ class ModelingSaeHBDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
+        
         def run_model_thread():
-            result, error, df, plot_paths = None, None, None, None
+            import sys
+            results, error, df = None, None, None
             try:
+                if self.console_dialog:
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 result, error, df, plot_paths = current_context.run(controller.run_model, r_script)
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -459,6 +506,9 @@ class ModelingSaeHBDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script, plot_paths):
+        if self.console_dialog:
+            self.console_dialog.stop_loading()
+            self.console_dialog.close()
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:

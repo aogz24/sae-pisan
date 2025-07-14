@@ -1,12 +1,12 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
+    QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget, QToolButton
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal, QItemSelectionModel
-from PyQt6.QtGui import QFont, QIcon, QPixmap
 from service.modelling.SaeEblupPseudo import *
 from controller.modelling.SaePseudoController import SaePseudoController
 from view.components.DragDropListView import DragDropListView
+from view.components.ConsoleDialog import ConsoleDialog
 from model.SaeEblupPseudo import SaeEblupPseudo
 from PyQt6.QtWidgets import QMessageBox
 import polars as pl
@@ -14,6 +14,17 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+
+import sys
+
+class ConsoleStream:
+    def __init__(self, signal):
+        self.signal = signal
+    def write(self, text):
+        if text.strip():
+            self.signal.emit(text)
+    def flush(self):
+        pass
 
 class ModelingSaePseudoDialog(QDialog):
     """
@@ -68,6 +79,8 @@ class ModelingSaePseudoDialog(QDialog):
     """
     
     run_model_finished = pyqtSignal(object, object, object, object)
+    update_console = pyqtSignal(str)
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -216,6 +229,11 @@ class ModelingSaePseudoDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         
         # self.option_button.clicked.connect(lambda : show_options(self))
@@ -253,6 +271,13 @@ class ModelingSaePseudoDialog(QDialog):
         
         self.stop_thread = threading.Event()
         self.reply=None
+        
+        self.console_dialog = None
+        self.update_console.connect(self._append_console)
+        
+    def _append_console(self, text):
+        if self.console_dialog:
+            self.console_dialog.append_text(text)
         
     def toggle_r_script_visibility(self):
         """
@@ -377,6 +402,8 @@ class ModelingSaePseudoDialog(QDialog):
                 unassign_variable(self)
     
     def closeEvent(self, event):
+        if self.console_dialog:
+            self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Pseudo" and thread.is_alive():
@@ -438,12 +465,23 @@ class ModelingSaePseudoDialog(QDialog):
         sae_model = SaeEblupPseudo(self.model, self.model2, view)
         controller = SaePseudoController(sae_model)
         
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
+        
         current_context = contextvars.copy_context()
         
         def run_model_thread():
             result, error, df = None, None, None
             try:
+                if self.console_dialog:
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 result, error, df = current_context.run(controller.run_model, r_script)
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -472,6 +510,9 @@ class ModelingSaePseudoDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
+        if self.console_dialog:
+            self.console_dialog.stop_loading()
+            self.console_dialog.close()
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:

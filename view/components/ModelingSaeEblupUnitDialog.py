@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
+    QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget, QToolButton
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QIcon
 from view.components.DragDropListView import DragDropListView
 from service.modelling.SaeEblupUnit import *
 from controller.modelling.SaeEblupUnitController import SaeEblupUnitController
@@ -12,8 +12,20 @@ from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
+from view.components.ConsoleDialog import ConsoleDialog
 import threading
 import contextvars
+
+import sys
+
+class ConsoleStream:
+    def __init__(self, signal):
+        self.signal = signal
+    def write(self, text):
+        if text.strip():
+            self.signal.emit(text)
+    def flush(self):
+        pass
 
 class ModelingSaeUnitDialog(QDialog):
     """
@@ -81,6 +93,7 @@ class ModelingSaeUnitDialog(QDialog):
     """
     
     run_model_finished = pyqtSignal(object, object, object, object)
+    update_console = pyqtSignal(str)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -99,6 +112,8 @@ class ModelingSaeUnitDialog(QDialog):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.console_dialog = None
+        self.update_console.connect(self._append_console)
 
         # Layout utama untuk membagi area menjadi dua bagian (kiri dan kanan)
         self.split_layout = QHBoxLayout()
@@ -257,6 +272,11 @@ class ModelingSaeUnitDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         self.option_button.clicked.connect(lambda : show_options(self))
         
@@ -297,6 +317,12 @@ class ModelingSaeUnitDialog(QDialog):
         self.reply=None
         self.stop_thread = threading.Event()
         
+    def _append_console(self, text):
+        if self.console_dialog:
+            if any(char.isdigit() for char in text):
+                text = f"Bootstrap={text}"
+            self.console_dialog.append_text(text)
+    
     def toggle_r_script_visibility(self):
         """
         Toggles the visibility of the R script text edit area and updates the toggle button text.
@@ -463,6 +489,8 @@ class ModelingSaeUnitDialog(QDialog):
                 unassign_variable(self)
     
     def closeEvent(self, event):
+        if self.console_dialog:
+            self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():
@@ -522,10 +550,21 @@ class ModelingSaeUnitDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
+        
         def run_model_thread():
             results, error, df = None, None, None
             try:
+                if self.console_dialog:
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 results, error, df = current_context.run(controller.run_model, r_script)
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -553,11 +592,15 @@ class ModelingSaeUnitDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, results, error, sae_model, r_script):
+        if self.console_dialog:
+            self.console_dialog.stop_loading()
+            self.console_dialog.close()
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:
             self.reply.reject()
         display_script_and_output(self.parent, r_script, results)
+        self.console_dialog.close()
         enable_service(self, error, results)
         self.finnish = True
         self.close()
