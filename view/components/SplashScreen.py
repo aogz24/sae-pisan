@@ -59,7 +59,7 @@ class SplashScreen(QSplashScreen):
     def update_message(self):
         self.current_message_index = (self.current_message_index + 1) % len(self.messages)
         self.label.setText(self.messages[self.current_message_index])
-        if self.current_message_index == len(self.messages) - 1:
+        if self.current_message_index == len(self.messages) - 2:
             progress = 100
         else:
             progress = int((self.current_message_index / (len(self.messages) - 1)) * 100)
