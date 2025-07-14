@@ -314,9 +314,9 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.save_output_pdf)
 
         # Menu "Exploration"
-        self.menu_exploration = self.menu_bar.addMenu("Exploration")
+        self.menu_exploration = self.menu_bar.addMenu("Pre-Modeling")
 
-        self.action_summary_data = QAction("Summary Data", self)
+        self.action_summary_data = QAction("Data Summary", self)
         self.action_summary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'summary.svg')))
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog_lazy)
 

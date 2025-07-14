@@ -1,10 +1,8 @@
 from PyQt6.QtWidgets import QLabel, QTextEdit, QFrame, QVBoxLayout, QMenu, QApplication, QSpacerItem, QFileDialog
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox, QSizePolicy
 import os
 from PyQt6.QtGui import QPixmap, QAction,  QClipboard
-
-
 
 def delete_output_card(parent, card_frame):
     """Delete the selected output card"""
@@ -17,7 +15,6 @@ def delete_output_card(parent, card_frame):
         if 0 <= index < len(parent.data):
             del parent.data[index]
 
-
 def delete_all_outputs(parent):
     """Removes all output cards from the output layout"""
     while parent.output_layout.count() > 0:
@@ -26,7 +23,6 @@ def delete_all_outputs(parent):
         if widget is not None:
             widget.deleteLater()
     parent.data = []  # Clear stored data
-
 
 def show_context_menu(parent, pos, card_frame):
     """Display right-click menu on each output card"""
@@ -190,6 +186,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
         }
     """)
 
+    card_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
     # Layout vertikal untuk card
     card_layout = QVBoxLayout(card_frame)
     card_layout.setSpacing(8)
@@ -301,6 +299,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 card_layout.addWidget(value_label)
                 result[key] = value
         out["result"] = result  # Simpan hasil ke dalam data parent untuk referensi
+
     elif results:
         label_output = QLabel("<b>Output:</b>")
         label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
@@ -317,7 +316,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             }
         """)
         
-
         card_layout.addWidget(label_output)
         card_layout.addWidget(result_box)
 
@@ -357,7 +355,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 
     # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
-    parent.output_layout.addStretch()
+    # parent.output_layout.addStretch()
     parent.tab_widget.setCurrentWidget(parent.tab3)
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
