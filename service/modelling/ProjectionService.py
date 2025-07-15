@@ -511,12 +511,12 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_pe <- ma_projection(final_formula, cluster_ids="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, working_model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, cv_folds={parent.k_fold}, tuning_grid={parent.grid})\n'
+        r_script += f'model_pe <- projection(final_formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
     else:
         if strata == 'NULL':
-            r_script += f'model_pe <- ma_projection(formula, cluster_ids="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", working_model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, cv_folds={parent.k_fold}, tuning_grid={parent.grid})\n'
+            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
         else:
-            r_script += f'model_pe <- ma_projection(formula, cluster_ids="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", working_model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, cv_folds={parent.k_fold}, tuning_grid={parent.grid})\n'
+            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
         return r_script
 
 def show_r_script(parent):
