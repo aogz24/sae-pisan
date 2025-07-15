@@ -27,7 +27,7 @@ def loadR(splash):
     packages = [
         "sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR",
         "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest",
-        "tidyr", "carData", "dplyr", "tseries", "FSelector", "glmnet"
+        "tidyr", "carData", "dplyr", "tseries", "FSelector", "glmnet", "Rcpp", "lme4"
     ]
     # Install CRAN packages if not installed
     for pkg in packages:

@@ -1439,7 +1439,8 @@ class MainWindow(QMainWindow):
                         os.remove(fpath)
                     except Exception:
                         pass
-        self.show_toast()
+        if self.isActiveWindow():
+            self.show_toast()
         
 
     def load_temp_data(self):
