@@ -172,7 +172,7 @@ class SummaryDataDialog(QDialog):
         widget_model_map = {
             self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
             self.data_output_list: (self.data_output_model, self.all_columns_model2),
-            self.selected_list: (self.selected_model, None),  # selected_list can accept all
+            self.selected_list: (self.selected_model, None),
         }
 
         if target_widget not in widget_model_map:
@@ -182,23 +182,30 @@ class SummaryDataDialog(QDialog):
         current_items = target_model.stringList()
 
         filtered_items = []
+        contains_none = False
 
         for item in items:
-            # If dropped to selected, accept all
+            if "[None]" in item:
+                contains_none = True
+                continue
+
             if target_widget == self.selected_list:
                 filtered_items.append(item)
             else:
-                # Dropped to editor/output? Only accept those from its own column
                 column_name = item.split(" ")[0]
                 if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
                     filtered_items.append(item)
 
-        # Add to target_model
+        # ❗️Tampilkan peringatan jika ada item [None]
+        if contains_none:
+            QMessageBox.warning(self, "Warning", "Cannot drop variables with type None.")
+
+        # Tambahkan item yang lolos ke model target
         for item in filtered_items:
             if item not in current_items:
                 current_items.append(item)
 
-        # Remove from other models (except target)
+        # Hapus dari model lain
         for other_widget, (model, _) in widget_model_map.items():
             if model == target_model:
                 continue
@@ -208,7 +215,7 @@ class SummaryDataDialog(QDialog):
                     other_items.remove(item)
             model.setStringList(other_items)
 
-        # Add & sort according to initial position (if editor/output)
+        # Atur ulang urutan
         if target_widget == self.data_editor_list:
             ordered = [col for col in self.all_columns_model1 if col in current_items]
             target_model.setStringList(ordered)
@@ -217,7 +224,9 @@ class SummaryDataDialog(QDialog):
             target_model.setStringList(ordered)
         else:
             target_model.setStringList(current_items)
+
         self.generate_r_script()
+
 
     def toggle_r_script_visibility(self):
         """
@@ -247,27 +256,35 @@ class SummaryDataDialog(QDialog):
 
     def get_column_with_dtype(self, model):
         """
-        Returns a list of columns with their data types from the given model.
-        
-        Args:
-            model (Any): The data model to extract columns from.
-        
-        Returns:
-            list: A list of columns with their data types.
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
         """
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
 
     def add_variable(self):
         """
         Adds selected variables to the selected list and generates the R script.
+        Variables of type None are not allowed.
         """
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
+
+        contains_none = any("[None]" in item for item in selected_items)
+        if contains_none:
+            QMessageBox.warning(self, "Warning", "Selected variables must not be of type None.")
+            return
+
         selected_list = self.selected_model.stringList()
+
         for item in selected_items:
             if item in self.data_editor_model.stringList():
                 editor_list = self.data_editor_model.stringList()

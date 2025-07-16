@@ -112,12 +112,12 @@ class VariableSelectionDialog(QDialog):
 
         button_layout2 = QVBoxLayout()
         self.add_dependent_variable_button = QPushButton("🡆", self)
-        self.add_dependent_variable_button.clicked.connect(self.dependent_variable)
+        self.add_dependent_variable_button.clicked.connect(self.add_dependent_variable)
         self.add_dependent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_dependent_variable_button.setFixedSize(50,35)
 
         self.add_independent_variable_button = QPushButton("🡆", self)  
-        self.add_independent_variable_button.clicked.connect(self.independent_variables)
+        self.add_independent_variable_button.clicked.connect(self.add_independent_variables)
         self.add_independent_variable_button.setStyleSheet("font-size: 24px;")
         self.add_independent_variable_button.setFixedSize(50,35)
 
@@ -192,7 +192,7 @@ class VariableSelectionDialog(QDialog):
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
-        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        # spacer removed because it was unused
 
         self.toggle_script_button = QToolButton()
         self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
@@ -233,77 +233,72 @@ class VariableSelectionDialog(QDialog):
         self.independent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.dependent_variable_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
-    def handle_drop(self, source_widget, items):
-        target_widget = self.sender() or source_widget
 
-        if target_widget == self.data_editor_list:
-            target_model = self.data_editor_model
-            target_origin = "model1"
-            other_models = [self.data_output_model, self.dependent_variable_model, self.independent_variable_model]
-            original_order = self.all_columns_model1
+    def handle_drop(self, target_widget, items):
+        # Peta widget ke model dan daftar kolom asal
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.dependent_variable_list: (self.dependent_variable_model, None),
+            self.independent_variable_list: (self.independent_variable_model, None),
+        }
 
-        elif target_widget == self.data_output_list:
-            target_model = self.data_output_model
-            target_origin = "model2"
-            other_models = [self.data_editor_model, self.dependent_variable_model, self.independent_variable_model]
-            original_order = self.all_columns_model2
+        if target_widget not in widget_model_map:
+            return
 
-        elif target_widget == self.dependent_variable_list:
-            target_model = self.dependent_variable_model
-            other_models = [self.data_editor_model, self.data_output_model, self.independent_variable_model]
-            original_order = []  # Tidak perlu sorting untuk dependent
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
 
-            if len(items) > 1 or len(target_model.stringList()) >= 1:
+        # Validasi: hanya 1 variabel untuk dependent
+        if target_widget == self.dependent_variable_list:
+            if len(items) > 1 or len(current_items) >= 1:
                 QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
                 return
 
-        elif target_widget == self.independent_variable_list:
-            target_model = self.independent_variable_model
-            other_models = [self.data_editor_model, self.data_output_model, self.dependent_variable_model]
-            original_order = []  # Tidak perlu sorting untuk independent
-
-        else:
-            return
-
-        current_items = target_model.stringList()
+        filtered_items = []
+        contains_invalid = False
 
         for item in items:
-            column_name = item.split(" ")[0]
-
-            # Validasi asal jika dikembalikan ke editor/output
-            if target_widget == self.data_editor_list:
-                if column_name not in [col.split(" ")[0] for col in self.all_columns_model1]:
+            # Tolak jika [String] atau [None] untuk dependent/independent
+            if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
+                if "[String]" in item or "[None]" in item:
+                    contains_invalid = True
                     continue
-            elif target_widget == self.data_output_list:
-                if column_name not in [col.split(" ")[0] for col in self.all_columns_model2]:
-                    continue
+                filtered_items.append(item)
+            else:
+                # Editor/output hanya cocokkan dengan kolom aslinya
+                column_name = item.split(" ")[0]
+                if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
+                    filtered_items.append(item)
 
-            # Untuk dependent: hanya boleh 1 item
-            if target_widget == self.dependent_variable_list and len(current_items) >= 1:
-                break
+        if contains_invalid:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+            return
 
+        # Hapus dari semua model lain
+        for _, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Tambahkan ke target jika belum ada
+        for item in filtered_items:
             if item not in current_items:
-                if original_order:
-                    # Sisipkan sesuai urutan asli
-                    insert_index = next(
-                        (i for i, col in enumerate(original_order) if col.split(" ")[0] == column_name), len(current_items)
-                    )
-                    # Cari indeks insert di current_items berdasarkan original_order
-                    insert_pos = next(
-                        (i for i, curr_item in enumerate(current_items)
-                        if original_order.index(curr_item) > insert_index),
-                        len(current_items)
-                    )
-                    current_items.insert(insert_pos, item)
-                else:
-                    current_items.append(item)
+                current_items.append(item)
 
-                # Hapus dari model lain
-                for model in other_models:
-                    other_list = model.stringList()
-                    if item in other_list:
-                        other_list.remove(item)
-                        model.setStringList(other_list)
+        # Urutkan kembali jika editor atau output
+        if target_widget in [self.data_editor_list, self.data_output_list]:
+            if target_widget == self.data_editor_list:
+                original_order = self.all_columns_model1
+            else:
+                original_order = self.all_columns_model2
+
+            reference_map = {col: i for i, col in enumerate(original_order)}
+            current_items = sorted(current_items, key=lambda x: reference_map.get(x, float('inf')))
 
         target_model.setStringList(current_items)
         self.generate_r_script()
@@ -328,24 +323,29 @@ class VariableSelectionDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
     
-
-    def dependent_variable(self):
-        # Check if there is already a variable in the dependent_variable axis
+    def add_dependent_variable(self):
         if len(self.dependent_variable_model.stringList()) >= 1:
             QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
-            return  # Do not add if one variable is already present
+            return
 
-        # Get all selected indexes from data editor and data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        # Jika tidak ada yang dipilih
         if not selected_items:
             QMessageBox.warning(self, "Warning", "Please select a variable first!")
             return
@@ -356,11 +356,10 @@ class VariableSelectionDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item:
+        if "[String]" in item or "[None]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
-        # Pindahkan item dari data_editor atau data_output
         if item in self.data_editor_model.stringList():
             editor_list = self.data_editor_model.stringList()
             editor_list.remove(item)
@@ -370,23 +369,19 @@ class VariableSelectionDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Masukkan ke dependent_variable_model
         self.dependent_variable_model.setStringList([item])
-
-        # Generate R script setelah variabel ditambahkan
         self.generate_r_script()
 
-
-    def independent_variables(self):
-
+    
+    def add_independent_variables(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.independent_variable_model.stringList()
 
-        contains_string = any("[String]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item]
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
 
-        if contains_string:
+        if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
@@ -404,6 +399,7 @@ class VariableSelectionDialog(QDialog):
 
         self.independent_variable_model.setStringList(selected_list)
         self.generate_r_script()
+
 
 
     def remove_variable(self):

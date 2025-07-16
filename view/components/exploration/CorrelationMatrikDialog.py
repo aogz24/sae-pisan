@@ -197,7 +197,7 @@ class CorrelationMatrixDialog(QDialog):
         widget_model_map = {
             self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
             self.data_output_list: (self.data_output_model, self.all_columns_model2),
-            self.selected_list: (self.selected_model, None),  # selected_list can accept all
+            self.selected_list: (self.selected_model, None),
         }
 
         if target_widget not in widget_model_map:
@@ -207,23 +207,26 @@ class CorrelationMatrixDialog(QDialog):
         current_items = target_model.stringList()
 
         filtered_items = []
+        contains_string = any("[String]" in item or "[None]" in item for item in items)
 
         for item in items:
-            # If dropped to selected, accept all
+            if "[String]" in item or "[None]" in item:
+                continue
+
             if target_widget == self.selected_list:
                 filtered_items.append(item)
             else:
-                # Dropped to editor/output? Only accept those from its own column
                 column_name = item.split(" ")[0]
                 if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
                     filtered_items.append(item)
 
-        # Add to target_model
+        if contains_string:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+
         for item in filtered_items:
             if item not in current_items:
                 current_items.append(item)
 
-        # Remove from other models (except target)
         for other_widget, (model, _) in widget_model_map.items():
             if model == target_model:
                 continue
@@ -233,7 +236,6 @@ class CorrelationMatrixDialog(QDialog):
                     other_items.remove(item)
             model.setStringList(other_items)
 
-        # Add & sort according to initial position (if editor/output)
         if target_widget == self.data_editor_list:
             ordered = [col for col in self.all_columns_model1 if col in current_items]
             target_model.setStringList(ordered)
@@ -264,21 +266,31 @@ class CorrelationMatrixDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
+
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
         
-        contains_string = any("[String]" in item for item in selected_items)   
-        selected_items = [item for item in selected_items if "[String]" not in item] 
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[Numeric]" in item]
 
-        if contains_string:
+        if contains_invalid:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:

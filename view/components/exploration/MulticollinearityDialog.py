@@ -1,3 +1,4 @@
+
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy, QToolButton
 )
@@ -245,14 +246,24 @@ class MulticollinearityDialog(QDialog):
                 return
 
         filtered_items = []
+        contains_invalid = False
 
         for item in items:
-            column_name = item.split(" ")[0]
-
+            # Tolak jika [String] atau [None] untuk dependent/independent
             if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
+                if "[String]" in item or "[None]" in item:
+                    contains_invalid = True
+                    continue
                 filtered_items.append(item)
-            elif allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
-                filtered_items.append(item)
+            else:
+                # Editor/output hanya cocokkan dengan kolom aslinya
+                column_name = item.split(" ")[0]
+                if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
+                    filtered_items.append(item)
+
+        if contains_invalid:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+            return
 
         # Hapus dari semua model lain
         for widget, (model, _) in widget_model_map.items():
@@ -276,12 +287,8 @@ class MulticollinearityDialog(QDialog):
             else:
                 original_order = self.all_columns_model2
 
-            # Cocokkan berdasarkan string penuh (bukan hanya nama kolom)
             reference_map = {col: i for i, col in enumerate(original_order)}
-            current_items = sorted(
-                current_items,
-                key=lambda x: reference_map.get(x, float('inf'))
-            )
+            current_items = sorted(current_items, key=lambda x: reference_map.get(x, float('inf')))
 
         target_model.setStringList(current_items)
         self.generate_r_script()
@@ -306,23 +313,29 @@ class MulticollinearityDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
     
     def add_dependent_variable(self):
-        # Check if there is already a variable in the dependent_variable axis
         if len(self.dependent_variable_model.stringList()) >= 1:
             QMessageBox.warning(self, "Warning", "You can only add one variable to the dependent_variable Axis!")
-            return  # Do not add if one variable is already present
+            return
 
-        # Get all selected indexes from data editor and data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        # If nothing is selected
         if not selected_items:
             QMessageBox.warning(self, "Warning", "Please select a variable first!")
             return
@@ -333,11 +346,10 @@ class MulticollinearityDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item:
+        if "[String]" in item or "[None]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
-        # Move item from data_editor or data_output
         if item in self.data_editor_model.stringList():
             editor_list = self.data_editor_model.stringList()
             editor_list.remove(item)
@@ -347,21 +359,19 @@ class MulticollinearityDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Insert into dependent_variable_model
         self.dependent_variable_model.setStringList([item])
-
-        # Generate R script after variable is added
         self.generate_r_script()
+
     
     def add_independent_variables(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.independent_variable_model.stringList()
 
-        contains_string = any("[String]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item]
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
 
-        if contains_string:
+        if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
