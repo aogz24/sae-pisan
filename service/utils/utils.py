@@ -198,8 +198,14 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     out = {}
     out["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
     result = {}
+    # Bersihkan baris kosong di akhir script
+    lines = r_script.splitlines()
+    while lines and lines[-1].strip() == "":
+        lines.pop()
+    cleaned_script = "\n".join(lines)
+
     script_box = QTextEdit()
-    script_box.setPlainText(r_script)
+    script_box.setPlainText(cleaned_script)
     script_box.setReadOnly(True)
     script_box.setStyleSheet("""
         QTextEdit {
@@ -212,14 +218,12 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
         }
     """)
     max_height = 400
-    calculated_height = script_box.fontMetrics().lineSpacing() * (r_script.count('\n') + 2)
+    calculated_height = script_box.fontMetrics().lineSpacing() * (cleaned_script.count('\n') + 2)
     script_box.setFixedHeight(min(calculated_height, max_height))
     script_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    # Tambahkan elemen teks ke layout card
     card_layout.addWidget(label_script)
     card_layout.addWidget(script_box)
-
     # Bagian Output (jika ada)
     if isinstance(results, dict):
         label_output = QLabel("<b>Output:</b>")

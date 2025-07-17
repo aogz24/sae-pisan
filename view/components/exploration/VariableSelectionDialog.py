@@ -553,7 +553,7 @@ class VariableSelectionDialog(QDialog):
             result_var = f"{method}_result"  # Variable name for the summary result
 
             r_script += (
-            f"{model_var} <- step(null_model, \n"
+            f"{model_var} <- stats::step(null_model, \n"
             f"                      scope = list(lower = null_model, upper = full_model), \n"
             f"                      direction = \"{method}\")\n\n"
             )
