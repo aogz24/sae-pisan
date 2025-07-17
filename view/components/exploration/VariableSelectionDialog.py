@@ -1,3 +1,4 @@
+
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton,QToolButton, QLabel, QCheckBox, QTextEdit, QGroupBox, QMessageBox, QMessageBox, QSpacerItem, QSizePolicy
 )
@@ -259,8 +260,8 @@ class VariableSelectionDialog(QDialog):
         contains_invalid = False
 
         for item in items:
-            # Tolak jika [String] atau [None] untuk dependent/independent
             if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
+                # Tolak jika [String] atau [None]
                 if "[String]" in item or "[None]" in item:
                     contains_invalid = True
                     continue
@@ -271,9 +272,9 @@ class VariableSelectionDialog(QDialog):
                 if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
                     filtered_items.append(item)
 
+        # Tampilkan warning kalau ada item tidak valid, tapi tetap proses yang valid
         if contains_invalid:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
-            return
 
         # Hapus dari semua model lain
         for _, (model, _) in widget_model_map.items():

@@ -223,7 +223,7 @@ class LinePlotDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.vertical_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.horizontal_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
-
+    
     def handle_drop(self, target_widget, items):
         widget_model_map = {
             self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
@@ -234,30 +234,38 @@ class LinePlotDialog(QDialog):
 
         if target_widget not in widget_model_map:
             return
-
         target_model, allowed_columns = widget_model_map[target_widget]
         current_items = target_model.stringList()
 
-        # Validasi: hanya satu variabel di horizontal axis
-        if target_widget == self.horizontal_list and (len(items) > 1 or len(current_items) >= 1):
-            QMessageBox.warning(self, "Warning", "You can only add one variable to the Horizontal Axis!")
-            return
+        # Validasi: hanya 1 variabel untuk horizontal
+        if target_widget == self.horizontal_list:
+            if len(items) > 1 or len(current_items) >= 1:
+                QMessageBox.warning(self, "Warning", "You can only add one variable to the horizontal Axis!")
+                return
 
         filtered_items = []
+        contains_invalid = False
+        rejected_items = []
 
         for item in items:
-            column_name = item.split(" ")[0]
-
-            # Jika ke horizontal/vertical, langsung diterima
             if target_widget in [self.horizontal_list, self.vertical_list]:
+                # Tolak jika [String] atau [None]
+                if "[String]" in item or "[None]" in item:
+                    contains_invalid = True
+                    rejected_items.append(item)
+                    continue
                 filtered_items.append(item)
+            else:
+                # Editor/output: cocokkan dengan kolom aslinya
+                column_name = item.split(" ")[0]
+                if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
+                    filtered_items.append(item)
 
-            # Jika ke editor/output, hanya yang berasal dari kolom terkait
-            elif allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
-                filtered_items.append(item)
+        if contains_invalid:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         # Hapus dari semua model lain
-        for widget, (model, _) in widget_model_map.items():
+        for _, (model, _) in widget_model_map.items():
             if model == target_model:
                 continue
             other_items = model.stringList()
@@ -266,18 +274,20 @@ class LinePlotDialog(QDialog):
                     other_items.remove(item)
             model.setStringList(other_items)
 
-        # Tambahkan ke target_model jika belum ada
+        # Tambahkan ke target jika belum ada
         for item in filtered_items:
             if item not in current_items:
                 current_items.append(item)
 
-        # Jika editor/output, urutkan berdasarkan asal
-        if allowed_columns:
-            reference_map = {col: i for i, col in enumerate(allowed_columns)}
+        # Urutkan kembali jika editor atau output
+        if target_widget in [self.data_editor_list, self.data_output_list]:
+            original_order = self.all_columns_model1 if target_widget == self.data_editor_list else self.all_columns_model2
+            reference_map = {col: i for i, col in enumerate(original_order)}
             current_items = sorted(current_items, key=lambda x: reference_map.get(x, float('inf')))
 
         target_model.setStringList(current_items)
         self.generate_r_script()
+
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -299,24 +309,29 @@ class LinePlotDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
     
-
     def add_variable_horizontal(self):
-        # Check if there is already a variable in the horizontal axis
         if len(self.horizontal_model.stringList()) >= 1:
             QMessageBox.warning(self, "Warning", "You can only add one variable to the Horizontal Axis!")
-            return  # Do not add if one variable is already present
+            return
 
-        # Get all selected indexes from data editor and data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        # Jika tidak ada yang dipilih
         if not selected_items:
             QMessageBox.warning(self, "Warning", "Please select a variable first!")
             return
@@ -327,11 +342,10 @@ class LinePlotDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item:
+        if "[String]" in item or "[None]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
-        # Pindahkan item dari data_editor atau data_output
         if item in self.data_editor_model.stringList():
             editor_list = self.data_editor_model.stringList()
             editor_list.remove(item)
@@ -341,23 +355,20 @@ class LinePlotDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Masukkan ke horizontal_model
         self.horizontal_model.setStringList([item])
-
-        # Generate R script setelah variabel ditambahkan
         self.generate_r_script()
+
 
     
     def add_variable_vertical(self):
-        # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.vertical_model.stringList()
 
-        contains_string = any("[String]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item]
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
 
-        if contains_string:
+        if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
@@ -375,6 +386,7 @@ class LinePlotDialog(QDialog):
 
         self.vertical_model.setStringList(selected_list)
         self.generate_r_script()
+
 
     def remove_variable(self):
         # Ambil item terpilih

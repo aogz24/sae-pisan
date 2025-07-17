@@ -249,8 +249,8 @@ class MulticollinearityDialog(QDialog):
         contains_invalid = False
 
         for item in items:
-            # Tolak jika [String] atau [None] untuk dependent/independent
             if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
+                # Tolak jika [String] atau [None]
                 if "[String]" in item or "[None]" in item:
                     contains_invalid = True
                     continue
@@ -261,12 +261,12 @@ class MulticollinearityDialog(QDialog):
                 if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
                     filtered_items.append(item)
 
+        # Tampilkan warning kalau ada item tidak valid, tapi tetap proses yang valid
         if contains_invalid:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
-            return
 
         # Hapus dari semua model lain
-        for widget, (model, _) in widget_model_map.items():
+        for _, (model, _) in widget_model_map.items():
             if model == target_model:
                 continue
             other_items = model.stringList()
@@ -292,7 +292,7 @@ class MulticollinearityDialog(QDialog):
 
         target_model.setStringList(current_items)
         self.generate_r_script()
-
+        
     def set_model(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
