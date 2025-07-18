@@ -60,9 +60,9 @@ def extract_formatted(r_output: str):
             match = re.search(r"F-statistic:\s+([\d.]+) on (\d+) and (\d+) DF,\s+p-value:\s+([^\s]+)", line)
             if match:
                 summary_info["F-statistic"] = float(match.group(1))
-                summary_info["F DF1"] = int(match.group(2))
-                summary_info["F DF2"] = int(match.group(3))
-                summary_info["F p-value"] = match.group(4)
+                summary_info["DF1"] = int(match.group(2))
+                summary_info["DF2"] = int(match.group(3))
+                summary_info["p-value"] = match.group(4)
 
         i += 1
 
@@ -79,7 +79,7 @@ def extract_formatted(r_output: str):
     def extract_coefficients(coef_lines: list[str]) -> pl.DataFrame:
         import re
 
-        columns = ["Variable", "Estimate", "Std. Error", "t Value", "P-value", "Significance"]
+        columns = ["Variable", "Estimate", "Std. Error", "t statistic", "p-value", "Significance"]
         rows = []
 
         signif_map = {
@@ -113,7 +113,7 @@ def extract_formatted(r_output: str):
                     "Variable": variable,
                     "Estimate": estimate,
                     "Std. Error": std_error,
-                    "t Value": t_value,
+                    "t statistic": t_value,
                     "P-value": p_value,
                     "Significance": significance
                 })
