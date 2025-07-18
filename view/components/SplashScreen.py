@@ -56,7 +56,6 @@ class SplashScreen(QSplashScreen):
             "Checking and Loading R...",
             "Loading R Packages...",
             "Setup Environment...",
-            "Loading Screens...",
             "Loading Completed!"
         ]
         self.current_message_index = 0
@@ -65,11 +64,8 @@ class SplashScreen(QSplashScreen):
         self.current_message_index = (self.current_message_index + 1) % len(self.messages)
         self.label.setText(self.messages[self.current_message_index])
         last_idx = len(self.messages) - 1
-        second_last_idx = len(self.messages) - 2
-        if self.current_message_index < second_last_idx:
-            progress = int((self.current_message_index / (second_last_idx - 1)) * 98) if second_last_idx > 1 else 90
-        elif self.current_message_index == second_last_idx:
-            progress = 99
+        if self.current_message_index < last_idx:
+            progress = int((self.current_message_index / (last_idx - 1)) * 99) if last_idx > 1 else 99
         else:
             progress = 100
         self.progress_anim.stop()
