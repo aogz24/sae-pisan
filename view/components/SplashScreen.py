@@ -52,6 +52,7 @@ class SplashScreen(QSplashScreen):
             "Checking and Loading R...",
             "Loading R Packages...",
             "Setup Environment...",
+            "Loading Screens...",
             "Loading Completed!"
         ]
         self.current_message_index = 0

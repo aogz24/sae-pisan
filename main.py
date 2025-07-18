@@ -49,7 +49,6 @@ def main():
     view.show()
     view.setWindowFlags(view.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint)  # Remove the always on top flag
     controller = FileController(view.model1, view.model2, view)
-    # ControllerExploration = ExplorationController(view.model1, view.model2, view)
     
     app.setStyleSheet(view.load_stylesheet_with_font_size(14))
 
@@ -73,10 +72,9 @@ def main():
         view.setStyleSheet(stylesheet)
 
     # Tampilkan window utama
-    view.show()
-
-    # Tutup splash screen setelah aplikasi siap
+    splash.update_message()
     splash.finish(view)
+    view.show()
 
     # Mulai aplikasi
     sys.exit(app.exec())
