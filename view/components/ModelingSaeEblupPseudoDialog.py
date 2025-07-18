@@ -422,7 +422,14 @@ class ModelingSaePseudoDialog(QDialog):
 
     def set_model(self, model):
         self.model = model
-        self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else
+            f"{col} [NULL]" if dtype == pl.Null else
+            f"{col} [Categorical]" if dtype == pl.Categorical else
+            f"{col} [Boolean]" if dtype == pl.Boolean else
+            f"{col} [Numeric]"
+            for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)
+        ]
         self.variables_model.setStringList(self.columns)
         self.vardir_model.setStringList([])
         self.auxilary_model.setStringList([])
