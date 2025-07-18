@@ -358,19 +358,27 @@ class CorrelationMatrixDialog(QDialog):
         formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
         r_script = ""
 
-        # Step 1: Generate the correlation matrix
-        for method, checkbox in [("pearson", self.pearson_checkbox), ("spearman", self.spearman_checkbox), ("kendall", self.kendall_checkbox)]:
+        # Step 1: Generate the correlation matrix and plots based on selected methods
+        for method, checkbox in [("pearson", self.pearson_checkbox),
+                                ("spearman", self.spearman_checkbox),
+                                ("kendall", self.kendall_checkbox)]:
             if checkbox.isChecked():
                 correlation_matrix_method = f"correlation_matrix_{method}"
-                r_script += f"{correlation_matrix_method} <- cor(data[, c({formatted_columns})], use='complete.obs', method='{method}')\n"
-
-            if self.correlation_plot_checkbox.isChecked():
                 r_script += (
-                    f"correlation_plot_{method} <- ggcorrplot({correlation_matrix_method}, "
-                    f"method = 'square', type = 'upper', lab = TRUE) + "
-                    f"ggtitle('{method.title()} Correlation Matrix')\n\n"
+                    f"{correlation_matrix_method} <- cor(data[, c({formatted_columns})], "
+                    f"use='complete.obs', method='{method}')\n"
                 )
+
+                # Only generate the plot if the plot checkbox is checked
+                if self.correlation_plot_checkbox.isChecked():
+                    r_script += (
+                        f"correlation_plot_{method} <- ggcorrplot({correlation_matrix_method}, "
+                        f"method = 'square', type = 'upper', lab = TRUE) + "
+                        f"ggtitle('{method.title()} Correlation Matrix')\n\n"
+                    )
+
         self.script_box.setPlainText(r_script)
+
 
     def accept(self):
         r_script = self.script_box.toPlainText()
