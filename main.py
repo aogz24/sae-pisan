@@ -73,8 +73,8 @@ def main():
 
     # Tampilkan window utama
     splash.update_message()
-    splash.finish(view)
     view.show()
+    splash.finish(view)
 
     # Mulai aplikasi
     sys.exit(app.exec())
