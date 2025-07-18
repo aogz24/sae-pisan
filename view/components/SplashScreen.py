@@ -26,7 +26,8 @@ class SplashScreen(QSplashScreen):
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("%p%")
         self.progress_bar.setFixedHeight(10)
         self.progress_anim = QPropertyAnimation(self.progress_bar, b"value")
         self.progress_anim.setDuration(400)
@@ -35,6 +36,9 @@ class SplashScreen(QSplashScreen):
                 border: 1px solid #bbb;
                 border-radius: 5px;
                 background: #eee;
+                text-align: center;
+                color: black;
+                font-size: 8px;
             }
             QProgressBar::chunk {
                 background-color: #4caf50;
@@ -60,10 +64,14 @@ class SplashScreen(QSplashScreen):
     def update_message(self):
         self.current_message_index = (self.current_message_index + 1) % len(self.messages)
         self.label.setText(self.messages[self.current_message_index])
-        if self.current_message_index == len(self.messages) - 2:
-            progress = 100
+        last_idx = len(self.messages) - 1
+        second_last_idx = len(self.messages) - 2
+        if self.current_message_index < second_last_idx:
+            progress = int((self.current_message_index / (second_last_idx - 1)) * 98) if second_last_idx > 1 else 90
+        elif self.current_message_index == second_last_idx:
+            progress = 99
         else:
-            progress = int((self.current_message_index / (len(self.messages) - 1)) * 100)
+            progress = 100
         self.progress_anim.stop()
         self.progress_anim.setStartValue(self.progress_bar.value())
         self.progress_anim.setEndValue(progress)
