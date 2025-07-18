@@ -31,7 +31,6 @@ def run_model_hb_area(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library(saeHB))')
         ro.r('datahb <- as.data.frame(r_df)')
         ro.r('attach(datahb)')
         try:
@@ -52,10 +51,11 @@ def run_model_hb_area(parent):
         
         script_png = """
         sae_autocorr <- function() {
-            coda::autocorr.plot(modelhb$plot[[3]], col='brown2', lwd=2)
+            coda::autocorr.plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
         }
+
         sae_plot <- function() {
-            plot(modelhb$plot[[3]], col='brown2', lwd=2)
+            plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
         }
         """
         
@@ -78,7 +78,6 @@ def run_model_hb_area(parent):
                 ro.r(f"{plot_name}()")
             plot_paths.append(plot_path)
         
-        print("Saved plots:", plot_paths)
             
         ro.r('estimated_value_hb <- modelhb$Est')
         ro.r('sd_hb <- modelhb$sd')

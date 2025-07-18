@@ -138,7 +138,6 @@ def run_model_eblup_unit(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library(sae))')
         ro.r('data_unit <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R

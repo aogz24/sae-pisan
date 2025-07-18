@@ -101,7 +101,7 @@ class FileController:
                 
                 if not file_path or not selected_sheet:  # Jika file tidak dipilih
                     return
-                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr, ignore_errors=True)
+                data = pl.read_excel(file_path, sheet_name=selected_sheet, has_header=hdr)
                 
             elif selected_filter == "JSON Files (*.json)":
                 data = pl.read_json(file_path)
@@ -118,6 +118,7 @@ class FileController:
         else:    
             self.model1.set_data(data)
             self.view.update_table(1, self.model1)
+            QMessageBox.information(self.view, "Success", "File loaded successfully!")
             self.view.autosave_data()
         
     
@@ -184,7 +185,7 @@ class FileController:
         self.view.autosave_data()
         
     def save_data(self):
-        """Simpan data dari model pertama (Sheet 1)."""
+        """Save data from the first model (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.view, "Save File", "",
             "CSV Files (*.csv);;Excel Files (*.xlsx);;JSON Files (*.json);;Text Files (*.txt)"
@@ -207,7 +208,7 @@ class FileController:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
 
     def save_data_output(self):
-        """Simpan data dari model kedua (Sheet 2)."""
+        """Save data from the first model (Sheet 1)."""
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.view, "Save Output Data", "",
             "CSV Files (*.csv);;Excel Files (*.xlsx);;JSON Files (*.json);;Text Files (*.txt)"
@@ -230,22 +231,22 @@ class FileController:
                 QMessageBox.critical(self.view, "Error", f"Failed to save file: {str(e)}")
 
     def save_as_csv(self, file_path, model):
-        """Simpan data sebagai CSV."""
+        """Save data as CSV."""
         data = model.get_data()
         data.write_csv(file_path)
 
     def save_as_excel(self, file_path, model):
-        """Simpan data sebagai Excel."""
+        """Save data as Excel."""
         data = model.get_data()
         data.write_excel(file_path)
 
     def save_as_json(self, file_path, model):
-        """Simpan data sebagai JSON."""
+        """Save data as JSON."""
         data = model.get_data()
         data.write_json(file_path, orient="records", lines=True)
 
     def save_as_txt(self, file_path, model):
-        """Simpan data sebagai file teks."""
+        """Save data as file teks."""
         data = model.get_data()
         data.write_csv(file_path, separator="\t")
 
@@ -316,15 +317,33 @@ class FileController:
                         if model:
                             columns = [model.headerData(col, Qt.Orientation.Horizontal) for col in range(model.columnCount())]
                             data_rows = []
+                            max_col_lens = [len(str(col)) for col in columns]
                             for row in range(model.rowCount()):
                                 row_data = []
-                                for col in range(model.columnCount()):
-                                    index = model.index(row, col)
-                                    row_data.append(str(model.data(index)))
-                                data_rows.append(row_data)
+                                for row in range(model.rowCount()):
+                                    row_data = []
+                                    for col in range(model.columnCount()):
+                                        index = model.index(row, col)
+                                        value = model.data(index)
+                                        value_str = str(value)
+                                        try:
+                                            float_val = float(value)
+                                            if '.' in value_str and len(value_str) > max_col_lens[col]:
+                                                value_str = f"{float_val:.5f}"
+                                        except Exception:
+                                            pass
+                                        row_data.append(value_str)
+                                        if len(value_str) > max_col_lens[col]:
+                                            max_col_lens[col] = len(value_str)
+                                    data_rows.append(row_data)
                             if data_rows:
                                 table_data = [columns] + data_rows
-                                table = Table(table_data, repeatRows=1)
+                                total_len = sum(max_col_lens)
+                                max_width = doc.width
+                                col_widths = [
+                                    max(40, (l / total_len) * max_width) for l in max_col_lens
+                                ]
+                                table = Table(table_data, repeatRows=1, colWidths=col_widths)
                                 table.setStyle(TableStyle([
                                     ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
@@ -333,6 +352,7 @@ class FileController:
                                     ('FONTSIZE', (0, 0), (-1, -1), 8),
                                     ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
                                     ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                 ]))
                                 elements.append(table)
                                 elements.append(Spacer(1, 12))
@@ -346,7 +366,10 @@ class FileController:
                                     buffer.open(QIODevice.OpenModeFlag.ReadWrite)
                                     pixmap.toImage().save(buffer, "PNG")
                                     buffer.seek(0)
-                                    img = Image(io.BytesIO(buffer.data()), width=400, height=250)
+                                    # Resize image to fit page width if needed
+                                    img_width = min(400, doc.width)
+                                    img_height = 250 * (img_width / 400)  # maintain aspect ratio
+                                    img = Image(io.BytesIO(buffer.data()), width=img_width, height=img_height)
                                     elements.append(img)
                                     elements.append(Spacer(1, 12))
                     elif isinstance(sub_widget, QLabel):
@@ -365,7 +388,7 @@ class FileController:
                             generated_style = ParagraphStyle(
                                 name="GeneratedHeading",
                                 parent=styles["Normal"],
-                                alignment=2,  # TA_RIGHT is 2
+                                alignment=2,
                                 fontName="Helvetica-Oblique",  # Italic
                                 fontSize=10,
                                 textColor=colors.black

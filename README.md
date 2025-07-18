@@ -3,7 +3,7 @@
 1. Install library yang dipakai dengan
 
 ```bash
-pip install pandas Rpython pyqt6
+pip install -r requirement.txt
 ```
 
 2. Untuk menjalankan program menggunakan perintah
@@ -11,6 +11,10 @@ pip install pandas Rpython pyqt6
 ```bash
 python3 __main__.py
 ```
+
+3. Install R dan R package ke dalam folder R
+
+4. versi
 
 ## Penulisan Commit 💬
 

@@ -4,6 +4,7 @@ import polars as pl
 from model.Scatterplot import Scatterplot
 from controller.Graph.GraphController import ScatterPlotController
 from service.utils.utils import display_script_and_output
+from view.components.DragDropListView import DragDropListView
 
 from PyQt6.QtWidgets import (
     QToolButton, QDialog, QVBoxLayout, QHBoxLayout, QListView, QPushButton, QLabel, QSpacerItem,  QCheckBox, QTextEdit, QGroupBox,QSizePolicy, QMessageBox
@@ -74,7 +75,7 @@ class ScatterPlotDialog(QDialog):
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list = DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -84,7 +85,7 @@ class ScatterPlotDialog(QDialog):
         # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list = DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -113,7 +114,7 @@ class ScatterPlotDialog(QDialog):
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variable", self)
         self.selected_model = QStringListModel()
-        self.selected_list = QListView(self)
+        self.selected_list = DragDropListView(parent=self)
         self.selected_list.setModel(self.selected_model)
         self.selected_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         right_layout.addWidget(self.selected_label)
@@ -150,10 +151,6 @@ class ScatterPlotDialog(QDialog):
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
-
-        # Spacer to keep the icon_label on the right end
-        spacer = QSpacerItem(40, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        
         self.toggle_script_button = QToolButton()
         self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
         self.toggle_script_button.setIconSize(QSize(16, 16))
@@ -193,6 +190,67 @@ class ScatterPlotDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
+    def handle_drop(self, target_widget, items):
+        # Map widget to model
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.selected_list: (self.selected_model, None),
+        }
+
+        if target_widget not in widget_model_map:
+            return
+
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
+
+        filtered_items = []
+        contains_string = any("[String]" in item or "[None]" in item for item in items)
+
+        for item in items:
+            # Reject if String or None type
+            if "[String]" in item or "[None]" in item:
+                continue
+
+            if target_widget == self.selected_list:
+                filtered_items.append(item)
+            else:
+                column_name = item.split(" ")[0]
+                if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
+                    filtered_items.append(item)
+
+        # ❗️Show warning if there are String or None types
+        if contains_string:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+
+        # Add valid items to the target model
+        for item in filtered_items:
+            if item not in current_items:
+                current_items.append(item)
+
+        # Remove from other models
+        for other_widget, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Reorder items
+        if target_widget == self.data_editor_list:
+            ordered = [col for col in self.all_columns_model1 if col in current_items]
+            target_model.setStringList(ordered)
+        elif target_widget == self.data_output_list:
+            ordered = [col for col in self.all_columns_model2 if col in current_items]
+            target_model.setStringList(ordered)
+        else:
+            target_model.setStringList(current_items)
+
+        self.generate_r_script()
+
+
     def set_model(self, model1, model2):
         self.model1 = model1
         self.model2 = model2
@@ -213,21 +271,33 @@ class ScatterPlotDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
+
 
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
-        
-        contains_string = any("[String]" in item for item in selected_items)   
-        selected_items = [item for item in selected_items if "[String]" not in item] 
 
-        if contains_string:
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+
+        selected_items = [item for item in selected_items if "[Numeric]" in item]
+
+        # Tampilkan warning jika ada yang tidak valid
+        if contains_invalid:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
@@ -247,25 +317,39 @@ class ScatterPlotDialog(QDialog):
         self.generate_r_script()
 
     def remove_variable(self):
+        """
+        Removes selected variables from the selected list and generates the R script.
+        """
         selected_indexes = self.selected_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
+
         selected_list = self.selected_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
 
         for item in selected_items:
-            column_name = item.split(' ')[0]
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                editor_list = self.data_editor_model.stringList()
-                editor_list.append(item)
-                self.data_editor_model.setStringList(editor_list)
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                output_list = self.data_output_model.stringList()
-                output_list.append(item)
-                self.data_output_model.setStringList(output_list)
+            column_name = item.split(" ")[0]
 
+            # Check if the item belongs to model1 (editor) or model2 (output)
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
+                if item not in editor_list:
+                    editor_list.append(item)
+                    # Re-sort according to all_columns_model1
+                    editor_list = [col for col in self.all_columns_model1 if col in editor_list]
+
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
+                if item not in output_list:
+                    output_list.append(item)
+                    # Re-sort according to all_columns_model2
+                    output_list = [col for col in self.all_columns_model2 if col in output_list]
+
+            # Remove from selected
             if item in selected_list:
                 selected_list.remove(item)
 
         self.selected_model.setStringList(selected_list)
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
         self.generate_r_script()
 
     def get_selected_columns(self):
@@ -326,7 +410,7 @@ class ScatterPlotDialog(QDialog):
 
         # Start creating R script for scatterplot matrix
         r_script = "data_plot <- data[, c(" + ", ".join(f'"{col}"' for col in selected_columns) + ")]\n\n"
-        r_script += "scatterplot_ <- ggpairs(\n"
+        r_script += "scatterplot <- ggpairs(\n"
         r_script += "    data_plot,\n"
         r_script += "    lower = list(continuous = " + ('wrap("smooth", method="lm")' if show_regression else '"points"') + "),\n"
         r_script += "    upper = list(continuous = " + ('"cor"' if show_correlation else '"blank"') + "),\n"

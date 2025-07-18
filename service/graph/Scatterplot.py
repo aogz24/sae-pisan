@@ -3,7 +3,7 @@ import polars as pl
 
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_scatterplot(parent):
     """
@@ -36,7 +36,7 @@ def run_scatterplot(parent):
     # Merge the data into one dataframe
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
 
@@ -57,13 +57,15 @@ def run_scatterplot(parent):
         r_objects = ro.r("ls()")  
 
         # Find scatterplot objects
-        scatterplot_vars = [obj for obj in r_objects if obj.startswith("scatterplot_")]
+        scatterplot_vars = [obj for obj in r_objects if obj.startswith("scatterplot")]
 
         plot_paths = []
 
         # Save scatterplots as images
         for plot_name in scatterplot_vars:
-            plot_path = f"{plot_name}.png"
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(appdata_dir, exist_ok=True)
+            plot_path = os.path.join(appdata_dir, f"{plot_name}.png")
             
             # Specify the output file for the image
             grdevices.png(file=plot_path, width=800, height=600)

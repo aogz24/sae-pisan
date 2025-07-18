@@ -8,7 +8,7 @@ import re
 from model.LinePlot import Lineplot
 from controller.Graph.GraphController import LinePlotController
 from service.utils.utils import display_script_and_output, check_script
-
+from view.components.DragDropListView import DragDropListView
 
 class LinePlotDialog(QDialog):
     """
@@ -79,7 +79,7 @@ class LinePlotDialog(QDialog):
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list = DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -89,7 +89,7 @@ class LinePlotDialog(QDialog):
         # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list = DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -134,7 +134,7 @@ class LinePlotDialog(QDialog):
         horizontal_layout = QVBoxLayout()
         self.horizontal_label = QLabel("Horizontal Axis", self)
         self.horizontal_model = QStringListModel()
-        self.horizontal_list = QListView(self)
+        self.horizontal_list = DragDropListView(parent=self)
         self.horizontal_list.setModel(self.horizontal_model)
         self.horizontal_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
 
@@ -151,7 +151,7 @@ class LinePlotDialog(QDialog):
         vertical_layout = QVBoxLayout()
         self.vertical_label = QLabel("Vertical Axis", self)
         self.vertical_model = QStringListModel()
-        self.vertical_list = QListView(self)
+        self.vertical_list = DragDropListView(parent=self)
         self.vertical_list.setModel(self.vertical_model)
         self.vertical_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         vertical_layout.addWidget(self.vertical_label)
@@ -223,6 +223,71 @@ class LinePlotDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.vertical_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.horizontal_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+    
+    def handle_drop(self, target_widget, items):
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.horizontal_list: (self.horizontal_model, None),
+            self.vertical_list: (self.vertical_model, None),
+        }
+
+        if target_widget not in widget_model_map:
+            return
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
+
+        # Validasi: hanya 1 variabel untuk horizontal
+        if target_widget == self.horizontal_list:
+            if len(items) > 1 or len(current_items) >= 1:
+                QMessageBox.warning(self, "Warning", "You can only add one variable to the horizontal Axis!")
+                return
+
+        filtered_items = []
+        contains_invalid = False
+        rejected_items = []
+
+        for item in items:
+            if target_widget in [self.horizontal_list, self.vertical_list]:
+                # Tolak jika [String] atau [None]
+                if "[String]" in item or "[None]" in item:
+                    contains_invalid = True
+                    rejected_items.append(item)
+                    continue
+                filtered_items.append(item)
+            else:
+                # Editor/output: cocokkan dengan kolom aslinya
+                column_name = item.split(" ")[0]
+                if allowed_columns and any(column_name == col.split(" ")[0] for col in allowed_columns):
+                    filtered_items.append(item)
+
+        if contains_invalid:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+
+        # Hapus dari semua model lain
+        for _, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Tambahkan ke target jika belum ada
+        for item in filtered_items:
+            if item not in current_items:
+                current_items.append(item)
+
+        # Urutkan kembali jika editor atau output
+        if target_widget in [self.data_editor_list, self.data_output_list]:
+            original_order = self.all_columns_model1 if target_widget == self.data_editor_list else self.all_columns_model2
+            reference_map = {col: i for i, col in enumerate(original_order)}
+            current_items = sorted(current_items, key=lambda x: reference_map.get(x, float('inf')))
+
+        target_model.setStringList(current_items)
+        self.generate_r_script()
+
 
     def set_model(self, model1, model2):
         self.model1 = model1
@@ -244,24 +309,29 @@ class LinePlotDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
     
-
     def add_variable_horizontal(self):
-        # Check if there is already a variable in the horizontal axis
         if len(self.horizontal_model.stringList()) >= 1:
             QMessageBox.warning(self, "Warning", "You can only add one variable to the Horizontal Axis!")
-            return  # Do not add if one variable is already present
+            return
 
-        # Get all selected indexes from data editor and data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        # Jika tidak ada yang dipilih
         if not selected_items:
             QMessageBox.warning(self, "Warning", "Please select a variable first!")
             return
@@ -272,11 +342,10 @@ class LinePlotDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item:
+        if "[String]" in item or "[None]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
-        # Pindahkan item dari data_editor atau data_output
         if item in self.data_editor_model.stringList():
             editor_list = self.data_editor_model.stringList()
             editor_list.remove(item)
@@ -286,23 +355,20 @@ class LinePlotDialog(QDialog):
             output_list.remove(item)
             self.data_output_model.setStringList(output_list)
 
-        # Masukkan ke horizontal_model
         self.horizontal_model.setStringList([item])
-
-        # Generate R script setelah variabel ditambahkan
         self.generate_r_script()
+
 
     
     def add_variable_vertical(self):
-        # Ambil semua indeks yang dipilih dari data editor dan data output
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.vertical_model.stringList()
 
-        contains_string = any("[String]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item]
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
 
-        if contains_string:
+        if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
@@ -323,50 +389,46 @@ class LinePlotDialog(QDialog):
 
 
     def remove_variable(self):
-        # Ambil indeks yang dipilih dari daftar variabel horizontal dan vertical
-        selected_horizontal_indexes = self.horizontal_list.selectedIndexes()
-        selected_vertical_indexes = self.vertical_list.selectedIndexes()
+        # Ambil item terpilih
+        selected_indexes = self.horizontal_list.selectedIndexes() + self.vertical_list.selectedIndexes()
+        selected_items = [index.data() for index in selected_indexes]
 
-        # Ambil nama variabel yang dipilih
-        selected_horizontal_items = [index.data() for index in selected_horizontal_indexes]
-        selected_vertical_items = [index.data() for index in selected_vertical_indexes]
-
-        # Gabungkan kedua daftar variabel yang dipilih
-        selected_items = selected_horizontal_items + selected_vertical_items
-
-        # Ambil daftar semua variabel yang sedang dipilih
+        # Ambil semua list sekarang
         horizontal_list = self.horizontal_model.stringList()
         vertical_list = self.vertical_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
 
-        # Periksa apakah variabel dikembalikan ke data editor atau data output
         for item in selected_items:
-            column_name = item.split(' ')[0]  # Ambil nama kolom sebelum spasi
+            column_name = item.split(" ")[0]
 
-            if column_name in [col.split(' ')[0] for col in self.all_columns_model1]:
-                editor_list = self.data_editor_model.stringList()
+            # Kembalikan ke model asal
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
                 if item not in editor_list:
                     editor_list.append(item)
-                    self.data_editor_model.setStringList(editor_list)
-
-            elif column_name in [col.split(' ')[0] for col in self.all_columns_model2]:
-                output_list = self.data_output_model.stringList()
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
                 if item not in output_list:
                     output_list.append(item)
-                    self.data_output_model.setStringList(output_list)
 
-            # Hapus item dari daftar horizontal atau vertical jika ada
+            # Hapus dari horizontal/vertical
             if item in horizontal_list:
                 horizontal_list.remove(item)
-
             if item in vertical_list:
                 vertical_list.remove(item)
 
-        # Perbarui daftar variabel yang dipilih
+        # Sort ulang sesuai urutan awal
+        editor_list = sorted(editor_list, key=lambda x: self.all_columns_model1.index(x) if x in self.all_columns_model1 else float('inf'))
+        output_list = sorted(output_list, key=lambda x: self.all_columns_model2.index(x) if x in self.all_columns_model2 else float('inf'))
+
+        # Update model
         self.horizontal_model.setStringList(horizontal_list)
         self.vertical_model.setStringList(vertical_list)
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
 
-        # Perbarui script R setelah perubahan
+        # Update R script
         self.generate_r_script()
+
 
     def get_selected_horizontal(self):
         return [

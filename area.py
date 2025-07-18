@@ -140,30 +140,50 @@ def mseFH(formula, vardir_col, method="REML", MAXITER=100, PRECISION=1e-4, B=0, 
 
     A = result["est"]["fit"]["refvar"]
     m, p = X.shape
+    
+    g1d = np.zeros(m)
+    g2d = np.zeros(m)
+    g3d = np.zeros(m)
+    mse2d = np.zeros(m)
+    
     Vi = 1 / (A + vardir)
     Bd = vardir / (A + vardir)
     SumAD2 = np.sum(Vi**2)
     XtVi = (Vi[:, np.newaxis] * X).T
     Q = solve(XtVi @ X, np.eye(p))
 
-    g1d = vardir * (1 - Bd)
-    g2d = np.array([(Bd[d]**2) * X[d:d+1] @ Q @ X[d:d+1].T for d in range(m)]).flatten()
+    
 
     if method == "REML":
-        VarA = 2 / SumAD2
-        g3d = (Bd**2) * VarA / (A + vardir)
-        mse2d = g1d + g2d + 2 * g3d
+        VarA = 2 / SumAD2  # Varian asimtotik estimator REML/ML
+        for d in range(m):
+            g1d[d] = vardir[d] * (1 - Bd[d])
+            xd = X[d, :].reshape(1, p)  # ubah menjadi matriks baris 1xP
+            g2d[d] = (Bd[d]**2) * xd @ Q @ xd.T
+            g3d[d] = (Bd[d]**2) * VarA / (A + vardir[d])
+            mse2d[d] = g1d[d] + g2d[d] + 2 * g3d[d]
+
     elif method == "ML":
         VarA = 2 / SumAD2
-        b = -np.trace(Q @ (XtVi @ (Vi[:, np.newaxis] * X))) / SumAD2
-        g3d = (Bd**2) * VarA / (A + vardir)
-        mse2d = g1d + g2d + 2 * g3d - b * (Bd**2)
-    else:  # FH
+        b = -1 * np.sum(np.diag(Q @ ((Vi**2).reshape(-1, 1) * X).T @ X)) / SumAD2
+        for d in range(m):
+            g1d[d] = vardir[d] * (1 - Bd[d])
+            xd = X[d, :].reshape(1, p)
+            g2d[d] = (Bd[d]**2) * xd @ Q @ xd.T
+            g3d[d] = (Bd[d]**2) * VarA / (A + vardir[d])
+            mse2d[d] = g1d[d] + g2d[d] + 2 * g3d[d] - b * (Bd[d]**2)
+
+    else:  # Metode FH
         SumAD = np.sum(Vi)
         VarA = 2 * m / (SumAD**2)
         b = 2 * (m * SumAD2 - SumAD**2) / (SumAD**3)
-        g3d = (Bd**2) * VarA / (A + vardir)
-        mse2d = g1d + g2d + 2 * g3d - b * (Bd**2)
+        for d in range(m):
+            g1d[d] = vardir[d] * (1 - Bd[d])
+            xd = X[d, :].reshape(1, p)
+            g2d[d] = (Bd[d]**2) * xd @ Q @ xd.T
+            g3d[d] = (Bd[d]**2) * VarA / (A + vardir[d])
+            mse2d[d] = g1d[d] + g2d[d] + 2 * g3d[d] - b * (Bd[d]**2)
+
 
     result["mse"] = mse2d
     return result

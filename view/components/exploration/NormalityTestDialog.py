@@ -7,10 +7,13 @@ import polars as pl
 from model.NormalityTest import NormalityTest
 from controller.Eksploration.EksplorationController import NormalityTestController
 from service.utils.utils import display_script_and_output
+from view.components.DragDropListView import DragDropListView
+
 
 class NormalityTestDialog(QDialog):
-    """
+    """z
     A dialog for performing normality tests on selected variables from two data models.
+    
     Attributes:
         parent (QWidget): The parent widget.
         model1 (Any): The first data model.
@@ -20,15 +23,15 @@ class NormalityTestDialog(QDialog):
         selected_status (dict): Dictionary to store the status of selected variables.
         data_editor_label (QLabel): Label for the data editor section.
         data_editor_model (QStringListModel): Model for the data editor list view.
-        data_editor_list (QListView): List view for the data editor.
+        data_editor_list (DragDropListView): List view for the data editor.
         data_output_label (QLabel): Label for the data output section.
         data_output_model (QStringListModel): Model for the data output list view.
-        data_output_list (QListView): List view for the data output.
+        data_output_list (DragDropListView): List view for the data output.
         add_button (QPushButton): Button to add selected variables.
         remove_button (QPushButton): Button to remove selected variables.
         selected_label (QLabel): Label for the selected variables section.
         selected_model (QStringListModel): Model for the selected variables list view.
-        selected_list (QListView): List view for the selected variables.
+        selected_list (DragDropListView): List view for the selected variables.
         shapiro_checkbox (QCheckBox): Checkbox for the Shapiro-Wilk test.
         jarque_checkbox (QCheckBox): Checkbox for the Jarque-Bera test.
         lilliefors_checkbox (QCheckBox): Checkbox for the Lilliefors test.
@@ -39,6 +42,7 @@ class NormalityTestDialog(QDialog):
         icon_label (QLabel): Label for the running icon.
         script_box (QTextEdit): Text box for displaying the generated R script.
         run_button (QPushButton): Button to run the normality test.
+    
     Methods:
         __init__(parent): Initializes the dialog and its components.
         set_model(model1, model2): Sets the data models and updates the data editor and output lists.
@@ -49,6 +53,8 @@ class NormalityTestDialog(QDialog):
         generate_r_script(): Generates the R script based on selected variables, methods, and graph options.
         accept(): Runs the normality test using the generated R script and displays the results.
         closeEvent(event): Resets the dialog when it is closed.
+        handle_drop(target_widget, items): Handles the drop event for drag-and-drop functionality.
+        toggle_r_script_visibility(): Toggles the visibility of the R script text edit area.
     """
     
     def __init__(self, parent):
@@ -76,7 +82,7 @@ class NormalityTestDialog(QDialog):
         # Data Editor
         self.data_editor_label = QLabel("Data Editor", self)
         self.data_editor_model = QStringListModel()
-        self.data_editor_list = QListView(self)
+        self.data_editor_list =  DragDropListView(parent=self)
         self.data_editor_list.setModel(self.data_editor_model)
         self.data_editor_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_editor_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -86,7 +92,7 @@ class NormalityTestDialog(QDialog):
         # Data Output
         self.data_output_label = QLabel("Data Output", self)
         self.data_output_model = QStringListModel()
-        self.data_output_list = QListView(self)
+        self.data_output_list =  DragDropListView(parent=self)
         self.data_output_list.setModel(self.data_output_model)
         self.data_output_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         self.data_output_list.setEditTriggers(QListView.EditTrigger.NoEditTriggers)
@@ -115,7 +121,7 @@ class NormalityTestDialog(QDialog):
         right_layout = QVBoxLayout()
         self.selected_label = QLabel("Variables", self)
         self.selected_model = QStringListModel()
-        self.selected_list = QListView(self)
+        self.selected_list =  DragDropListView(parent=self)
         self.selected_list.setModel(self.selected_model)
         self.selected_list.setSelectionMode(QListView.SelectionMode.MultiSelection)
         right_layout.addWidget(self.selected_label)
@@ -199,6 +205,65 @@ class NormalityTestDialog(QDialog):
         self.data_output_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
 
+    def handle_drop(self, target_widget, items):
+        # Mapping widget to model
+        widget_model_map = {
+            self.data_editor_list: (self.data_editor_model, self.all_columns_model1),
+            self.data_output_list: (self.data_output_model, self.all_columns_model2),
+            self.selected_list: (self.selected_model, None),
+        }
+
+        if target_widget not in widget_model_map:
+            return
+
+        target_model, allowed_columns = widget_model_map[target_widget]
+        current_items = target_model.stringList()
+
+        filtered_items = []
+        contains_string = any("[String]" in item or "[None]" in item for item in items)
+
+        for item in items:
+            # Tolak jika String atau None
+            if "[String]" in item or "[None]" in item:
+                continue
+
+            if target_widget == self.selected_list:
+                filtered_items.append(item)
+            else:
+                column_name = item.split(" ")[0]
+                if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
+                    filtered_items.append(item)
+
+        # ❗️Warning kalau ada String atau None
+        if contains_string:
+            QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
+
+        # Tambahkan item yang valid ke target
+        for item in filtered_items:
+            if item not in current_items:
+                current_items.append(item)
+
+        # Hapus dari model lain
+        for other_widget, (model, _) in widget_model_map.items():
+            if model == target_model:
+                continue
+            other_items = model.stringList()
+            for item in filtered_items:
+                if item in other_items:
+                    other_items.remove(item)
+            model.setStringList(other_items)
+
+        # Urutkan kembali
+        if target_widget == self.data_editor_list:
+            ordered = [col for col in self.all_columns_model1 if col in current_items]
+            target_model.setStringList(ordered)
+        elif target_widget == self.data_output_list:
+            ordered = [col for col in self.all_columns_model2 if col in current_items]
+            target_model.setStringList(ordered)
+        else:
+            target_model.setStringList(current_items)
+
+        self.generate_r_script()
 
     def toggle_r_script_visibility(self):
         """
@@ -222,21 +287,33 @@ class NormalityTestDialog(QDialog):
 
 
     def get_column_with_dtype(self, model):
-        self.columns = [
-            f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]"
-            for col, dtype in zip(model.get_data().columns, model.get_data().dtypes)
-        ]
-        return self.columns 
+        """
+        Returns a list of columns with simplified data types:
+        String, Numeric, or None.
+        """
+        self.columns = []
+        for col, dtype in zip(model.get_data().columns, model.get_data().dtypes):
+            if dtype == pl.Utf8:
+                tipe = "String"
+            elif dtype == pl.Null:
+                tipe = "None"
+            else:
+                tipe = "Numeric"
+            self.columns.append(f"{col} [{tipe}]")
+        return self.columns
+
     
     def add_variable(self):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
-        
-        contains_string = any("[String]" in item for item in selected_items)   
-        selected_items = [item for item in selected_items if "[String]" not in item] 
 
-        if contains_string:
+        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+
+        selected_items = [item for item in selected_items if "[Numeric]" in item]
+
+        # Tampilkan warning jika ada yang tidak valid
+        if contains_invalid:
             QMessageBox.warning(self, "Warning", "Selected variables must be of type Numeric.")
 
         for item in selected_items:
@@ -254,6 +331,7 @@ class NormalityTestDialog(QDialog):
 
         self.selected_model.setStringList(selected_list)
         self.generate_r_script()
+
 
     def remove_variable(self):
         selected_indexes = self.selected_list.selectedIndexes()
@@ -276,10 +354,45 @@ class NormalityTestDialog(QDialog):
 
         self.selected_model.setStringList(selected_list)
         self.generate_r_script()
+
+    def remove_variable(self):
+        """
+        Removes selected variables from the selected list and generates the R script.
+        """
+        selected_indexes = self.selected_list.selectedIndexes()
+        selected_items = [index.data() for index in selected_indexes]
+
+        selected_list = self.selected_model.stringList()
+        editor_list = self.data_editor_model.stringList()
+        output_list = self.data_output_model.stringList()
+
+        for item in selected_items:
+            column_name = item.split(" ")[0]
+
+            # Check if the item belongs to model1 (editor) or model2 (output)
+            if column_name in [col.split(" ")[0] for col in self.all_columns_model1]:
+                if item not in editor_list:
+                    editor_list.append(item)
+                    # Re-sort according to all_columns_model1
+                    editor_list = [col for col in self.all_columns_model1 if col in editor_list]
+
+            elif column_name in [col.split(" ")[0] for col in self.all_columns_model2]:
+                if item not in output_list:
+                    output_list.append(item)
+                    # Re-sort according to all_columns_model2
+                    output_list = [col for col in self.all_columns_model2 if col in output_list]
+
+            # Remove from selected
+            if item in selected_list:
+                selected_list.remove(item)
+
+        self.selected_model.setStringList(selected_list)
+        self.data_editor_model.setStringList(editor_list)
+        self.data_output_model.setStringList(output_list)
+        self.generate_r_script()
     
     def get_selected_columns(self):
         return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
-
 
     def generate_r_script(self):
         selected_vars = self.get_selected_columns()

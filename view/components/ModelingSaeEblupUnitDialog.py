@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QListView, QPushButton, QHBoxLayout, 
+    QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget, QToolButton
 )
 from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QIcon
+from view.components.DragDropListView import DragDropListView
 from service.modelling.SaeEblupUnit import *
 from controller.modelling.SaeEblupUnitController import SaeEblupUnitController
 from model.SaeEblupUnit import SaeEblupUnit
@@ -11,8 +12,20 @@ from PyQt6.QtWidgets import QMessageBox
 import polars as pl
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
+from view.components.ConsoleDialog import ConsoleDialog
 import threading
 import contextvars
+
+import sys
+
+class ConsoleStream:
+    def __init__(self, signal):
+        self.signal = signal
+    def write(self, text):
+        if text.strip():
+            self.signal.emit(text)
+    def flush(self):
+        pass
 
 class ModelingSaeUnitDialog(QDialog):
     """
@@ -80,6 +93,7 @@ class ModelingSaeUnitDialog(QDialog):
     """
     
     run_model_finished = pyqtSignal(object, object, object, object)
+    update_console = pyqtSignal(str)
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -98,6 +112,8 @@ class ModelingSaeUnitDialog(QDialog):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.console_dialog = None
+        self.update_console.connect(self._append_console)
 
         # Layout utama untuk membagi area menjadi dua bagian (kiri dan kanan)
         self.split_layout = QHBoxLayout()
@@ -105,7 +121,7 @@ class ModelingSaeUnitDialog(QDialog):
         # Layout kiri untuk daftar variabel
         self.left_layout = QVBoxLayout()
         self.variables_label = QLabel("Select Variables:")
-        self.variables_list = QListView()
+        self.variables_list = DragDropListView(parent=self)
         self.variables_model = QStringListModel(self.columns)
         self.variables_list.setModel(self.variables_model)
         self.variables_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -155,7 +171,7 @@ class ModelingSaeUnitDialog(QDialog):
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         self.right_layout = QVBoxLayout()
         self.of_interest_label = QLabel("Variable of interest:")
-        self.of_interest_list = QListView()
+        self.of_interest_list = DragDropListView(parent=self)
         self.of_interest_model = QStringListModel()
         self.of_interest_list.setModel(self.of_interest_model)
         self.of_interest_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -164,7 +180,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.right_layout.addWidget(self.of_interest_list)
 
         self.auxilary_label = QLabel("Auxilary Variable(s):")
-        self.auxilary_list = QListView()
+        self.auxilary_list = DragDropListView(parent=self)
         self.auxilary_model = QStringListModel()
         self.auxilary_list.setModel(self.auxilary_model)
         self.auxilary_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -173,7 +189,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.right_layout.addWidget(self.auxilary_list)
 
         self.as_factor_label = QLabel("as Factor of Auxilary Variable(s):")
-        self.as_factor_list = QListView()
+        self.as_factor_list = DragDropListView(parent=self)
         self.as_factor_model = QStringListModel()
         self.as_factor_list.setModel(self.as_factor_model)
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -184,7 +200,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.as_factor_model.setStringList([])
         
         self.domain_label = QLabel("Domain:")
-        self.domain_list = QListView()
+        self.domain_list = DragDropListView(parent=self)
         self.domain_model = QStringListModel()
         self.domain_list.setModel(self.domain_model)
         self.domain_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -192,7 +208,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.right_layout.addWidget(self.domain_list)
         
         self.index_label = QLabel("Index number of Area:")
-        self.index_list = QListView()
+        self.index_list = DragDropListView(parent=self)
         self.index_model = QStringListModel()
         self.index_list.setModel(self.index_model)
         self.index_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -200,7 +216,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.right_layout.addWidget(self.index_list)
         
         self.auxilary_vars_mean = QLabel("Auxilary Variable(s) Mean:")
-        self.auxilary_vars_mean_list = QListView()
+        self.auxilary_vars_mean_list = DragDropListView(parent=self)
         self.aux_mean_model = QStringListModel()
         self.auxilary_vars_mean_list.setModel(self.aux_mean_model)
         self.auxilary_vars_mean_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -208,7 +224,7 @@ class ModelingSaeUnitDialog(QDialog):
         self.right_layout.addWidget(self.auxilary_vars_mean_list)
         
         self.population_sample_size = QLabel("Population Sample Size:")
-        self.population_sample_size_list = QListView()
+        self.population_sample_size_list = DragDropListView(parent=self)
         self.population_sample_size_model = QStringListModel()
         self.population_sample_size_list.setModel(self.population_sample_size_model)
         self.population_sample_size_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -256,6 +272,11 @@ class ModelingSaeUnitDialog(QDialog):
         self.icon_label.setVisible(False)
         self.script_layout.setAlignment(self.text_script, Qt.AlignmentFlag.AlignLeft)
 
+        self.show_console_first_checkbox = QCheckBox("Show R Console")
+        self.show_console_first_checkbox.setChecked(False)  # default: show before
+        # Tambahkan ke layout sebelum tombol Option
+        self.main_layout.addWidget(self.show_console_first_checkbox)
+        
         self.main_layout.addLayout(self.script_layout)
         self.option_button.clicked.connect(lambda : show_options(self))
         
@@ -296,6 +317,12 @@ class ModelingSaeUnitDialog(QDialog):
         self.reply=None
         self.stop_thread = threading.Event()
         
+    def _append_console(self, text):
+        if self.console_dialog:
+            if any(char.isdigit() for char in text):
+                text = f"Bootstrap={text}"
+            self.console_dialog.append_text(text)
+    
     def toggle_r_script_visibility(self):
         """
         Toggles the visibility of the R script text edit area and updates the toggle button text.
@@ -307,7 +334,163 @@ class ModelingSaeUnitDialog(QDialog):
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
+    def handle_drop(self, target_list, items):
+        """
+        Handle drag and drop between variable lists.
+        """
+        from PyQt6.QtCore import QItemSelectionModel
+
+        mapping = {
+            self.variables_list: "variables",
+            self.of_interest_list: "of_interest",
+            self.auxilary_list: "auxilary",
+            self.as_factor_list: "as_factor",
+            self.domain_list: "domain",
+            self.index_list: "index",
+            self.auxilary_vars_mean_list: "aux_mean",
+            self.population_sample_size_list: "population_sample_size"
+        }
+        source_list = None
+        for lst in mapping:
+            if any(item in lst.model().stringList() for item in items):
+                source_list = lst
+                break
+
+        # Drag dari variables_list ke kanan (assign)
+        if source_list == self.variables_list:
+            if target_list == self.of_interest_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.domain_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_domains(self)
+            elif target_list == self.index_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_index(self)
+            elif target_list == self.auxilary_vars_mean_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_aux_mean(self)
+            elif target_list == self.population_sample_size_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_population_sample_size(self)
+
+        # Drag dari kanan ke variables_list (unassign)
+        elif target_list == self.variables_list:
+            if source_list == self.of_interest_list:
+                self.of_interest_list.clearSelection()
+                for idx, val in enumerate(self.of_interest_model.stringList()):
+                    if val in items:
+                        self.of_interest_list.selectionModel().select(
+                            self.of_interest_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.auxilary_list:
+                self.auxilary_list.clearSelection()
+                for idx, val in enumerate(self.auxilary_model.stringList()):
+                    if val in items:
+                        self.auxilary_list.selectionModel().select(
+                            self.auxilary_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.as_factor_list:
+                self.as_factor_list.clearSelection()
+                for idx, val in enumerate(self.as_factor_model.stringList()):
+                    if val in items:
+                        self.as_factor_list.selectionModel().select(
+                            self.as_factor_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.domain_list:
+                self.domain_list.clearSelection()
+                for idx, val in enumerate(self.domain_model.stringList()):
+                    if val in items:
+                        self.domain_list.selectionModel().select(
+                            self.domain_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.index_list:
+                self.index_list.clearSelection()
+                for idx, val in enumerate(self.index_model.stringList()):
+                    if val in items:
+                        self.index_list.selectionModel().select(
+                            self.index_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.auxilary_vars_mean_list:
+                self.auxilary_vars_mean_list.clearSelection()
+                for idx, val in enumerate(self.aux_mean_model.stringList()):
+                    if val in items:
+                        self.auxilary_vars_mean_list.selectionModel().select(
+                            self.aux_mean_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+            elif source_list == self.population_sample_size_list:
+                self.population_sample_size_list.clearSelection()
+                for idx, val in enumerate(self.population_sample_size_model.stringList()):
+                    if val in items:
+                        self.population_sample_size_list.selectionModel().select(
+                            self.population_sample_size_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                unassign_variable(self)
+    
     def closeEvent(self, event):
+        if self.console_dialog:
+            self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == "Unit Level" and thread.is_alive():
@@ -367,10 +550,21 @@ class ModelingSaeUnitDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
+        show_console_first = self.show_console_first_checkbox.isChecked()
+        if show_console_first:
+            self.console_dialog = ConsoleDialog(self)
+            self.console_dialog.show()
+        
         def run_model_thread():
             results, error, df = None, None, None
             try:
+                if self.console_dialog:
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = ConsoleStream(self.update_console)
                 results, error, df = current_context.run(controller.run_model, r_script)
+                if self.console_dialog:
+                    sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
             except Exception as e:
@@ -398,11 +592,15 @@ class ModelingSaeUnitDialog(QDialog):
         timer.start(60000)
     
     def on_run_model_finished(self, results, error, sae_model, r_script):
+        if self.console_dialog:
+            self.console_dialog.stop_loading()
+            self.console_dialog.close()
         if not error:
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:
             self.reply.reject()
         display_script_and_output(self.parent, r_script, results)
+        self.console_dialog.close()
         enable_service(self, error, results)
         self.finnish = True
         self.close()

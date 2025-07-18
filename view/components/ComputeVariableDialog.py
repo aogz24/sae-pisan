@@ -3,6 +3,7 @@ from service.compute import run_compute
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QSize, Qt
 import os
+import shutil
 
 class ComputeVariableDialog(QDialog):
     """
@@ -42,8 +43,17 @@ class ComputeVariableDialog(QDialog):
         self.init_ui()
 
     def load_templates(self):
+        app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+        os.makedirs(app_data_dir, exist_ok=True)
         templates = {}
         template_file = os.path.join(self.parent.path, 'file-data', 'template.dat')
+        appdata_template_file = os.path.join(app_data_dir, 'template.dat')
+        
+        if not os.path.exists(appdata_template_file):
+            # Copy template.dat to appdata_template_file if it doesn't exist
+            shutil.copyfile(template_file, appdata_template_file)
+            template_file = appdata_template_file
+            
         with open(template_file, 'r') as file:
             lines = file.readlines()
             for line in lines:
@@ -58,7 +68,7 @@ class ComputeVariableDialog(QDialog):
         if ok and template_name:
             script = self.get_script()
             self.templates[template_name] = script
-            template_file = os.path.join(self.parent.path, 'file-data', 'template.dat')
+            template_file = os.path.join(os.getenv("APPDATA"), "saePisan", 'template.dat')
             with open(template_file, 'a') as file:
                 file.write(f"{template_name}={script}\n")
             self.template_selection.addItem(template_name)

@@ -3,7 +3,7 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
 
 def run_lineplot(parent):
     """
@@ -38,7 +38,7 @@ def run_lineplot(parent):
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         # Load required R libraries
@@ -61,7 +61,9 @@ def run_lineplot(parent):
         plot_paths = []
 
         for plot_name in lineplot_vars:
-            plot_path = f"{plot_name}.png"
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(appdata_dir, exist_ok=True)
+            plot_path = os.path.join(appdata_dir, f"{plot_name}.png")
             grdevices.png(file=plot_path, width=800, height=600)
             ro.r(f"print({plot_name})")
             grdevices.dev_off()

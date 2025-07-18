@@ -14,6 +14,8 @@ def extract_output2_results(output):
     formula_match = re.search(r"formula\s*=\s*(.+)", output)
     if formula_match:
         formula = formula_match.group(1).strip()
+    else:
+        formula = "No formula found"
 
     # Extract coefficients
     coefficients_match = re.search(r'Coefficients:\s+((?:.+\n)+)', output, re.S)
@@ -31,6 +33,8 @@ def extract_output2_results(output):
         
         # Convert to Polars DataFrame
         coeff = pl.DataFrame(data, schema=header, orient="row")
+    else:
+        coeff = pl.DataFrame()
 
     return formula, coeff
 
@@ -54,7 +58,6 @@ def run_model_projection(parent):
     result = ""
     error = False
     try:
-        ro.r('suppressMessages(library(sae.projection))')
         ro.r('data_pe <- as.data.frame(r_df)')
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R

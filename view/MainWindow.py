@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         
         super().__init__()
 
-        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.3.0")
+        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.4.0")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -278,7 +278,7 @@ class MainWindow(QMainWindow):
         
         self.recent_data = QAction("Open Recent data", self)
         self.recent_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_D))
-        self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'recentdata.svg')))
         self.recent_data.setStatusTip("Ctrl+D")
         
         self.load_action = QAction("Load File", self)
@@ -288,7 +288,7 @@ class MainWindow(QMainWindow):
         
         self.load_secondary_data = QAction("Load File for Secondary Data", self)
         self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
-        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
+        self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
         
         self.save_action = QAction("Save Data", self)
@@ -314,9 +314,9 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.save_output_pdf)
 
         # Menu "Exploration"
-        self.menu_exploration = self.menu_bar.addMenu("Exploration")
+        self.menu_exploration = self.menu_bar.addMenu("Pre-Modeling")
 
-        self.action_summary_data = QAction("Summary Data", self)
+        self.action_summary_data = QAction("Data Summary", self)
         self.action_summary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'summary.svg')))
         self.action_summary_data.triggered.connect(self.open_summary_data_dialog_lazy)
 
@@ -427,13 +427,13 @@ class MainWindow(QMainWindow):
         menu_about.addAction(action_about_info)
         
         action_header_icon_info = QAction("Header Icon Info", self)
-        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_header_icon_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'information.svg')))
         action_header_icon_info.triggered.connect(self.show_header_icon_info)
         menu_about.addAction(action_header_icon_info)
         
         # Add R Packages Used menu
         action_r_packages_info = QAction("R Packages Used", self)
-        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'Rinfo.svg')))
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
         
@@ -1379,7 +1379,9 @@ class MainWindow(QMainWindow):
         """
         Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        temp_dir = os.path.join(self.path, 'file-data')
+        app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+        os.makedirs(app_data_dir, exist_ok=True)
+        temp_dir = os.path.join(app_data_dir, 'file-data')
         os.makedirs(temp_dir, exist_ok=True)
         # Save data1 and data2 as parquet
         data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
@@ -1437,14 +1439,16 @@ class MainWindow(QMainWindow):
                         os.remove(fpath)
                     except Exception:
                         pass
-        self.show_toast()
+        if self.isActiveWindow():
+            self.show_toast()
         
 
     def load_temp_data(self):
         """
         Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        temp_dir = os.path.join(self.path, 'file-data')
+        app_path = os.path.join(os.getenv("APPDATA"), "saePisan")
+        temp_dir = os.path.join(app_path, 'file-data')
         data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
         data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
         output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
@@ -1506,12 +1510,14 @@ class MainWindow(QMainWindow):
     
     def show_r_packages_info(self):
         """
-        Show a dialog listing the R packages used and their versions in a styled table.
+        Show a dialog listing the R packages used and their versions in a single table with 6 columns (3 pairs of Package/Version side by side).
         """
         try:
             import rpy2.robjects as ro
             packages = [
-                "sae", "saeHB", "rjags", "ggplot2", "MASS"
+                "sae", "arrow", "sae.projection", "emdi", "xgboost", "LiblineaR",
+                "kernlab", "GGally", "ggplot2", "ggcorrplot", "car", "nortest",
+                "tidyr", "carData", "dplyr", "tseries", "FSelector", "rjags", "saeHB"
             ]
             versions = []
             for pkg in packages:
@@ -1520,29 +1526,36 @@ class MainWindow(QMainWindow):
                 except Exception:
                     ver = "Not Installed"
                 versions.append((pkg, ver))
-            msg = """
-            <b>R Packages Used:</b><br><br>
-            <table style="
-                border-collapse: collapse;
-                min-width: 320px;
-                font-size: 13px;
-                ">
-                <thead>
-                    <tr style="background-color:#f2f2f2;">
-                        <th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>
-                        <th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>
-                    </tr>
-                </thead>
-                <tbody>
-            """
-            for pkg, ver in versions:
-                msg += (
-                    f"<tr>"
-                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{pkg}</td>"
-                    f"<td style='border:1px solid #bbb; padding:6px 16px;'>{ver}</td>"
-                    f"</tr>"
-                )
-            msg += "</tbody></table>"
+
+            # Arrange into 3 columns (each column is Package/Version pair)
+            n_cols = 3
+            n_rows = (len(versions) + n_cols - 1) // n_cols
+            table_cells = []
+            for i in range(n_rows):
+                row = []
+                for j in range(n_cols):
+                    idx = i + j * n_rows
+                    if idx < len(versions):
+                        row.extend(versions[idx])
+                    else:
+                        row.extend(("", ""))
+                table_cells.append(row)
+
+            msg = "<b>R Packages Used:</b><br><br>"
+            msg += "<table style='border-collapse:collapse;font-size:13px;'>"
+            # Header
+            msg += "<tr style='background-color:#f2f2f2;'>"
+            for i in range(n_cols):
+                msg += "<th style='border:1px solid #bbb; padding:6px 16px;'>Package</th>"
+                msg += "<th style='border:1px solid #bbb; padding:6px 16px;'>Version</th>"
+            msg += "</tr>"
+            # Rows
+            for row in table_cells:
+                msg += "<tr>"
+                for cell in row:
+                    msg += f"<td style='border:1px solid #bbb; padding:6px 16px;'>{cell}</td>"
+                msg += "</tr>"
+            msg += "</table>"
         except Exception as e:
             msg = f"Could not retrieve R package versions.<br>Error: {e}"
         QMessageBox.information(self, "R Packages Used", msg)

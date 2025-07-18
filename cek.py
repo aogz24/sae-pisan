@@ -1,36 +1,9 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget
-from PyQt6.QtGui import QPixmap, QClipboard 
+import rpy2.situation
+import os
 
-class ClipboardImageApp(QWidget):
-    def __init__(self):
-        super().__init__()
 
-        # Load gambar ke QPixmap
-        self.pixmap = QPixmap("assets/icon.svg")
-
-        # Label untuk menampilkan gambar
-        self.label = QLabel()
-        self.label.setPixmap(self.pixmap)
-
-        # Tombol untuk menyalin ke clipboard
-        self.copy_button = QPushButton("Copy to Clipboard")
-        self.copy_button.clicked.connect(self.copy_to_clipboard)
-
-        # Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        layout.addWidget(self.copy_button)
-        self.setLayout(layout)
-
-    def copy_to_clipboard(self):
-        clipboard = QApplication.clipboard()
-        clipboard.setPixmap(self.pixmap, QClipboard.Mode.Clipboard)  # Menyalin gambar ke clipboard
-
-        print("Image copied to clipboard!")
-
-# Jalankan aplikasi
-app = QApplication(sys.argv)
-window = ClipboardImageApp()
-window.show()
-sys.exit(app.exec())
+a = rpy2.situation.get_r_home()
+print(rpy2.situation.get_r_flags(a, '--ldflags')[0].L)
+# for libpath in rpy2.situation.get_r_flags(a, '--ldflags')[0].L:
+#             os.add_dll_directory(libpath)
+print("DEBUG R_HOME:", a)

@@ -3,7 +3,8 @@ import polars as pl
 from PyQt6.QtWidgets import QMessageBox
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
-from service.convert_df import convert_df
+from service.utils.convert import get_data
+import re
 
 def run_box_plot(parent):
     """
@@ -33,7 +34,7 @@ def run_box_plot(parent):
     df2 = parent.model2.get_data()
     df = pl.concat([df1, df2], how="horizontal")
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
-    convert_df(df, parent)
+    get_data(parent,df)
 
     try:
         # Load required R libraries
@@ -49,14 +50,17 @@ def run_box_plot(parent):
         script = parent.r_script
         ro.r(script)
 
-        # Retrieve the list of boxplot variables in the R environment
-        r_objects = ro.r("ls()")  # List all objects in R
-        boxplot_vars = [obj for obj in r_objects if obj.startswith("boxplot_")]
+        # Extract list of boxplot variable names in order of appearance in the script
+        boxplot_vars = re.findall(r'boxplot_\w+', script)
+        print("Boxplot variables (ordered):", boxplot_vars)
 
         plot_paths = []
 
         for plot_name in boxplot_vars:
-            plot_path = f"{plot_name}.png"
+            # Ensure the directory exists
+            appdata_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(appdata_dir, exist_ok=True)
+            plot_path = os.path.join(appdata_dir, f"{plot_name}.png")
             grdevices.png(file=plot_path, width=800, height=600)
             ro.r(f"print({plot_name})")
             grdevices.dev_off()
