@@ -487,6 +487,135 @@ class ModelingSaeUnitDialog(QDialog):
                             QItemSelectionModel.SelectionFlag.Select
                         )
                 unassign_variable(self)
+            
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, 
+                                        self.domain_list, self.index_list, self.auxilary_vars_mean_list, 
+                                        self.population_sample_size_list]:
+            if source_list == target_list:
+                # If the source and target are the same, do nothing
+                return
+            elif source_list == self.of_interest_list:
+                self.of_interest_list.clearSelection()
+                for idx, val in enumerate(self.of_interest_model.stringList()):
+                    if val in items:
+                        self.of_interest_list.selectionModel().select(
+                            self.of_interest_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.auxilary_list:
+                self.auxilary_list.clearSelection()
+                for idx, val in enumerate(self.auxilary_model.stringList()):
+                    if val in items:
+                        self.auxilary_list.selectionModel().select(
+                            self.auxilary_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.as_factor_list:
+                self.as_factor_list.clearSelection()
+                for idx, val in enumerate(self.as_factor_model.stringList()):
+                    if val in items:
+                        self.as_factor_list.selectionModel().select(
+                            self.as_factor_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.domain_list:
+                self.domain_list.clearSelection()
+                for idx, val in enumerate(self.domain_model.stringList()):
+                    if val in items:
+                        self.domain_list.selectionModel().select(
+                            self.domain_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.index_list:
+                self.index_list.clearSelection()
+                for idx, val in enumerate(self.index_model.stringList()):
+                    if val in items:
+                        self.index_list.selectionModel().select(
+                            self.index_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.auxilary_vars_mean_list:
+                self.auxilary_vars_mean_list.clearSelection()
+                for idx, val in enumerate(self.aux_mean_model.stringList()):
+                    if val in items:
+                        self.auxilary_vars_mean_list.selectionModel().select(
+                            self.aux_mean_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.population_sample_size_list:
+                self.population_sample_size_list.clearSelection()
+                for idx, val in enumerate(self.population_sample_size_model.stringList()):
+                    if val in items:
+                        self.population_sample_size_list.selectionModel().select(
+                            self.population_sample_size_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            unassign_variable(self)
+            
+            if target_list == self.of_interest_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                print("of_interest_list")
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.domain_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_domains(self)
+            elif target_list == self.index_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_index(self)
+            elif target_list == self.auxilary_vars_mean_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_aux_mean(self)
+            elif target_list == self.population_sample_size_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):   
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_population_sample_size(self)
     
     def closeEvent(self, event):
         if self.console_dialog:

@@ -363,6 +363,86 @@ class ModelingSaeDialog(QDialog):
                             QItemSelectionModel.SelectionFlag.Select
                         )
                 unassign_variable(self)
+        
+        # Drag antar daftar di kanan
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list]:
+            if source_list == target_list:
+                return
+            if source_list == self.of_interest_list:
+                self.of_interest_list.clearSelection()
+                for idx, val in enumerate(self.of_interest_model.stringList()):
+                    if val in items:
+                        self.of_interest_list.selectionModel().select(
+                            self.of_interest_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.auxilary_list:
+                self.auxilary_list.clearSelection()
+                for idx, val in enumerate(self.auxilary_model.stringList()):
+                    if val in items:
+                        self.auxilary_list.selectionModel().select(
+                            self.auxilary_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.as_factor_list:
+                self.as_factor_list.clearSelection()
+                for idx, val in enumerate(self.as_factor_model.stringList()):
+                    if val in items:
+                        self.as_factor_list.selectionModel().select(
+                            self.as_factor_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.vardir_list:
+                self.vardir_list.clearSelection()
+                for idx, val in enumerate(self.vardir_model.stringList()):
+                    if val in items:
+                        self.vardir_list.selectionModel().select(
+                            self.vardir_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            
+            # Hapus dari source list
+            unassign_variable(self)
+            
+            # Pindahkan ke target list yang sesuai
+            if target_list == self.of_interest_list:
+                # Pilih item di variables_list untuk assign
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.vardir_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_vardir(self)
+                        
 
     def closeEvent(self, event):
         if self.console_dialog:

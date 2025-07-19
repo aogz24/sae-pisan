@@ -14,6 +14,7 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+from PyQt6.QtGui import QIcon
 
 import sys
 
@@ -400,6 +401,99 @@ class ModelingSaePseudoDialog(QDialog):
                             QItemSelectionModel.SelectionFlag.Select
                         )
                 unassign_variable(self)
+        
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list, self.domain_list]:
+            if source_list == target_list:
+                # Jika drag dari satu list ke list yang sama, tidak melakukan apa-apa
+                return
+            elif source_list == self.of_interest_list:
+                self.of_interest_list.clearSelection()
+                for idx, val in enumerate(self.of_interest_model.stringList()):
+                    if val in items:
+                        self.of_interest_list.selectionModel().select(
+                            self.of_interest_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.auxilary_list:
+                self.auxilary_list.clearSelection()
+                for idx, val in enumerate(self.auxilary_model.stringList()):
+                    if val in items:
+                        self.auxilary_list.selectionModel().select(
+                            self.auxilary_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.as_factor_list:
+                self.as_factor_list.clearSelection()
+                for idx, val in enumerate(self.as_factor_model.stringList()):
+                    if val in items:
+                        self.as_factor_list.selectionModel().select(
+                            self.as_factor_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.vardir_list:
+                self.vardir_list.clearSelection()
+                for idx, val in enumerate(self.vardir_model.stringList()):
+                    if val in items:
+                        self.vardir_list.selectionModel().select(
+                            self.vardir_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            elif source_list == self.domain_list:
+                self.domain_list.clearSelection()
+                for idx, val in enumerate(self.domain_model.stringList()):
+                    if val in items:
+                        self.domain_list.selectionModel().select(
+                            self.domain_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+            unassign_variable(self)
+            
+            if target_list == self.of_interest_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list: 
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_as_factor(self)
+            elif target_list == self.vardir_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_vardir(self)
+            elif target_list == self.domain_list:
+                self.variables_list.clearSelection()
+                for idx, val in enumerate(self.variables_model.stringList()):
+                    if val in items:
+                        self.variables_list.selectionModel().select(
+                            self.variables_model.index(idx),
+                            QItemSelectionModel.SelectionFlag.Select
+                        )
+                assign_domain(self)
+                
     
     def closeEvent(self, event):
         if self.console_dialog:
