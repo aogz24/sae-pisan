@@ -468,7 +468,9 @@ class ModelingSaeHBDialog(QDialog):
                 if self.console_dialog:
                     old_stdout = sys.stdout
                     sys.stdout = ConsoleStream(self.update_console)
-                result, error, df, plot_paths = current_context.run(controller.run_model, r_script)
+                from rpy2.rinterface_lib import openrlib
+                with openrlib.rlock:
+                    result, error, df, plot_paths = current_context.run(controller.run_model, r_script)
                 if self.console_dialog:
                     sys.stdout = old_stdout
                 if not error:

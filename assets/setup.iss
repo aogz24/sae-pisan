@@ -37,6 +37,9 @@ OutputBaseFilename=mysetup
 SetupIconFile=F:\Kuliah\Skripsi\Aplikasi\sae-pisan\sip-sae\assets\icon.ico
 SolidCompression=yes
 WizardStyle=modern
+CreateUninstallRegKey=no
+UpdateUninstallLogAppName=no
+UsePreviousAppDir=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

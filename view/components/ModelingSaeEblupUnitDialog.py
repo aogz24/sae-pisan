@@ -569,7 +569,9 @@ class ModelingSaeUnitDialog(QDialog):
                     import sys
                     old_stdout = sys.stdout
                     sys.stdout = ConsoleStream(self.update_console)
-                results, error, df = current_context.run(controller.run_model, r_script)
+                from rpy2.rinterface_lib import openrlib
+                with openrlib.rlock:
+                    results, error, df = current_context.run(controller.run_model, r_script)
                 if self.console_dialog:
                     sys.stdout = old_stdout
                 if not error:
