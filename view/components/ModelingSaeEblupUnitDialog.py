@@ -152,14 +152,14 @@ class ModelingSaeUnitDialog(QDialog):
         self.assign_population_sample_size_button = QPushButton("🡆")
         self.assign_population_sample_size_button.setObjectName("arrow_button")
 
-        self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
-        self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
-        self.assign_index_button.clicked.connect(lambda: assign_index(self))
-        self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
-        self.assign_domains_button.clicked.connect(lambda: assign_domains(self))
-        self.assign_aux_mean_button.clicked.connect(lambda: assign_aux_mean(self))
-        self.assign_population_sample_size_button.clicked.connect(lambda: assign_population_sample_size(self))
-        self.unassign_button.clicked.connect(lambda: unassign_variable(self))
+        self.assign_of_interest_button.clicked.connect(lambda: self.handle_assign(self.of_interest_list))
+        self.assign_aux_button.clicked.connect(lambda: self.handle_assign(self.auxilary_list))
+        self.assign_index_button.clicked.connect(lambda: self.handle_assign(self.index_list))
+        self.assign_as_factor_button.clicked.connect(lambda: self.handle_assign(self.as_factor_list))
+        self.assign_domains_button.clicked.connect(lambda: self.handle_assign(self.domain_list))
+        self.assign_aux_mean_button.clicked.connect(lambda: self.handle_assign(self.auxilary_vars_mean_list))
+        self.assign_population_sample_size_button.clicked.connect(lambda: self.handle_assign(self.population_sample_size_list))
+        self.unassign_button.clicked.connect(self.handle_unassign)
         self.middle_layout.addWidget(self.assign_of_interest_button)
         self.middle_layout.addWidget(self.assign_aux_button)
         self.middle_layout.addWidget(self.assign_as_factor_button)
@@ -333,6 +333,122 @@ class ModelingSaeUnitDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+    
+    def get_selected_items_from_list(self, list_widget, model):
+        """Helper method to get selected items from a list widget."""
+        selected_indexes = list_widget.selectionModel().selectedIndexes()
+        return [model.data(index) for index in selected_indexes]
+
+    def select_items_in_list(self, list_widget, model, items_to_select):
+        """Helper method to select items in a list widget."""
+        from PyQt6.QtCore import QItemSelectionModel
+        list_widget.clearSelection()
+        string_list = model.stringList()
+        for idx, val in enumerate(string_list):
+            if val in items_to_select:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Select
+                )
+
+    def handle_assign(self, target_list):
+        """
+        Flexible assign method that works with any target list.
+        Handles assignment from variables_list or between right lists.
+        """
+        # Define mapping for list identification
+        list_mapping = {
+            self.variables_list: ("variables", self.variables_model),
+            self.of_interest_list: ("of_interest", self.of_interest_model),
+            self.auxilary_list: ("auxilary", self.auxilary_model),
+            self.as_factor_list: ("as_factor", self.as_factor_model),
+            self.domain_list: ("domain", self.domain_model),
+            self.index_list: ("index", self.index_model),
+            self.auxilary_vars_mean_list: ("aux_mean", self.aux_mean_model),
+            self.population_sample_size_list: ("population_sample_size", self.population_sample_size_model)
+        }
+        
+        # Define assignment functions mapping
+        assignment_functions = {
+            self.of_interest_list: assign_of_interest,
+            self.auxilary_list: assign_auxilary,
+            self.as_factor_list: assign_as_factor,
+            self.domain_list: assign_domains,
+            self.index_list: assign_index,
+            self.auxilary_vars_mean_list: assign_aux_mean,
+            self.population_sample_size_list: assign_population_sample_size
+        }
+        
+        right_lists = {
+            self.of_interest_list, self.auxilary_list, self.as_factor_list, 
+            self.domain_list, self.index_list, self.auxilary_vars_mean_list, 
+            self.population_sample_size_list
+        }
+        
+        # First, try to get selected items from variables_list
+        selected_from_variables = self.get_selected_items_from_list(self.variables_list, self.variables_model)
+        
+        if selected_from_variables and target_list in assignment_functions:
+            # Assign from variables_list to target_list
+            assignment_functions[target_list](self)
+            return
+        
+        # If no selection in variables_list, check for selections in other right lists
+        source_list = None
+        selected_items = []
+        
+        for lst in right_lists:
+            if lst != target_list:  # Don't check the target list itself
+                items = self.get_selected_items_from_list(lst, list_mapping[lst][1])
+                if items:
+                    source_list = lst
+                    selected_items = items
+                    break
+        
+        if source_list and selected_items and target_list in assignment_functions:
+            # Move between right lists
+            # First unassign from source
+            unassign_variable(self)
+            
+            # Then select items in variables_list and assign to target
+            self.select_items_in_list(self.variables_list, self.variables_model, selected_items)
+            assignment_functions[target_list](self)
+        elif not selected_from_variables and not selected_items:
+            # Show warning if no items are selected
+            QMessageBox.information(self, "Information", "Please select items to assign.")
+
+    def handle_unassign(self):
+        """
+        Flexible unassign method that works with any source list.
+        Handles unassignment from any right list back to variables_list.
+        """
+        list_mapping = {
+            self.of_interest_list: ("of_interest", self.of_interest_model),
+            self.auxilary_list: ("auxilary", self.auxilary_model),
+            self.as_factor_list: ("as_factor", self.as_factor_model),
+            self.domain_list: ("domain", self.domain_model),
+            self.index_list: ("index", self.index_model),
+            self.auxilary_vars_mean_list: ("aux_mean", self.aux_mean_model),
+            self.population_sample_size_list: ("population_sample_size", self.population_sample_size_model)
+        }
+        
+        # Find which list has selected items
+        source_list = None
+        selected_items = []
+        
+        for lst, (_, model) in list_mapping.items():
+            items = self.get_selected_items_from_list(lst, model)
+            if items:
+                source_list = lst
+                selected_items = items
+                break
+        
+        if source_list and selected_items:
+            # Unassign the selected items
+            unassign_variable(self)
+        else:
+            # Show warning if no items are selected in any right list
+            QMessageBox.information(self, "Information", "Please select items from assigned lists to unassign.")
     
     def handle_drop(self, target_list, items):
         """

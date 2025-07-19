@@ -132,12 +132,12 @@ class ModelingSaePseudoDialog(QDialog):
         self.assign_domain_button = QPushButton("🡆")
         self.assign_domain_button.setObjectName("arrow_button")
 
-        self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
-        self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
-        self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
-        self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
-        self.assign_domain_button.clicked.connect(lambda: assign_domain(self))
-        self.unassign_button.clicked.connect(lambda: unassign_variable(self))
+        self.assign_of_interest_button.clicked.connect(lambda: self.handle_assign(self.of_interest_list))
+        self.assign_aux_button.clicked.connect(lambda: self.handle_assign(self.auxilary_list))
+        self.assign_vardir_button.clicked.connect(lambda: self.handle_assign(self.vardir_list))
+        self.assign_as_factor_button.clicked.connect(lambda: self.handle_assign(self.as_factor_list))
+        self.assign_domain_button.clicked.connect(lambda: self.handle_assign(self.domain_list))
+        self.unassign_button.clicked.connect(self.handle_unassign)
         self.middle_layout.addWidget(self.assign_of_interest_button)
         self.middle_layout.addWidget(self.assign_aux_button)
         self.middle_layout.addWidget(self.assign_as_factor_button)
@@ -290,6 +290,91 @@ class ModelingSaePseudoDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/less.svg"))
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
+    
+    def get_selected_items_from_list(self, list_widget):
+        """Helper method to get selected items from any list widget"""
+        selected_items = []
+        selection_model = list_widget.selectionModel()
+        if selection_model:
+            selected_indexes = selection_model.selectedIndexes()
+            model = list_widget.model()
+            for index in selected_indexes:
+                selected_items.append(model.data(index, Qt.ItemDataRole.DisplayRole))
+        return selected_items
+    
+    def select_items_in_list(self, list_widget, model, items):
+        """Helper method to select items in a list widget"""
+        list_widget.clearSelection()
+        for idx, val in enumerate(model.stringList()):
+            if val in items:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Select
+                )
+    
+    def handle_assign(self, target_list):
+        """Smart assign method that works like handle_drop for buttons"""
+        # Get selected items from variables list
+        selected_from_variables = self.get_selected_items_from_list(self.variables_list)
+        
+        # Get selected items from any right-side list
+        right_side_lists = [
+            self.of_interest_list, self.auxilary_list, self.as_factor_list, 
+            self.vardir_list, self.domain_list
+        ]
+        
+        selected_from_right = []
+        source_list = None
+        
+        for lst in right_side_lists:
+            selected = self.get_selected_items_from_list(lst)
+            if selected:
+                selected_from_right = selected
+                source_list = lst
+                break
+        
+        # Determine what items to assign
+        items_to_assign = []
+        
+        if selected_from_variables:
+            # If items are selected from variables list, assign them to target
+            items_to_assign = selected_from_variables
+            self.handle_drop(target_list, items_to_assign)
+        elif selected_from_right and source_list != target_list:
+            # If items are selected from a different right-side list, move them
+            items_to_assign = selected_from_right
+            self.handle_drop(target_list, items_to_assign)
+        elif not selected_from_variables and not selected_from_right:
+            # No selection, show message
+            QMessageBox.information(self, "Info", "Please select variables to assign.")
+    
+    def handle_unassign(self):
+        """Smart unassign method that works with any selected items"""
+        # Map lists to their models
+        list_model_map = {
+            self.of_interest_list: self.of_interest_model,
+            self.auxilary_list: self.auxilary_model,
+            self.as_factor_list: self.as_factor_model,
+            self.vardir_list: self.vardir_model,
+            self.domain_list: self.domain_model
+        }
+        
+        # Find which list has selected items
+        selected_items = []
+        source_list = None
+        
+        for lst, model in list_model_map.items():
+            selected = self.get_selected_items_from_list(lst)
+            if selected:
+                selected_items = selected
+                source_list = lst
+                break
+        
+        if selected_items and source_list:
+            # Use handle_drop to move items back to variables list
+            self.handle_drop(self.variables_list, selected_items)
+        else:
+            QMessageBox.information(self, "Info", "Please select variables to unassign.")
     
     def handle_drop(self, target_list, items):
         mapping = {
