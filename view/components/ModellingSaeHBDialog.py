@@ -317,171 +317,65 @@ class ModelingSaeHBDialog(QDialog):
     
     def handle_drop(self, target_list, items):
         from PyQt6.QtCore import QItemSelectionModel
-        mapping = {
-            self.variables_list: "variables",
-            self.of_interest_list: "of_interest",
-            self.auxilary_list: "auxilary",
-            self.as_factor_list: "as_factor",
-            self.vardir_list: "vardir"
+        
+        # Mapping lists to their names and models
+        list_mapping = {
+            self.variables_list: ("variables", self.variables_model),
+            self.of_interest_list: ("of_interest", self.of_interest_model),
+            self.auxilary_list: ("auxilary", self.auxilary_model),
+            self.as_factor_list: ("as_factor", self.as_factor_model),
+            self.vardir_list: ("vardir", self.vardir_model)
         }
+        
+        # Find source list
         source_list = None
-        for lst in mapping:
-            if any(item in lst.model().stringList() for item in items):
+        for lst, (_, model) in list_mapping.items():
+            if any(item in model.stringList() for item in items):
                 source_list = lst
                 break
-
-        # Drag dari variables_list ke kanan (assign)
-        if source_list == self.variables_list:
-            if target_list == self.of_interest_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_of_interest(self)
-            elif target_list == self.auxilary_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_auxilary(self)
-            elif target_list == self.as_factor_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_as_factor(self)
-            elif target_list == self.vardir_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_vardir(self)
-
-        # Drag dari kanan ke variables_list (unassign)
-        elif target_list == self.variables_list:
-            if source_list == self.of_interest_list:
-                self.of_interest_list.clearSelection()
-                for idx, val in enumerate(self.of_interest_model.stringList()):
-                    if val in items:
-                        self.of_interest_list.selectionModel().select(
-                            self.of_interest_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-            elif source_list == self.auxilary_list:
-                self.auxilary_list.clearSelection()
-                for idx, val in enumerate(self.auxilary_model.stringList()):
-                    if val in items:
-                        self.auxilary_list.selectionModel().select(
-                            self.auxilary_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-            elif source_list == self.as_factor_list:
-                self.as_factor_list.clearSelection()
-                for idx, val in enumerate(self.as_factor_model.stringList()):
-                    if val in items:
-                        self.as_factor_list.selectionModel().select(
-                            self.as_factor_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-            elif source_list == self.vardir_list:
-                self.vardir_list.clearSelection()
-                for idx, val in enumerate(self.vardir_model.stringList()):
-                    if val in items:
-                        self.vardir_list.selectionModel().select(
-                            self.vardir_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
         
-        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list]:
-            if source_list == target_list:
-                # Jika drag and drop dari satu list ke list yang sama, tidak melakukan apa-apa
-                return
-            elif source_list == self.of_interest_list:
-                self.of_interest_list.clearSelection()
-                for idx, val in enumerate(self.of_interest_model.stringList()):
-                    if val in items:
-                        self.of_interest_list.selectionModel().select(
-                            self.of_interest_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.auxilary_list:
-                self.auxilary_list.clearSelection()
-                for idx, val in enumerate(self.auxilary_model.stringList()):
-                    if val in items:
-                        self.auxilary_list.selectionModel().select(
-                            self.auxilary_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.as_factor_list:
-                self.as_factor_list.clearSelection()
-                for idx, val in enumerate(self.as_factor_model.stringList()):
-                    if val in items:
-                        self.as_factor_list.selectionModel().select(
-                            self.as_factor_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.vardir_list:
-                self.vardir_list.clearSelection()
-                for idx, val in enumerate(self.vardir_model.stringList()):
-                    if val in items:
-                        self.vardir_list.selectionModel().select(
-                            self.vardir_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
+        # Helper function to select items in a list
+        def select_items_in_list(list_widget, model, items_to_select):
+            list_widget.clearSelection()
+            string_list = model.stringList()
+            for idx, val in enumerate(string_list):
+                if val in items_to_select:
+                    list_widget.selectionModel().select(
+                        model.index(idx),
+                        QItemSelectionModel.SelectionFlag.Select
+                    )
+        
+        # Assignment function mapping
+        assignment_functions = {
+            self.of_interest_list: assign_of_interest,
+            self.auxilary_list: assign_auxilary,
+            self.as_factor_list: assign_as_factor,
+            self.vardir_list: assign_vardir
+        }
+        
+        # Handle drag from variables_list to assignment lists
+        if source_list == self.variables_list:
+            if target_list in assignment_functions:
+                select_items_in_list(self.variables_list, self.variables_model, items)
+                assignment_functions[target_list](self)
+        
+        # Handle drag from assignment lists to variables_list (unassign)
+        elif target_list == self.variables_list and source_list in list_mapping:
+            select_items_in_list(source_list, list_mapping[source_list][1], items)
+            unassign_variable(self)
+        
+        # Handle drag between assignment lists
+        elif (target_list in assignment_functions and 
+            source_list in assignment_functions and 
+            source_list != target_list):
+            
+            # First unassign from source
+            select_items_in_list(source_list, list_mapping[source_list][1], items)
             unassign_variable(self)
             
-            if target_list == self.of_interest_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_of_interest(self)
-            elif target_list == self.auxilary_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_auxilary(self)
-            elif target_list == self.as_factor_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_as_factor(self)
-            elif target_list == self.vardir_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_vardir(self)
+            # Then assign to target
+            select_items_in_list(self.variables_list, self.variables_model, items)
+            assignment_functions[target_list](self)
                 
     
     import sys

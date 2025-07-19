@@ -477,236 +477,70 @@ class ProjectionDialog(QDialog):
         
     def handle_drop(self, target_list, items):
         from PyQt6.QtCore import QItemSelectionModel
-        # Mirip dengan handle_drop di dialog lain, sesuaikan mapping dan aksi assign/unassign
-        mapping = {
-            self.variables_list: "variables",
-            self.of_interest_list: "of_interest",
-            self.auxilary_list: "auxilary",
-            self.as_factor_list: "as_factor",
-            self.domain_list: "domain",
-            self.index_list: "index",
-            self.weight_list: "weight",
-            self.strata_list: "strata"
+        # Mapping untuk memudahkan identifikasi list
+        list_mapping = {
+            self.variables_list: ("variables", self.variables_model),
+            self.of_interest_list: ("of_interest", self.of_interest_model),
+            self.auxilary_list: ("auxilary", self.auxilary_model),
+            self.as_factor_list: ("as_factor", self.as_factor_model),
+            self.domain_list: ("domain", self.domain_model),
+            self.index_list: ("index", self.index_model),
+            self.weight_list: ("weight", self.weight_model),
+            self.strata_list: ("strata", self.strata_model)
         }
+        
+        # Mapping fungsi assign
+        assign_functions = {
+            self.of_interest_list: assign_of_interest,
+            self.auxilary_list: assign_auxilary,
+            self.as_factor_list: assign_as_factor,
+            self.domain_list: assign_domains,
+            self.index_list: assign_index,
+            self.weight_list: assign_weight,
+            self.strata_list: assign_strata
+        }
+        
+        # Helper function untuk select items di list
+        def select_items_in_list(list_widget, model, items_to_select):
+            list_widget.clearSelection()
+            for idx, val in enumerate(model.stringList()):
+                if val in items_to_select:
+                    list_widget.selectionModel().select(
+                        model.index(idx),
+                        QItemSelectionModel.SelectionFlag.Select
+                    )
+        
+        # Find source list
         source_list = None
-        for lst in mapping:
-            if any(item in lst.model().stringList() for item in items):
+        for lst, (name, model) in list_mapping.items():
+            if any(item in model.stringList() for item in items):
                 source_list = lst
                 break
-
-        # Drag dari variables_list ke kanan (assign)
-        if source_list == self.variables_list:
-            if target_list == self.of_interest_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_of_interest(self)
-            elif target_list == self.auxilary_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_auxilary(self)
-            elif target_list == self.as_factor_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_as_factor(self)
-            elif target_list == self.domain_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_domains(self)
-            elif target_list == self.index_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_index(self)
-            elif target_list == self.weight_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_weight(self)
-            elif target_list == self.strata_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_strata(self)
-
-        # Drag dari kanan ke variables_list (unassign)
-        elif target_list == self.variables_list:
-            for lst, model in [
-                (self.of_interest_list, self.of_interest_model),
-                (self.auxilary_list, self.auxilary_model),
-                (self.as_factor_list, self.as_factor_model),
-                (self.domain_list, self.domain_model),
-                (self.index_list, self.index_model),
-                (self.weight_list, self.weight_model),
-                (self.strata_list, self.strata_model)
-            ]:
-                if source_list == lst:
-                    lst.clearSelection()
-                    for idx, val in enumerate(model.stringList()):
-                        if val in items:
-                            lst.selectionModel().select(
-                                model.index(idx),
-                                QItemSelectionModel.SelectionFlag.Select
-                            )
-                    unassign_variable(self)
         
-        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, 
-                        self.domain_list, self.index_list, self.weight_list, self.strata_list]:
-            if source_list == target_list:
-                # Drag and drop within the same list, do nothing
-                return
-            elif source_list == self.of_interest_list:
-                self.of_interest_list.clearSelection()
-                for idx, val in enumerate(self.of_interest_model.stringList()):
-                    if val in items:
-                        self.of_interest_list.selectionModel().select(
-                            self.of_interest_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.auxilary_list:
-                self.auxilary_list.clearSelection()
-                for idx, val in enumerate(self.auxilary_model.stringList()):
-                    if val in items:
-                        self.auxilary_list.selectionModel().select(
-                            self.auxilary_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.as_factor_list:
-                self.as_factor_list.clearSelection()
-                for idx, val in enumerate(self.as_factor_model.stringList()):
-                    if val in items:
-                        self.as_factor_list.selectionModel().select(
-                            self.as_factor_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.domain_list:
-                self.domain_list.clearSelection()
-                for idx, val in enumerate(self.domain_model.stringList()):
-                    if val in items:
-                        self.domain_list.selectionModel().select(
-                            self.domain_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.index_list:
-                self.index_list.clearSelection()
-                for idx, val in enumerate(self.index_model.stringList()):
-                    if val in items:
-                        self.index_list.selectionModel().select(
-                            self.index_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.weight_list:
-                self.weight_list.clearSelection()
-                for idx, val in enumerate(self.weight_model.stringList()):
-                    if val in items:
-                        self.weight_list.selectionModel().select(
-                            self.weight_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-            elif source_list == self.strata_list:
-                self.strata_list.clearSelection()
-                for idx, val in enumerate(self.strata_model.stringList()):
-                    if val in items:
-                        self.strata_list.selectionModel().select(
-                            self.strata_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
+        # Case 1: Drag dari variables_list ke target list (assign)
+        if source_list == self.variables_list:
+            if target_list in assign_functions:
+                select_items_in_list(self.variables_list, self.variables_model, items)
+                assign_functions[target_list](self)
+        
+        # Case 2: Drag dari any list ke variables_list (unassign)
+        elif target_list == self.variables_list and source_list in list_mapping:
+            source_model = list_mapping[source_list][1]
+            select_items_in_list(source_list, source_model, items)
+            unassign_variable(self)
+        
+        # Case 3: Drag dari list ke list lain (unassign then assign)
+        elif (target_list in assign_functions and source_list in list_mapping and 
+            source_list != target_list and source_list != self.variables_list):
+            
+            # Unassign dari source
+            source_model = list_mapping[source_list][1]
+            select_items_in_list(source_list, source_model, items)
             unassign_variable(self)
             
-            if target_list == self.of_interest_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_of_interest(self)
-            elif target_list == self.auxilary_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_auxilary(self)
-            elif target_list == self.as_factor_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_as_factor(self)
-            elif target_list == self.domain_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_domains(self)
-            elif target_list == self.index_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_index(self)
-            elif target_list == self.weight_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_weight(self)
-            elif target_list == self.strata_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_strata(self)
+            # Assign ke target
+            select_items_in_list(self.variables_list, self.variables_model, items)
+            assign_functions[target_list](self)
     
     def accept(self):
         if not self.of_interest_var or self.of_interest_var == [""]:
