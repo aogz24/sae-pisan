@@ -1,6 +1,6 @@
 import polars as pl
 from PyQt6.QtWidgets import QMessageBox
-from convert_df import convert_df
+from test.modelling.run_model.test_convert_df import convert_df
 
 def run_model_eblup_area(parent):
     df = parent.model1.get_data()
