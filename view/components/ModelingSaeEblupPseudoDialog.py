@@ -291,22 +291,60 @@ class ModelingSaePseudoDialog(QDialog):
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
+    def has_null_values(self, items):
+        """Helper method to check if any of the items contain NULL values."""
+        return any("[NULL]" in item for item in items)
+
+    def show_null_warning(self):
+        """Show warning message for NULL values."""
+        QMessageBox.warning(self, "Warning", "Cannot assign variables with NULL values. Please clean your data first.")
+
+    def filter_non_null_items(self, items):
+        """Filter out items with NULL values and return only valid items."""
+        return [item for item in items if "[NULL]" not in item]
+
+    def deselect_null_items(self, list_widget, model, null_items):
+        """Deselect NULL items from the list widget."""
+        string_list = model.stringList()
+        for idx, val in enumerate(string_list):
+            if val in null_items:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Deselect
+                )
+
     def get_selected_items_from_list(self, list_widget):
-        """Helper method to get selected items from any list widget"""
+        """Helper method to get selected items from any list widget, filtering out NULL values"""
         selected_items = []
         selection_model = list_widget.selectionModel()
         if selection_model:
             selected_indexes = selection_model.selectedIndexes()
             model = list_widget.model()
+            all_selected = []
             for index in selected_indexes:
-                selected_items.append(model.data(index, Qt.ItemDataRole.DisplayRole))
+                all_selected.append(model.data(index, Qt.ItemDataRole.DisplayRole))
+            
+            # Filter out NULL values
+            valid_items = self.filter_non_null_items(all_selected)
+            null_items = [item for item in all_selected if "[NULL]" in item]
+            
+            # If there are NULL items selected, show warning and deselect them
+            if null_items:
+                self.show_null_warning()
+                # Deselect NULL items
+                self.deselect_null_items(list_widget, model, null_items)
+            
+            selected_items = valid_items
+        
         return selected_items
-    
+
     def select_items_in_list(self, list_widget, model, items):
-        """Helper method to select items in a list widget"""
+        """Helper method to select items in a list widget, excluding NULL values"""
         list_widget.clearSelection()
+        # Filter out NULL values before selecting
+        valid_items = self.filter_non_null_items(items)
         for idx, val in enumerate(model.stringList()):
-            if val in items:
+            if val in valid_items:
                 list_widget.selectionModel().select(
                     model.index(idx),
                     QItemSelectionModel.SelectionFlag.Select
@@ -386,6 +424,17 @@ class ModelingSaePseudoDialog(QDialog):
             self.domain_list: "domain"
         }
         
+        valid_items = self.filter_non_null_items(items)
+        null_items = [item for item in items if "[NULL]" in item]
+        
+        # Show warning if NULL items were attempted to be dropped
+        if null_items:
+            self.show_null_warning()
+        
+        # If no valid items, return early
+        if not valid_items:
+            return
+        
         # Helper function to select items in a list
         def select_items_in_list(list_widget, model, items):
             list_widget.clearSelection()
@@ -449,7 +498,6 @@ class ModelingSaePseudoDialog(QDialog):
                 # Then assign to target
                 assign_to_target(target_list, items)
                 
-    
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()

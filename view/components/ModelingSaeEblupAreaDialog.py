@@ -271,17 +271,53 @@ class ModelingSaeDialog(QDialog):
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
 
-    def get_selected_items_from_list(self, list_widget, model):
-        """Helper method to get selected items from a list widget."""
-        selected_indexes = list_widget.selectionModel().selectedIndexes()
-        return [model.data(index) for index in selected_indexes]
+    def has_null_values(self, items):
+        """Helper method to check if any of the items contain NULL values."""
+        return any("[NULL]" in item for item in items)
+    
+    def show_null_warning(self):
+        """Show warning message for NULL values."""
+        QMessageBox.warning(self, "Warning", "Cannot assign variables with NULL values. Please clean your data first.")
 
-    def select_items_in_list(self, list_widget, model, items_to_select):
-        """Helper method to select items in a list widget."""
-        list_widget.clearSelection()
+    def filter_non_null_items(self, items):
+        """Filter out items with NULL values and return only valid items."""
+        return [item for item in items if "[NULL]" not in item]
+    
+    def get_selected_items_from_list(self, list_widget, model):
+        """Helper method to get selected items from a list widget, filtering out NULL values."""
+        selected_indexes = list_widget.selectionModel().selectedIndexes()
+        all_selected = [model.data(index) for index in selected_indexes]
+        
+        # Filter out NULL values
+        valid_items = self.filter_non_null_items(all_selected)
+        null_items = [item for item in all_selected if "[NULL]" in item]
+        
+        # If there are NULL items selected, show warning and deselect them
+        if null_items:
+            self.show_null_warning()
+            # Deselect NULL items
+            self.deselect_null_items(list_widget, model, null_items)
+        
+        return valid_items
+
+    def deselect_null_items(self, list_widget, model, null_items):
+        """Deselect NULL items from the list widget."""
         string_list = model.stringList()
         for idx, val in enumerate(string_list):
-            if val in items_to_select:
+            if val in null_items:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Deselect
+                )
+
+    def select_items_in_list(self, list_widget, model, items_to_select):
+        """Helper method to select items in a list widget, excluding NULL values."""
+        list_widget.clearSelection()
+        # Filter out NULL values before selecting
+        valid_items = self.filter_non_null_items(items_to_select)
+        string_list = model.stringList()
+        for idx, val in enumerate(string_list):
+            if val in valid_items:
                 list_widget.selectionModel().select(
                     model.index(idx),
                     QItemSelectionModel.SelectionFlag.Select
@@ -378,6 +414,18 @@ class ModelingSaeDialog(QDialog):
         """
         Optimized handle_drop method with better performance and cleaner code structure.
         """
+        
+        valid_items = self.filter_non_null_items(items)
+        null_items = [item for item in items if "[NULL]" in item]
+        
+        # Show warning if NULL items were attempted to be dropped
+        if null_items:
+            self.show_null_warning()
+        
+        # If no valid items, return early
+        if not valid_items:
+            return
+        
         # Define mapping for list identification
         list_mapping = {
             self.variables_list: ("variables", self.variables_model),

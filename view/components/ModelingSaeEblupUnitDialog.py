@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QHBoxLayout, 
     QAbstractItemView, QTextEdit, QSizePolicy, QScrollArea, QWidget, QToolButton
 )
-from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal
+from PyQt6.QtCore import QStringListModel, QTimer, Qt, QSize, pyqtSignal, QItemSelectionModel
 from PyQt6.QtGui import QIcon
 from view.components.DragDropListView import DragDropListView
 from service.modelling.SaeEblupUnit import *
@@ -334,23 +334,45 @@ class ModelingSaeUnitDialog(QDialog):
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
-    def get_selected_items_from_list(self, list_widget, model):
-        """Helper method to get selected items from a list widget."""
-        selected_indexes = list_widget.selectionModel().selectedIndexes()
-        return [model.data(index) for index in selected_indexes]
+    def has_null_values(self, items):
+        """Helper method to check if any of the items contain NULL values."""
+        return any("[NULL]" in item for item in items)
 
-    def select_items_in_list(self, list_widget, model, items_to_select):
-        """Helper method to select items in a list widget."""
-        from PyQt6.QtCore import QItemSelectionModel
-        list_widget.clearSelection()
+    def show_null_warning(self):
+        """Show warning message for NULL values."""
+        QMessageBox.warning(self, "Warning", "Cannot assign variables with NULL values. Please clean your data first.")
+
+    def filter_non_null_items(self, items):
+        """Filter out items with NULL values and return only valid items."""
+        return [item for item in items if "[NULL]" not in item]
+
+    def deselect_null_items(self, list_widget, model, null_items):
+        """Deselect NULL items from the list widget."""
         string_list = model.stringList()
         for idx, val in enumerate(string_list):
-            if val in items_to_select:
+            if val in null_items:
                 list_widget.selectionModel().select(
                     model.index(idx),
-                    QItemSelectionModel.SelectionFlag.Select
+                    QItemSelectionModel.SelectionFlag.Deselect
                 )
 
+    def get_selected_items_from_list(self, list_widget, model):
+        """Helper method to get selected items from a list widget, filtering out NULL values."""
+        selected_indexes = list_widget.selectionModel().selectedIndexes()
+        all_selected = [model.data(index) for index in selected_indexes]
+        
+        # Filter out NULL values
+        valid_items = self.filter_non_null_items(all_selected)
+        null_items = [item for item in all_selected if "[NULL]" in item]
+        
+        # If there are NULL items selected, show warning and deselect them
+        if null_items:
+            self.show_null_warning()
+            # Deselect NULL items
+            self.deselect_null_items(list_widget, model, null_items)
+        
+        return valid_items
+    
     def handle_assign(self, target_list):
         """
         Flexible assign method that works with any target list.
@@ -454,7 +476,6 @@ class ModelingSaeUnitDialog(QDialog):
         """
         Handle drag and drop between variable lists.
         """
-        from PyQt6.QtCore import QItemSelectionModel
 
         # Mapping for lists and their corresponding models and assignment functions
         list_mapping = {
@@ -467,6 +488,18 @@ class ModelingSaeUnitDialog(QDialog):
             self.auxilary_vars_mean_list: ("aux_mean", self.aux_mean_model, assign_aux_mean),
             self.population_sample_size_list: ("population_sample_size", self.population_sample_size_model, assign_population_sample_size)
         }
+        
+        # Filter out NULL values and show warning if any
+        valid_items = self.filter_non_null_items(items)
+        null_items = [item for item in items if "[NULL]" in item]
+        
+        # Show warning if NULL items were attempted to be dropped
+        if null_items:
+            self.show_null_warning()
+        
+        # If no valid items, return early
+        if not valid_items:
+            return
         
         def select_items_in_list(list_widget, model, items):
             """Helper function to select items in a list widget."""
