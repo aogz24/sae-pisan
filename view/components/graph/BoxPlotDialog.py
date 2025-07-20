@@ -194,11 +194,11 @@ class BoxPlotDialog(QDialog):
         current_items = target_model.stringList()
 
         filtered_items = []
-        contains_string = any("[String]" in item or "[None]" in item for item in items)
+        contains_string = any("[String]" in item or "[NULL]" in item for item in items)
 
         for item in items:
             # Reject if String or None type
-            if "[String]" in item or "[None]" in item:
+            if "[String]" in item or "[NULL]" in item:
                 continue
 
             if target_widget == self.selected_list:
@@ -268,7 +268,7 @@ class BoxPlotDialog(QDialog):
             if dtype == pl.Utf8:
                 tipe = "String"
             elif dtype == pl.Null:
-                tipe = "None"
+                tipe = "NULL"
             else:
                 tipe = "Numeric"
             self.columns.append(f"{col} [{tipe}]")
@@ -279,7 +279,7 @@ class BoxPlotDialog(QDialog):
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
 
-        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        contains_invalid = any("[String]" in item or "[NULL]" in item for item in selected_items)
 
         selected_items = [item for item in selected_items if "[Numeric]" in item]
 

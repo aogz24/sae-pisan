@@ -185,7 +185,7 @@ class SummaryDataDialog(QDialog):
         contains_none = False
 
         for item in items:
-            if "[None]" in item:
+            if "[NULL]" in item:
                 contains_none = True
                 continue
 
@@ -196,7 +196,7 @@ class SummaryDataDialog(QDialog):
                 if allowed_columns and column_name in [col.split(" ")[0] for col in allowed_columns]:
                     filtered_items.append(item)
 
-        # ❗️Tampilkan peringatan jika ada item [None]
+        # ❗️Tampilkan peringatan jika ada item [NULL]
         if contains_none:
             QMessageBox.warning(self, "Warning", "Cannot drop variables with type None.")
 
@@ -264,7 +264,7 @@ class SummaryDataDialog(QDialog):
             if dtype == pl.Utf8:
                 tipe = "String"
             elif dtype == pl.Null:
-                tipe = "None"
+                tipe = "NULL"
             else:
                 tipe = "Numeric"
             self.columns.append(f"{col} [{tipe}]")
@@ -278,7 +278,7 @@ class SummaryDataDialog(QDialog):
         selected_indexes = self.data_editor_list.selectedIndexes() + self.data_output_list.selectedIndexes()
         selected_items = [index.data() for index in selected_indexes]
 
-        contains_none = any("[None]" in item for item in selected_items)
+        contains_none = any("[NULL]" in item for item in selected_items)
         if contains_none:
             QMessageBox.warning(self, "Warning", "Selected variables must not be of type None.")
             return
