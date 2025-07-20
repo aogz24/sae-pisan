@@ -320,22 +320,20 @@ class FileController:
                             max_col_lens = [len(str(col)) for col in columns]
                             for row in range(model.rowCount()):
                                 row_data = []
-                                for row in range(model.rowCount()):
-                                    row_data = []
-                                    for col in range(model.columnCount()):
-                                        index = model.index(row, col)
-                                        value = model.data(index)
-                                        value_str = str(value)
-                                        try:
-                                            float_val = float(value)
-                                            if '.' in value_str and len(value_str) > max_col_lens[col]:
-                                                value_str = f"{float_val:.5f}"
-                                        except Exception:
-                                            pass
-                                        row_data.append(value_str)
-                                        if len(value_str) > max_col_lens[col]:
-                                            max_col_lens[col] = len(value_str)
-                                    data_rows.append(row_data)
+                                for col in range(model.columnCount()):
+                                    index = model.index(row, col)
+                                    value = model.data(index)
+                                    value_str = str(value)
+                                    try:
+                                        float_val = float(value)
+                                        if '.' in value_str and len(value_str) > max_col_lens[col]:
+                                            value_str = f"{float_val:.5f}"
+                                    except Exception:
+                                        pass
+                                    row_data.append(value_str)
+                                    if len(value_str) > max_col_lens[col]:
+                                        max_col_lens[col] = len(value_str)
+                                data_rows.append(row_data)
                             if data_rows:
                                 table_data = [columns] + data_rows
                                 total_len = sum(max_col_lens)

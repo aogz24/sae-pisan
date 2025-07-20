@@ -277,11 +277,19 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
                 table_view.horizontalHeader().setFixedHeight(50)
 
-                # Hitung tinggi tabel berdasarkan jumlah baris
+                # Hitung tinggi tabel berdasarkan jumlah baris (maksimal 5 baris)
                 row_height = table_view.verticalHeader().defaultSectionSize()
                 header_height = table_view.horizontalHeader().height()
-                total_height = row_height * model.rowCount() + header_height + 20  # Tambahkan margin
+                max_visible_rows = 5
+                visible_rows = min(model.rowCount(), max_visible_rows)
+                total_height = row_height * visible_rows + header_height + 20  # Tambahkan margin
                 table_view.setFixedHeight(total_height)
+
+                # Enable scroll jika baris lebih dari 5
+                if model.rowCount() > max_visible_rows:
+                    table_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+                else:
+                    table_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
                 table_view.setStyleSheet("""
                     QTableView {
