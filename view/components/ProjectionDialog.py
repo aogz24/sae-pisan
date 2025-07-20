@@ -428,8 +428,17 @@ class ProjectionDialog(QDialog):
             for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes):
                 col_key = col.split(self.separator)[0] if self.var_position == "Before" else col.split(self.separator)[-1]
 
-                # Format dengan tipe data
-                col_key_formatted = f"{col_key} [{dtype}]" if dtype == pl.Utf8 else f"{col_key} [Numeric]"
+                # Format dengan tipe data - DIPERBAIKI agar konsisten
+                if dtype == pl.Utf8:
+                    col_key_formatted = f"{col_key} [String]"
+                elif dtype == pl.Null:
+                    col_key_formatted = f"{col_key} [NULL]"
+                elif dtype == pl.Categorical:
+                    col_key_formatted = f"{col_key} [Categorical]"
+                elif dtype == pl.Boolean:
+                    col_key_formatted = f"{col_key} [Boolean]"
+                else:
+                    col_key_formatted = f"{col_key} [Numeric]"
                 
                 # Menyimpan hanya jika belum ada dalam unique_columns
                 if col_key not in unique_columns:
