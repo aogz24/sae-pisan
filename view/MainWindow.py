@@ -1181,7 +1181,6 @@ class MainWindow(QMainWindow):
         
         self.path=path
     
-    
     def remove_output(self, card_frame):
         """Menghapus output dari layout"""
         self.output_layout.removeWidget(card_frame)
