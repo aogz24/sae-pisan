@@ -32,7 +32,6 @@ from service.table.DeleteColumn import confirm_delete_selected_columns
 from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
 from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
-import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
