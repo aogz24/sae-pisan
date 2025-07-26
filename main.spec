@@ -15,7 +15,7 @@ r_home = os.path.join(os.path.dirname(__file__), 'R', 'R-4.4.2')
 os.environ['R_HOME'] = r_home
 
 a = Analysis(
-    ['main.py'],
+    ['saePisan.py'],
     pathex=[],
     binaries=[],
     datas=[('assets', 'assets'), ('R', 'R'), ('file-data', 'file-data'), ('temp', 'temp')],
@@ -37,7 +37,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='main',
+    name='saePisan',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -59,5 +59,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='main'
+    name='saePisan'
 )
