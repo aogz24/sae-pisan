@@ -8,8 +8,8 @@ from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 import polars as pl
 from model.TableModel import TableModel
 import os
-from service.table.GoToRow import *
-from service.table.GoToColumn import *
+from service.table.GoToRow import go_to_start_row, go_to_end_row
+from service.table.GoToColumn import go_to_start_column, go_to_end_column
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
 from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
@@ -665,7 +665,6 @@ class MainWindow(QMainWindow):
         if os.path.exists(stylesheet_path):
             with open(stylesheet_path, 'r') as file:
                 stylesheet = file.read()
-                # stylesheet = stylesheet.replace("font-size: 12px;", f"font-size: {size}px;")
                 stylesheet = stylesheet.replace("__FONT_SIZE__", f"{size}px")
                 return stylesheet
         else:
@@ -1037,26 +1036,24 @@ class MainWindow(QMainWindow):
             pass  # Tidak digunakan untuk Sheet 2
     
     def update_table(self, sheet_number, model):
-        """Memperbarui tabel pada sheet tertentu dengan model baru"""
+        """Update the table for the specified sheet with a new model."""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
-            if self.show_modeling_sae_dialog:
-                self.show_modeling_sae_dialog.set_model(model)
-            if self.show_modeling_saeHB_dialog:
-                self.show_modeling_saeHB_dialog.set_model(model)
-            if self.show_modeling_sae_unit_dialog:
-                self.show_modeling_sae_unit_dialog.set_model(model)
-            if self.show_modeling_saeHB_normal_dialog:
-                self.show_modeling_saeHB_normal_dialog.set_model(model)
-            if self.show_modellig_sae_pseudo_dialog:
-                self.show_modellig_sae_pseudo_dialog.set_model(model)
-            if self.show_compute_variable_dialog:
-                self.show_compute_variable_dialog.set_model(model)
-            if self.show_projection_variabel_dialog:
-                self.show_projection_variabel_dialog.set_model(model)
+            dialogs = [
+                self.show_modeling_sae_dialog,
+                self.show_modeling_saeHB_dialog,
+                self.show_modeling_sae_unit_dialog,
+                self.show_modeling_saeHB_normal_dialog,
+                self.show_modellig_sae_pseudo_dialog,
+                self.show_compute_variable_dialog,
+                self.show_projection_variabel_dialog,
+            ]
+            for dialog in dialogs:
+                if dialog:
+                    dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
@@ -1185,214 +1182,7 @@ class MainWindow(QMainWindow):
         
         self.path=path
     
-    def add_output(self, script_text, result_text=None, plot_paths=None):
-        """Menambahkan output ke layout dalam bentuk card"""
-
-        card_frame = QFrame()
-        card_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 10px;
-            }
-        """)
-
-        card_layout = QVBoxLayout(card_frame)
-        card_layout.setSpacing(8)
-
-        label_script = QLabel("<b>Script R:</b>")
-        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
-        script_box = QTextEdit()
-        script_box.setPlainText(script_text)
-        script_box.setReadOnly(True)
-        script_box.setStyleSheet("""
-            QTextEdit {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-                font-family: Consolas, Courier New, monospace;
-            }
-        """)
-        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
-
-        card_layout.addWidget(label_script)
-        card_layout.addWidget(script_box)
-
-        if result_text:
-            label_output = QLabel("<b>Output:</b>")
-            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            result_box = QTextEdit()
-            result_box.setPlainText(result_text)
-            result_box.setReadOnly(True)
-            result_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                }
-            """)
-            max_height = 400
-            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
-            result_box.setFixedHeight(min(calculated_height, max_height))
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-            card_layout.addWidget(label_output)
-            card_layout.addWidget(result_box)
-
-        if plot_paths:
-            label_plot = QLabel("<b>Plot:</b>")
-            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            card_layout.addWidget(label_plot)
-
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    pixmap = QPixmap(plot_path)
-                    label = QLabel()
-                    label.setPixmap(pixmap)
-                    label.setFixedSize(500, 350) 
-                    label.setScaledContents(True)
-                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
-                    card_layout.addWidget(label)
-        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
-
-        if self.output_layout.count() > 0:
-            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
-            if isinstance(last_item.spacerItem(), QSpacerItem):
-                self.output_layout.removeItem(last_item)
-
-        self.output_layout.addWidget(card_frame)
-
-        if self.output_layout.count() == 1:
-            self.output_layout.addStretch()
-
-        self.tab_widget.setCurrentWidget(self.tab3)
-
-        if plot_paths:
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    os.remove(plot_path)
-
-
-    def add_output(self, script_text, result_text=None, plot_paths=None, error_text=None):
-        """Add output to the layout in the form of a card"""
-
-        # Create a frame as a card
-        card_frame = QFrame()
-        card_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 10px;
-            }
-        """)
-
-
-        card_layout = QVBoxLayout(card_frame)
-        card_layout.setSpacing(8)
-
-        label_script = QLabel("<b>R Script:</b>")
-        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
-        script_box = QTextEdit()
-        script_box.setPlainText(script_text)
-        script_box.setReadOnly(True)
-        script_box.setStyleSheet("""
-            QTextEdit {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-                font-family: Consolas, Courier New, monospace;
-            }
-        """)
-        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
-
-        card_layout.addWidget(label_script)
-        card_layout.addWidget(script_box)
-
-        if result_text:
-            label_output = QLabel("<b>Output:</b>")
-            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            result_box = QTextEdit()
-            result_box.setPlainText(result_text)
-            result_box.setReadOnly(True)
-            result_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                }
-            """)
-            max_height = 400
-            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
-            result_box.setFixedHeight(min(calculated_height, max_height))
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-            card_layout.addWidget(label_output)
-            card_layout.addWidget(result_box)
-
-        if plot_paths:
-            label_plot = QLabel("<b>Plot:</b>")
-            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            card_layout.addWidget(label_plot)
-
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    pixmap = QPixmap(plot_path)
-                    label = QLabel()
-                    label.setPixmap(pixmap)
-                    label.setFixedSize(500, 350)
-                    label.setScaledContents(True)
-                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
-                    card_layout.addWidget(label)
-
-        if error_text:
-            label_error = QLabel("<b>Error:</b>")
-            label_error.setStyleSheet("color: #a94442; margin-top: 10px; margin-bottom: 5px;")
-            error_box = QTextEdit()
-            error_box.setPlainText(error_text)
-            error_box.setReadOnly(True)
-            error_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #f8d7da;
-                    border: 1px solid #f5c6cb;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                    color: #721c24;
-                }
-            """)
-            error_box.setFixedHeight(error_box.fontMetrics().lineSpacing() * (error_text.count('\n') + 3))
-
-            card_layout.addWidget(label_error)
-            card_layout.addWidget(error_box)
-
-        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
-
-        if self.output_layout.count() > 0:
-            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
-            if isinstance(last_item.spacerItem(), QSpacerItem):
-                self.output_layout.removeItem(last_item)
-
-        self.output_layout.addWidget(card_frame)
-        if self.output_layout.count() == 1:
-            self.output_layout.addStretch()
-
-        self.tab_widget.setCurrentWidget(self.tab3)
-
-        if plot_paths:
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    os.remove(plot_path)
-
+    
     def remove_output(self, card_frame):
         """Menghapus output dari layout"""
         self.output_layout.removeWidget(card_frame)
@@ -1450,11 +1240,13 @@ class MainWindow(QMainWindow):
             os.makedirs(app_data_dir, exist_ok=True)
             temp_dir = os.path.join(app_data_dir, 'file-data')
             os.makedirs(temp_dir, exist_ok=True)
+
             # Save data1 and data2 as parquet
             data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
             data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
             self.model1.get_data().write_parquet(data1_path)
             self.model2.get_data().write_parquet(data2_path)
+
             # Save output as JSON
             output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
             import numpy as np
@@ -1462,16 +1254,13 @@ class MainWindow(QMainWindow):
             def make_json_serializable(obj):
                 if isinstance(obj, dict):
                     return {k: make_json_serializable(v) for k, v in obj.items()}
-                elif isinstance(obj, list):
+                if isinstance(obj, list):
                     return [make_json_serializable(v) for v in obj]
-                elif isinstance(obj, np.ndarray):
+                if isinstance(obj, np.ndarray) or hasattr(obj, 'tolist'):
                     return obj.tolist()
-                elif hasattr(obj, 'tolist'):
-                    return obj.tolist()
-                elif isinstance(obj, (int, float, str, type(None), bool)):
+                if isinstance(obj, (int, float, str, type(None), bool)):
                     return obj
-                else:
-                    return str(obj)
+                return str(obj)
 
             serializable_data = make_json_serializable(self.data)
             data = {
@@ -1480,36 +1269,39 @@ class MainWindow(QMainWindow):
             }
             with open(output_path, 'w') as file:
                 json.dump(data, file)
-            
-            # ?? delete image wasnt used
-            temp_img_dir = os.path.join(temp_dir, 'temp')
-            if os.path.exists(temp_img_dir):
-                used_images = set()
-                for output in serializable_data:
-                    result = output.get("result", {})
-                    plot_path = result.get("Plot")
-                    if plot_path and isinstance(plot_path, str):
-                        used_images.add(os.path.abspath(plot_path))
-                for output in self.data:
-                    result = output.get("result", {})
-                    plot_paths = result.get("Plot")
-                    if isinstance(plot_paths, list):
-                        for p in plot_paths:
-                            used_images.add(os.path.abspath(p))
-                    elif isinstance(plot_paths, str):
-                        used_images.add(os.path.abspath(plot_paths))
-                # Hapus file di temp yang tidak digunakan
-                for fname in os.listdir(temp_img_dir):
-                    fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
-                    if fpath not in used_images:
-                        try:
-                            os.remove(fpath)
-                        except Exception:
-                            pass
+
+            self._cleanup_unused_images(temp_dir, serializable_data)
+
             if self.isActiveWindow():
                 self.show_toast()
         except Exception as e:
             self.log_exception(e, "Autosave Data")
+
+    def _collect_used_images(self, outputs):
+        used_images = set()
+        for output in outputs:
+            result = output.get("result", {})
+            plot_paths = result.get("Plot")
+            if isinstance(plot_paths, list):
+                for p in plot_paths:
+                    used_images.add(os.path.abspath(p))
+            elif isinstance(plot_paths, str):
+                used_images.add(os.path.abspath(plot_paths))
+        return used_images
+
+    def _cleanup_unused_images(self, temp_dir, serializable_data):
+        temp_img_dir = os.path.join(temp_dir, 'temp')
+        if not os.path.exists(temp_img_dir):
+            return
+        used_images = self._collect_used_images(serializable_data)
+        used_images.update(self._collect_used_images(self.data))
+        for fname in os.listdir(temp_img_dir):
+            fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+            if fpath not in used_images:
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
 
     def load_temp_data(self):
         """
@@ -1666,8 +1458,8 @@ class MainWindow(QMainWindow):
 
                 current_system_pid = os.getpid()
 
-                ThisSystem = psutil.Process(current_system_pid)
-                ThisSystem.terminate()
+                this_system = psutil.Process(current_system_pid)
+                this_system.terminate()
                 event.accept()
             else:
                 event.ignore()
