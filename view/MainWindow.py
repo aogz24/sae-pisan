@@ -602,7 +602,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 12, "Big": 16}
+        sizes = {"Small": 10, "Medium": 12, "Large": 16}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
