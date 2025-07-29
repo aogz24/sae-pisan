@@ -70,6 +70,7 @@ def run_box_plot(parent):
 
         # Store the results in parent (optional)
         parent.plot = plot_paths  # All plots are stored in a list
+        parent.result = {"Graph": "Box Plot"}
 
     except Exception as e:
         parent.error = True

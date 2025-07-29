@@ -45,6 +45,7 @@ def run_multicollinearity(parent):
         ro.r(parent.r_script)
 
         result = {}
+        result["Pre-Modeling"] = "Multicollinearity Analysis"
 
         if parent.reg_model:
             # Ambil formula regresi sebagai teks string

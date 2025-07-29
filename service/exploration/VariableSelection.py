@@ -163,6 +163,7 @@ def run_variable_selection(parent):
         ro.r(parent.r_script)
 
         result_dict = {}
+        result_dict["Pre-Modeling"] = "Variable Selection"
         existing_objects = list(ro.r("ls()"))
 
         # Daftar metode seleksi variabel

@@ -67,6 +67,7 @@ def run_histogram(parent):
             plot_paths.append(plot_path)
 
         parent.plot = plot_paths  
+        parent.result = {"Graph": "Histogram"}
 
     except Exception as e:
         parent.error = True
