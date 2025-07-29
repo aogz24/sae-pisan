@@ -351,7 +351,7 @@ class CorrelationMatrixDialog(QDialog):
     def generate_r_script(self):
         """Function to generate R script for Correlation Matrix using ggcorrplot"""
         selected_columns = self.get_selected_columns()
-        if not selected_columns:
+        if not selected_columns or len(selected_columns) < 2:
             self.script_box.setPlainText("")
             return
 

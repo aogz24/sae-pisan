@@ -59,7 +59,7 @@ class SummaryDataDialog(QDialog):
         self.all_columns_model1 = []
         self.all_columns_model2 = []
 
-        self.setWindowTitle("Summary Data")
+        self.setWindowTitle("Data Summary")
 
         # Store selected variable status
         self.selected_status = {}
