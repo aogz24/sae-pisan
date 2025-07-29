@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
         action_about_info.triggered.connect(self.open_about_dialog)
-        action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'icon.svg')))
         menu_about.addAction(action_about_info)
         
         action_header_icon_info = QAction("Header Icon Info", self)
@@ -490,7 +490,7 @@ class MainWindow(QMainWindow):
         
         # Add R Packages Used menu
         action_r_packages_info = QAction("R Packages Used", self)
-        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'Rinfo.svg')))
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'R.svg')))
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
         
