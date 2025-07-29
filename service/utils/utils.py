@@ -216,7 +216,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             border-radius: 4px;
             padding: 5px;
             font-family: "Courier New", Courier, monospace;
-            font-size: 9pt;
+            font-size: {parent.font_size}px;
         }
     """)
 

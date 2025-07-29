@@ -7,6 +7,11 @@ QWidget {
     font-size: __FONT_SIZE__;
 }
 
+* {
+    font-size: __FONT_SIZE__;
+}
+
+
 /* Tab widget */
 QTabWidget::pane {
     background: #FFFFFF; /* white */
