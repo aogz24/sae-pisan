@@ -81,6 +81,7 @@ def run_scatterplot(parent):
 
         # Save the plot results in the parent (optional)
         parent.plot = plot_paths  # All plots are stored in a list
+        parent.result = {"Graph": "Scatter Plot"}
 
     except Exception as e:
         parent.error = True

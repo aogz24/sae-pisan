@@ -14,6 +14,7 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+from PyQt6.QtGui import QIcon
 
 import sys
 
@@ -131,12 +132,12 @@ class ModelingSaePseudoDialog(QDialog):
         self.assign_domain_button = QPushButton("🡆")
         self.assign_domain_button.setObjectName("arrow_button")
 
-        self.assign_of_interest_button.clicked.connect(lambda: assign_of_interest(self))
-        self.assign_aux_button.clicked.connect(lambda: assign_auxilary(self))
-        self.assign_vardir_button.clicked.connect(lambda: assign_vardir(self))
-        self.assign_as_factor_button.clicked.connect(lambda: assign_as_factor(self))
-        self.assign_domain_button.clicked.connect(lambda: assign_domain(self))
-        self.unassign_button.clicked.connect(lambda: unassign_variable(self))
+        self.assign_of_interest_button.clicked.connect(lambda: self.handle_assign(self.of_interest_list))
+        self.assign_aux_button.clicked.connect(lambda: self.handle_assign(self.auxilary_list))
+        self.assign_vardir_button.clicked.connect(lambda: self.handle_assign(self.vardir_list))
+        self.assign_as_factor_button.clicked.connect(lambda: self.handle_assign(self.as_factor_list))
+        self.assign_domain_button.clicked.connect(lambda: self.handle_assign(self.domain_list))
+        self.unassign_button.clicked.connect(self.handle_unassign)
         self.middle_layout.addWidget(self.assign_of_interest_button)
         self.middle_layout.addWidget(self.assign_aux_button)
         self.middle_layout.addWidget(self.assign_as_factor_button)
@@ -290,6 +291,129 @@ class ModelingSaePseudoDialog(QDialog):
         else:
             self.toggle_script_button.setIcon(QIcon("assets/more.svg"))
     
+    def has_null_values(self, items):
+        """Helper method to check if any of the items contain NULL values."""
+        return any("[NULL]" in item for item in items)
+
+    def show_null_warning(self):
+        """Show warning message for NULL values."""
+        QMessageBox.warning(self, "Warning", "Cannot assign variables with NULL values. Please clean your data first.")
+
+    def filter_non_null_items(self, items):
+        """Filter out items with NULL values and return only valid items."""
+        return [item for item in items if "[NULL]" not in item]
+
+    def deselect_null_items(self, list_widget, model, null_items):
+        """Deselect NULL items from the list widget."""
+        string_list = model.stringList()
+        for idx, val in enumerate(string_list):
+            if val in null_items:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Deselect
+                )
+
+    def get_selected_items_from_list(self, list_widget):
+        """Helper method to get selected items from any list widget, filtering out NULL values"""
+        selected_items = []
+        selection_model = list_widget.selectionModel()
+        if selection_model:
+            selected_indexes = selection_model.selectedIndexes()
+            model = list_widget.model()
+            all_selected = []
+            for index in selected_indexes:
+                all_selected.append(model.data(index, Qt.ItemDataRole.DisplayRole))
+            
+            # Filter out NULL values
+            valid_items = self.filter_non_null_items(all_selected)
+            null_items = [item for item in all_selected if "[NULL]" in item]
+            
+            # If there are NULL items selected, show warning and deselect them
+            if null_items:
+                self.show_null_warning()
+                # Deselect NULL items
+                self.deselect_null_items(list_widget, model, null_items)
+            
+            selected_items = valid_items
+        
+        return selected_items
+
+    def select_items_in_list(self, list_widget, model, items):
+        """Helper method to select items in a list widget, excluding NULL values"""
+        list_widget.clearSelection()
+        # Filter out NULL values before selecting
+        valid_items = self.filter_non_null_items(items)
+        for idx, val in enumerate(model.stringList()):
+            if val in valid_items:
+                list_widget.selectionModel().select(
+                    model.index(idx),
+                    QItemSelectionModel.SelectionFlag.Select
+                )
+    
+    def handle_assign(self, target_list):
+        """Smart assign method that works like handle_drop for buttons"""
+        # Get selected items from variables list
+        selected_from_variables = self.get_selected_items_from_list(self.variables_list)
+        
+        # Get selected items from any right-side list
+        right_side_lists = [
+            self.of_interest_list, self.auxilary_list, self.as_factor_list, 
+            self.vardir_list, self.domain_list
+        ]
+        
+        selected_from_right = []
+        source_list = None
+        
+        for lst in right_side_lists:
+            selected = self.get_selected_items_from_list(lst)
+            if selected:
+                selected_from_right = selected
+                source_list = lst
+                break
+        
+        # Determine what items to assign
+        items_to_assign = []
+        
+        if selected_from_variables:
+            # If items are selected from variables list, assign them to target
+            items_to_assign = selected_from_variables
+            self.handle_drop(target_list, items_to_assign)
+        elif selected_from_right and source_list != target_list:
+            # If items are selected from a different right-side list, move them
+            items_to_assign = selected_from_right
+            self.handle_drop(target_list, items_to_assign)
+        elif not selected_from_variables and not selected_from_right:
+            # No selection, show message
+            QMessageBox.information(self, "Info", "Please select variables to assign.")
+    
+    def handle_unassign(self):
+        """Smart unassign method that works with any selected items"""
+        # Map lists to their models
+        list_model_map = {
+            self.of_interest_list: self.of_interest_model,
+            self.auxilary_list: self.auxilary_model,
+            self.as_factor_list: self.as_factor_model,
+            self.vardir_list: self.vardir_model,
+            self.domain_list: self.domain_model
+        }
+        
+        # Find which list has selected items
+        selected_items = []
+        source_list = None
+        
+        for lst, model in list_model_map.items():
+            selected = self.get_selected_items_from_list(lst)
+            if selected:
+                selected_items = selected
+                source_list = lst
+                break
+        
+        if selected_items and source_list:
+            # Use handle_drop to move items back to variables list
+            self.handle_drop(self.variables_list, selected_items)
+        else:
+            QMessageBox.information(self, "Info", "Please select variables to unassign.")
+    
     def handle_drop(self, target_list, items):
         mapping = {
             self.variables_list: "variables",
@@ -299,108 +423,81 @@ class ModelingSaePseudoDialog(QDialog):
             self.vardir_list: "vardir",
             self.domain_list: "domain"
         }
+        
+        valid_items = self.filter_non_null_items(items)
+        null_items = [item for item in items if "[NULL]" in item]
+        
+        # Show warning if NULL items were attempted to be dropped
+        if null_items:
+            self.show_null_warning()
+        
+        # If no valid items, return early
+        if not valid_items:
+            return
+        
+        # Helper function to select items in a list
+        def select_items_in_list(list_widget, model, items):
+            list_widget.clearSelection()
+            for idx, val in enumerate(model.stringList()):
+                if val in items:
+                    list_widget.selectionModel().select(
+                        model.index(idx),
+                        QItemSelectionModel.SelectionFlag.Select
+                    )
+        
+        # Helper function to assign variables based on target
+        def assign_to_target(target_list, items):
+            select_items_in_list(self.variables_list, self.variables_model, items)
+            if target_list == self.of_interest_list:
+                assign_of_interest(self)
+            elif target_list == self.auxilary_list:
+                assign_auxilary(self)
+            elif target_list == self.as_factor_list:
+                assign_as_factor(self)
+            elif target_list == self.vardir_list:
+                assign_vardir(self)
+            elif target_list == self.domain_list:
+                assign_domain(self)
+        
+        # Find source list
         source_list = None
         for lst in mapping:
             if any(item in lst.model().stringList() for item in items):
                 source_list = lst
                 break
 
+        # Map lists to their models
+        list_model_map = {
+            self.variables_list: self.variables_model,
+            self.of_interest_list: self.of_interest_model,
+            self.auxilary_list: self.auxilary_model,
+            self.as_factor_list: self.as_factor_model,
+            self.vardir_list: self.vardir_model,
+            self.domain_list: self.domain_model
+        }
+
         # Drag dari variables_list ke kanan (assign)
         if source_list == self.variables_list:
-            if target_list == self.of_interest_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_of_interest(self)
-            elif target_list == self.auxilary_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_auxilary(self)
-            elif target_list == self.as_factor_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_as_factor(self)
-            elif target_list == self.vardir_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_vardir(self)
-            elif target_list == self.domain_list:
-                self.variables_list.clearSelection()
-                for idx, val in enumerate(self.variables_model.stringList()):
-                    if val in items:
-                        self.variables_list.selectionModel().select(
-                            self.variables_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                assign_domain(self)
+            assign_to_target(target_list, items)
 
         # Drag dari kanan ke variables_list (unassign)
         elif target_list == self.variables_list:
-            if source_list == self.of_interest_list:
-                self.of_interest_list.clearSelection()
-                for idx, val in enumerate(self.of_interest_model.stringList()):
-                    if val in items:
-                        self.of_interest_list.selectionModel().select(
-                            self.of_interest_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
+            if source_list in list_model_map:
+                select_items_in_list(source_list, list_model_map[source_list], items)
                 unassign_variable(self)
-            elif source_list == self.auxilary_list:
-                self.auxilary_list.clearSelection()
-                for idx, val in enumerate(self.auxilary_model.stringList()):
-                    if val in items:
-                        self.auxilary_list.selectionModel().select(
-                            self.auxilary_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
+        
+        # Drag between right-side lists (unassign then assign)
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list, self.domain_list]:
+            if source_list == target_list:
+                # Same list, do nothing
+                return
+            elif source_list in list_model_map:
+                # Select items in source list and unassign
+                select_items_in_list(source_list, list_model_map[source_list], items)
                 unassign_variable(self)
-            elif source_list == self.as_factor_list:
-                self.as_factor_list.clearSelection()
-                for idx, val in enumerate(self.as_factor_model.stringList()):
-                    if val in items:
-                        self.as_factor_list.selectionModel().select(
-                            self.as_factor_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-            elif source_list == self.vardir_list:
-                self.vardir_list.clearSelection()
-                for idx, val in enumerate(self.vardir_model.stringList()):
-                    if val in items:
-                        self.vardir_list.selectionModel().select(
-                            self.vardir_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-            elif source_list == self.domain_list:
-                self.domain_list.clearSelection()
-                for idx, val in enumerate(self.domain_model.stringList()):
-                    if val in items:
-                        self.domain_list.selectionModel().select(
-                            self.domain_model.index(idx),
-                            QItemSelectionModel.SelectionFlag.Select
-                        )
-                unassign_variable(self)
-    
+                # Then assign to target
+                assign_to_target(target_list, items)
+                
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
@@ -422,7 +519,14 @@ class ModelingSaePseudoDialog(QDialog):
 
     def set_model(self, model):
         self.model = model
-        self.columns = [f"{col} [{dtype}]" if dtype == pl.Utf8 else f"{col} [Numeric]" for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)]
+        self.columns = [
+            f"{col} [{dtype}]" if dtype == pl.Utf8 else
+            f"{col} [NULL]" if dtype == pl.Null else
+            f"{col} [Categorical]" if dtype == pl.Categorical else
+            f"{col} [Boolean]" if dtype == pl.Boolean else
+            f"{col} [Numeric]"
+            for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)
+        ]
         self.variables_model.setStringList(self.columns)
         self.vardir_model.setStringList([])
         self.auxilary_model.setStringList([])
@@ -479,7 +583,9 @@ class ModelingSaePseudoDialog(QDialog):
                     import sys
                     old_stdout = sys.stdout
                     sys.stdout = ConsoleStream(self.update_console)
-                result, error, df = current_context.run(controller.run_model, r_script)
+                from rpy2.rinterface_lib import openrlib
+                with openrlib.rlock:
+                    result, error, df = current_context.run(controller.run_model, r_script)
                 if self.console_dialog:
                     sys.stdout = old_stdout
                 if not error:

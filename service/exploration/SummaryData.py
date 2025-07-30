@@ -173,6 +173,7 @@ def run_summary_data(parent):
         summary_str_joined = "\n".join(summary_str)
         print("[DEBUG] Summary String:", summary_str_joined)
         parent.result = {}
+        parent.result["Pre-Modeling"] = "Data Summary"
 
         if ncol == 2 :
             summary_table = extract_formatted_single(summary_str_joined, parent.r_script)

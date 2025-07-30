@@ -8,8 +8,8 @@ from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 import polars as pl
 from model.TableModel import TableModel
 import os
-from service.table.GoToRow import *
-from service.table.GoToColumn import *
+from service.table.GoToRow import go_to_start_row, go_to_end_row
+from service.table.GoToColumn import go_to_start_column, go_to_end_column
 from view.components.MenuContext import show_context_menu
 from view.components.ModelingSaeEblupAreaDialog import ModelingSaeDialog
 from view.components.ModellingSaeHBDialog import ModelingSaeHBDialog
@@ -32,11 +32,12 @@ from service.table.DeleteColumn import confirm_delete_selected_columns
 from service.table.AddColumn import show_add_column_before_dialog, show_add_column_after_dialog
 from view.components.ProjectionDialog import ProjectionDialog
 from PyQt6.QtWidgets import QLabel
-import threading
 import json
 import datetime
 from service.utils.utils import display_script_and_output
 from view.components.CustomToast import CustomToast
+import logging
+import traceback
 
 class MainWindow(QMainWindow):
     """Main application window for SAE Pisan: Small Area Estimation Programming for Statistical Analysis.
@@ -129,7 +130,7 @@ class MainWindow(QMainWindow):
         
         super().__init__()
 
-        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.4.0")
+        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.5.0")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -154,8 +155,64 @@ class MainWindow(QMainWindow):
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self.autosave_data)
         self.autosave_timer.start(self.autosave_interval)
+        self.setup_logging()
         self.showMaximized()
 
+    def setup_logging(self):
+        """Setup logging to AppData folder"""
+        try:
+            # Create AppData directory for saePisan
+            app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(app_data_dir, exist_ok=True)
+            
+            # Create logs directory
+            logs_dir = os.path.join(app_data_dir, "logs")
+            os.makedirs(logs_dir, exist_ok=True)
+            
+            # Setup log file with timestamp
+            log_filename = f"saepisan_error_{datetime.datetime.now().strftime('%Y%m%d')}.log"
+            log_path = os.path.join(logs_dir, log_filename)
+            
+            # Configure logging
+            logging.basicConfig(
+                level=logging.ERROR,
+                format='%(asctime)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(log_path, encoding='utf-8'),
+                    logging.StreamHandler()  # Also log to console
+                ]
+            )
+            
+            self.logger = logging.getLogger(__name__)
+            self.logger.info("Logging system initialized")
+            
+        except Exception as e:
+            print(f"Failed to setup logging: {e}")
+            # Fallback to basic logging
+            logging.basicConfig(level=logging.ERROR)
+            self.logger = logging.getLogger(__name__)
+
+    def log_exception(self, exception, context="Unknown"):
+        """Log exception with context information"""
+        try:
+            error_msg = f"""
+                        Context: {context}
+                        Exception Type: {type(exception).__name__}
+                        Exception Message: {str(exception)}
+                        Traceback:
+                        {traceback.format_exc()}
+                        System Info:
+                        - App Version: 1.4.0
+                        - Current Tab: {self.tab_widget.currentIndex() if hasattr(self, 'tab_widget') else 'Unknown'}
+                        - Data1 Shape: {self.model1.get_data().shape if hasattr(self, 'model1') else 'Unknown'}
+                        - Data2 Shape: {self.model2.get_data().shape if hasattr(self, 'model2') else 'Unknown'}
+                        {'='*50}
+                        """
+            self.logger.error(error_msg)
+        except Exception as log_error:
+            print(f"Failed to log exception: {log_error}")
+
+    
     def init_ui(self):
         """
         Initialize the user interface of the main window.
@@ -423,7 +480,7 @@ class MainWindow(QMainWindow):
         menu_about = self.menu_bar.addMenu("About")
         action_about_info = QAction("About This App", self)
         action_about_info.triggered.connect(self.open_about_dialog)
-        action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'about.svg')))
+        action_about_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'icon.svg')))
         menu_about.addAction(action_about_info)
         
         action_header_icon_info = QAction("Header Icon Info", self)
@@ -433,7 +490,7 @@ class MainWindow(QMainWindow):
         
         # Add R Packages Used menu
         action_r_packages_info = QAction("R Packages Used", self)
-        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'Rinfo.svg')))
+        action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'R.svg')))
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
         
@@ -545,7 +602,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 12, "Big": 16}
+        sizes = {"Small": 10, "Medium": 12, "Large": 16}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
@@ -607,7 +664,6 @@ class MainWindow(QMainWindow):
         if os.path.exists(stylesheet_path):
             with open(stylesheet_path, 'r') as file:
                 stylesheet = file.read()
-                # stylesheet = stylesheet.replace("font-size: 12px;", f"font-size: {size}px;")
                 stylesheet = stylesheet.replace("__FONT_SIZE__", f"{size}px")
                 return stylesheet
         else:
@@ -622,9 +678,13 @@ class MainWindow(QMainWindow):
         Then, it calls the 'open_summary_data_dialog' method to open the dialog.
         """
         
-        if not hasattr(self, 'show_summary_data_dialog'):
-            self.show_summary_data_dialog = SummaryDataDialog(self)
-        self.open_summary_data_dialog()
+        try:
+            if not hasattr(self, 'show_summary_data_dialog'):
+                self.show_summary_data_dialog = SummaryDataDialog(self)
+            self.open_summary_data_dialog()
+        except Exception as e:
+            self.log_exception(e, "Opening Summary Data Dialog")
+            QMessageBox.critical(self, "Error", f"Failed to open Summary Data Dialog: {str(e)}")
 
     def open_normality_test_dialog_lazy(self):
         """
@@ -634,9 +694,13 @@ class MainWindow(QMainWindow):
         already been created, it simply opens the existing instance.
         """
         
-        if not hasattr(self, 'show_normality_test_dialog'):
-            self.show_normality_test_dialog = NormalityTestDialog(self)
-        self.open_normality_test_dialog()
+        try:
+            if not hasattr(self, 'show_normality_test_dialog'):
+                self.show_normality_test_dialog = NormalityTestDialog(self)
+            self.open_normality_test_dialog()
+        except Exception as e:
+            self.log_exception(e, "Opening Normality Test Dialog")
+            QMessageBox.critical(self, "Error", f"Failed to open Normality Test Dialog: {str(e)}")
 
     def open_multicollinearity_dialog_lazy(self):
         """
@@ -971,26 +1035,24 @@ class MainWindow(QMainWindow):
             pass  # Tidak digunakan untuk Sheet 2
     
     def update_table(self, sheet_number, model):
-        """Memperbarui tabel pada sheet tertentu dengan model baru"""
+        """Update the table for the specified sheet with a new model."""
         if sheet_number == 1:
             self.spreadsheet.setModel(model)
             self.model1 = model
             self.spreadsheet.resizeColumnsToContents()
             self.tab_widget.setCurrentWidget(self.tab1)
-            if self.show_modeling_sae_dialog:
-                self.show_modeling_sae_dialog.set_model(model)
-            if self.show_modeling_saeHB_dialog:
-                self.show_modeling_saeHB_dialog.set_model(model)
-            if self.show_modeling_sae_unit_dialog:
-                self.show_modeling_sae_unit_dialog.set_model(model)
-            if self.show_modeling_saeHB_normal_dialog:
-                self.show_modeling_saeHB_normal_dialog.set_model(model)
-            if self.show_modellig_sae_pseudo_dialog:
-                self.show_modellig_sae_pseudo_dialog.set_model(model)
-            if self.show_compute_variable_dialog:
-                self.show_compute_variable_dialog.set_model(model)
-            if self.show_projection_variabel_dialog:
-                self.show_projection_variabel_dialog.set_model(model)
+            dialogs = [
+                self.show_modeling_sae_dialog,
+                self.show_modeling_saeHB_dialog,
+                self.show_modeling_sae_unit_dialog,
+                self.show_modeling_saeHB_normal_dialog,
+                self.show_modellig_sae_pseudo_dialog,
+                self.show_compute_variable_dialog,
+                self.show_projection_variabel_dialog,
+            ]
+            for dialog in dialogs:
+                if dialog:
+                    dialog.set_model(model)
         elif sheet_number == 2:
             self.table_view2.setModel(model)
             self.model2 = model
@@ -1119,214 +1181,6 @@ class MainWindow(QMainWindow):
         
         self.path=path
     
-    def add_output(self, script_text, result_text=None, plot_paths=None):
-        """Menambahkan output ke layout dalam bentuk card"""
-
-        card_frame = QFrame()
-        card_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 10px;
-            }
-        """)
-
-        card_layout = QVBoxLayout(card_frame)
-        card_layout.setSpacing(8)
-
-        label_script = QLabel("<b>Script R:</b>")
-        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
-        script_box = QTextEdit()
-        script_box.setPlainText(script_text)
-        script_box.setReadOnly(True)
-        script_box.setStyleSheet("""
-            QTextEdit {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-                font-family: Consolas, Courier New, monospace;
-            }
-        """)
-        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
-
-        card_layout.addWidget(label_script)
-        card_layout.addWidget(script_box)
-
-        if result_text:
-            label_output = QLabel("<b>Output:</b>")
-            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            result_box = QTextEdit()
-            result_box.setPlainText(result_text)
-            result_box.setReadOnly(True)
-            result_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                }
-            """)
-            max_height = 400
-            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
-            result_box.setFixedHeight(min(calculated_height, max_height))
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-            card_layout.addWidget(label_output)
-            card_layout.addWidget(result_box)
-
-        if plot_paths:
-            label_plot = QLabel("<b>Plot:</b>")
-            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            card_layout.addWidget(label_plot)
-
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    pixmap = QPixmap(plot_path)
-                    label = QLabel()
-                    label.setPixmap(pixmap)
-                    label.setFixedSize(500, 350) 
-                    label.setScaledContents(True)
-                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
-                    card_layout.addWidget(label)
-        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
-
-        if self.output_layout.count() > 0:
-            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
-            if isinstance(last_item.spacerItem(), QSpacerItem):
-                self.output_layout.removeItem(last_item)
-
-        self.output_layout.addWidget(card_frame)
-
-        if self.output_layout.count() == 1:
-            self.output_layout.addStretch()
-
-        self.tab_widget.setCurrentWidget(self.tab3)
-
-        if plot_paths:
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    os.remove(plot_path)
-
-
-    def add_output(self, script_text, result_text=None, plot_paths=None, error_text=None):
-        """Add output to the layout in the form of a card"""
-
-        # Create a frame as a card
-        card_frame = QFrame()
-        card_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 10px;
-            }
-        """)
-
-
-        card_layout = QVBoxLayout(card_frame)
-        card_layout.setSpacing(8)
-
-        label_script = QLabel("<b>R Script:</b>")
-        label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
-        script_box = QTextEdit()
-        script_box.setPlainText(script_text)
-        script_box.setReadOnly(True)
-        script_box.setStyleSheet("""
-            QTextEdit {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-                font-family: Consolas, Courier New, monospace;
-            }
-        """)
-        script_box.setFixedHeight(script_box.fontMetrics().lineSpacing() * (script_text.count('\n') + 3))
-
-        card_layout.addWidget(label_script)
-        card_layout.addWidget(script_box)
-
-        if result_text:
-            label_output = QLabel("<b>Output:</b>")
-            label_output.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            result_box = QTextEdit()
-            result_box.setPlainText(result_text)
-            result_box.setReadOnly(True)
-            result_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                }
-            """)
-            max_height = 400
-            calculated_height = result_box.fontMetrics().lineSpacing() * (result_text.count('\n') + 3)
-            result_box.setFixedHeight(min(calculated_height, max_height))
-            result_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-            card_layout.addWidget(label_output)
-            card_layout.addWidget(result_box)
-
-        if plot_paths:
-            label_plot = QLabel("<b>Plot:</b>")
-            label_plot.setStyleSheet("color: #333; margin-top: 10px; margin-bottom: 5px;")
-            card_layout.addWidget(label_plot)
-
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    pixmap = QPixmap(plot_path)
-                    label = QLabel()
-                    label.setPixmap(pixmap)
-                    label.setFixedSize(500, 350)
-                    label.setScaledContents(True)
-                    label.setStyleSheet("border: 1px solid #ccc; border-radius: 4px;")
-                    card_layout.addWidget(label)
-
-        if error_text:
-            label_error = QLabel("<b>Error:</b>")
-            label_error.setStyleSheet("color: #a94442; margin-top: 10px; margin-bottom: 5px;")
-            error_box = QTextEdit()
-            error_box.setPlainText(error_text)
-            error_box.setReadOnly(True)
-            error_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #f8d7da;
-                    border: 1px solid #f5c6cb;
-                    border-radius: 4px;
-                    padding: 5px;
-                    font-family: Consolas, Courier New, monospace;
-                    color: #721c24;
-                }
-            """)
-            error_box.setFixedHeight(error_box.fontMetrics().lineSpacing() * (error_text.count('\n') + 3))
-
-            card_layout.addWidget(label_error)
-            card_layout.addWidget(error_box)
-
-        card_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        card_frame.customContextMenuRequested.connect(lambda pos: self.show_context_menu(pos, card_frame))
-
-        if self.output_layout.count() > 0:
-            last_item = self.output_layout.itemAt(self.output_layout.count() - 1)
-            if isinstance(last_item.spacerItem(), QSpacerItem):
-                self.output_layout.removeItem(last_item)
-
-        self.output_layout.addWidget(card_frame)
-        if self.output_layout.count() == 1:
-            self.output_layout.addStretch()
-
-        self.tab_widget.setCurrentWidget(self.tab3)
-
-        if plot_paths:
-            for plot_path in plot_paths:
-                if os.path.exists(plot_path):
-                    os.remove(plot_path)
-
     def remove_output(self, card_frame):
         """Menghapus output dari layout"""
         self.output_layout.removeWidget(card_frame)
@@ -1379,96 +1233,105 @@ class MainWindow(QMainWindow):
         """
         Save the current state of data1, data2 (as parquet), and output (as JSON) to temporary files.
         """
-        app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
-        os.makedirs(app_data_dir, exist_ok=True)
-        temp_dir = os.path.join(app_data_dir, 'file-data')
-        os.makedirs(temp_dir, exist_ok=True)
-        # Save data1 and data2 as parquet
-        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
-        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
-        self.model1.get_data().write_parquet(data1_path)
-        self.model2.get_data().write_parquet(data2_path)
-        # Save output as JSON
-        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
-        import numpy as np
+        try:
+            app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(app_data_dir, exist_ok=True)
+            temp_dir = os.path.join(app_data_dir, 'file-data')
+            os.makedirs(temp_dir, exist_ok=True)
 
-        def make_json_serializable(obj):
-            if isinstance(obj, dict):
-                return {k: make_json_serializable(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [make_json_serializable(v) for v in obj]
-            elif isinstance(obj, np.ndarray):
-                return obj.tolist()
-            elif hasattr(obj, 'tolist'):
-                return obj.tolist()
-            elif isinstance(obj, (int, float, str, type(None), bool)):
-                return obj
-            else:
+            # Save data1 and data2 as parquet
+            data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+            data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+            self.model1.get_data().write_parquet(data1_path)
+            self.model2.get_data().write_parquet(data2_path)
+
+            # Save output as JSON
+            output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+            import numpy as np
+
+            def make_json_serializable(obj):
+                if isinstance(obj, dict):
+                    return {k: make_json_serializable(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [make_json_serializable(v) for v in obj]
+                if isinstance(obj, np.ndarray) or hasattr(obj, 'tolist'):
+                    return obj.tolist()
+                if isinstance(obj, (int, float, str, type(None), bool)):
+                    return obj
                 return str(obj)
 
-        serializable_data = make_json_serializable(self.data)
-        data = {
-            'timestamp': datetime.datetime.now().isoformat(),
-            'output': serializable_data
-        }
-        with open(output_path, 'w') as file:
-            json.dump(data, file)
-        
-        # ?? delete image wasnt used
+            serializable_data = make_json_serializable(self.data)
+            data = {
+                'timestamp': datetime.datetime.now().isoformat(),
+                'output': serializable_data
+            }
+            with open(output_path, 'w') as file:
+                json.dump(data, file)
+
+            self._cleanup_unused_images(temp_dir, serializable_data)
+
+            if self.isActiveWindow():
+                self.show_toast()
+        except Exception as e:
+            self.log_exception(e, "Autosave Data")
+
+    def _collect_used_images(self, outputs):
+        used_images = set()
+        for output in outputs:
+            result = output.get("result", {})
+            plot_paths = result.get("Plot")
+            if isinstance(plot_paths, list):
+                for p in plot_paths:
+                    used_images.add(os.path.abspath(p))
+            elif isinstance(plot_paths, str):
+                used_images.add(os.path.abspath(plot_paths))
+        return used_images
+
+    def _cleanup_unused_images(self, temp_dir, serializable_data):
         temp_img_dir = os.path.join(temp_dir, 'temp')
-        if os.path.exists(temp_img_dir):
-            used_images = set()
-            for output in serializable_data:
-                result = output.get("result", {})
-                plot_path = result.get("Plot")
-                if plot_path and isinstance(plot_path, str):
-                    used_images.add(os.path.abspath(plot_path))
-            for output in self.data:
-                result = output.get("result", {})
-                plot_paths = result.get("Plot")
-                if isinstance(plot_paths, list):
-                    for p in plot_paths:
-                        used_images.add(os.path.abspath(p))
-                elif isinstance(plot_paths, str):
-                    used_images.add(os.path.abspath(plot_paths))
-            # Hapus file di temp yang tidak digunakan
-            for fname in os.listdir(temp_img_dir):
-                fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
-                if fpath not in used_images:
-                    try:
-                        os.remove(fpath)
-                    except Exception:
-                        pass
-        if self.isActiveWindow():
-            self.show_toast()
-        
+        if not os.path.exists(temp_img_dir):
+            return
+        used_images = self._collect_used_images(serializable_data)
+        used_images.update(self._collect_used_images(self.data))
+        for fname in os.listdir(temp_img_dir):
+            fpath = os.path.abspath(os.path.join(temp_img_dir, fname))
+            if fpath not in used_images:
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
 
     def load_temp_data(self):
         """
         Load data1 and data2 from parquet, and output from JSON, if they exist.
         """
-        app_path = os.path.join(os.getenv("APPDATA"), "saePisan")
-        temp_dir = os.path.join(app_path, 'file-data')
-        data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
-        data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
-        output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
-        if os.path.exists(data1_path) and os.path.exists(data2_path) and os.path.exists(output_path):
-            reply = QMessageBox.question(self, 'Load Temporary Data',
-                                         'Temporary data was found. Do you want to load it?',
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                         QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.Yes:
-                self.data1 = pl.read_parquet(data1_path)
-                self.data2 = pl.read_parquet(data2_path)
-                self.model1.set_data(self.data1)
-                self.model2.set_data(self.data2)
-                self.update_table(1, self.model1)
-                self.update_table(2, self.model2)
-                with open(output_path, 'r') as file:
-                    data = json.load(file)
-                    self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
-        else:
-            QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
+        try:
+            app_path = os.path.join(os.getenv("APPDATA"), "saePisan")
+            temp_dir = os.path.join(app_path, 'file-data')
+            data1_path = os.path.join(temp_dir, 'sae_pisan_data1.parquet')
+            data2_path = os.path.join(temp_dir, 'sae_pisan_data2.parquet')
+            output_path = os.path.join(temp_dir, 'sae_pisan_output.json')
+            if os.path.exists(data1_path) and os.path.exists(data2_path) and os.path.exists(output_path):
+                reply = QMessageBox.question(self, 'Load Temporary Data',
+                                            'Temporary data was found. Do you want to load it?',
+                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                            QMessageBox.StandardButton.No)
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.data1 = pl.read_parquet(data1_path)
+                    self.data2 = pl.read_parquet(data2_path)
+                    self.model1.set_data(self.data1)
+                    self.model2.set_data(self.data2)
+                    self.update_table(1, self.model1)
+                    self.update_table(2, self.model2)
+                    with open(output_path, 'r') as file:
+                        data = json.load(file)
+                        self.set_output_data(data.get('output', []), timestamp=data.get('timestamp'))
+            else:
+                QMessageBox.warning(self, 'No Recent Data', 'No recent data file was found.')
+        except Exception as e:
+            self.log_exception(e, "Load Temporary Data")
+            QMessageBox.warning(self, 'Error Loading Data',
+                                f'An error occurred while loading temporary data: {e}')
 
     def set_output_data(parent, output_data, timestamp=None):
         """
@@ -1573,27 +1436,32 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
-        reply = QMessageBox.question(self, 'Confirm Exit',
+        
+        try:
+            reply = QMessageBox.question(self, 'Confirm Exit',
                                      'Are you sure you want to exit?',
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            self.autosave_data()
-            import rpy2.robjects as ro
-            if 'saeHB' in ro.r('loadedNamespaces()'):
-                ro.r('detach("package:saeHB", unload=TRUE)')
-            if 'rjags' in ro.r('loadedNamespaces()'):
-                ro.r("unloadNamespace('rjags')")
-            
-            #to kill the process
-            import os
-            import psutil
+            if reply == QMessageBox.StandardButton.Yes:
+                self.autosave_data()
+                import rpy2.robjects as ro
+                if 'saeHB' in ro.r('loadedNamespaces()'):
+                    ro.r('detach("package:saeHB", unload=TRUE)')
+                if 'rjags' in ro.r('loadedNamespaces()'):
+                    ro.r("unloadNamespace('rjags')")
+                
+                #to kill the process
+                import os
+                import psutil
 
-            current_system_pid = os.getpid()
+                current_system_pid = os.getpid()
 
-            ThisSystem = psutil.Process(current_system_pid)
-            ThisSystem.terminate()
-            event.accept()
-        else:
-            event.ignore()
+                this_system = psutil.Process(current_system_pid)
+                this_system.terminate()
+                event.accept()
+            else:
+                event.ignore()
+        except Exception as e:
+            self.log_exception(e, "Close Event")
+            QMessageBox.warning(self, 'Error', f'An error occurred while closing the application: {e}')
 

@@ -168,7 +168,7 @@ def set_selection_method(parent, dialog):
 import unittest
 from unittest.mock import MagicMock
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from sae_eblup_area import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, generate_r_script, show_r_script
+from test.modelling.script.test_sae_eblup_area import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, generate_r_script, show_r_script
 
 class TestSaeEblupArea(unittest.TestCase):
     def setUp(self):

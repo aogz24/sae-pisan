@@ -318,7 +318,7 @@ class LinePlotDialog(QDialog):
             if dtype == pl.Utf8:
                 tipe = "String"
             elif dtype == pl.Null:
-                tipe = "None"
+                tipe = "NULL"
             else:
                 tipe = "Numeric"
             self.columns.append(f"{col} [{tipe}]")
@@ -342,7 +342,7 @@ class LinePlotDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item or "[None]" in item:
+        if "[String]" in item or "[NULL]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
@@ -365,8 +365,8 @@ class LinePlotDialog(QDialog):
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.vertical_model.stringList()
 
-        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
+        contains_invalid = any("[String]" in item or "[NULL]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[NULL]" not in item]
 
         if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")

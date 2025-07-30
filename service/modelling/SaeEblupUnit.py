@@ -27,9 +27,13 @@ def assign_of_interest(parent):
             type_of_var = index.data().split(" [")[1].replace("]", "")
             if type_of_var != "String":
                 all_string = False
+                old_var = parent.of_interest_var[0] if parent.of_interest_var else None
                 parent.of_interest_var = [index.data()]
                 parent.of_interest_model.setStringList(parent.of_interest_var)
                 parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+                if old_var:
+                    parent.variables_list.model().insertRow(0)
+                    parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
                 show_r_script(parent)
                 break
         if all_string:
@@ -92,9 +96,13 @@ def assign_index(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         for index in selected_indexes:
+            old_var = parent.index_var[0] if parent.index_var else None
             parent.index_var = [index.data()]
             parent.index_model.setStringList(parent.index_var)
             parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+            if old_var:
+                parent.variables_list.model().insertRow(0)
+                parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
             show_r_script(parent)
             break
 
@@ -117,11 +125,15 @@ def assign_as_factor(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        old_var = parent.as_factor_var[0] if parent.as_factor_var else None
         last_index = selected_indexes[-1]  # Get the last selected index
         new_var = last_index.data()  # Get the data of the last selected variable
         parent.as_factor_var = [new_var]  # Assign only the last variable
         parent.as_factor_model.setStringList(parent.as_factor_var)
         parent.variables_list.model().removeRow(last_index.row())  # Remove the last selected variable from the list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
         
 def assign_domains(parent):
@@ -139,9 +151,13 @@ def assign_domains(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        old_var = parent.domain_var[0] if parent.domain_var else None
         parent.domain_var = [selected_indexes[0].data()]  # Only one variable
         parent.domain_model.setStringList(parent.domain_var)
         parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
 
 def assign_aux_mean(parent):
@@ -195,9 +211,13 @@ def assign_population_sample_size(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        old_var = parent.population_sample_size_var[0] if parent.population_sample_size_var else None
         parent.population_sample_size_var = [selected_indexes[0].data()]  # Only one variable
         parent.population_sample_size_model.setStringList(parent.population_sample_size_var)
         parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
 
 def unassign_variable(parent):

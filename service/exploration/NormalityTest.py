@@ -88,6 +88,7 @@ def run_normality_test(parent):
 
         # Build parent.result only with non-empty tables
         result_dict = {}
+        result_dict["Pre-Modeling"] = "Normality Test"
         if shapiro_data:
             result_dict["Shapiro Test Results"] = pl.DataFrame(shapiro_data)
         if jarque_data:

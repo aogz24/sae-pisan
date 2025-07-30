@@ -26,9 +26,13 @@ def assign_of_interest(parent):
             type_of_var = index.data().split(" [")[1].replace("]", "")
             if type_of_var != "String":
                 all_string = False
+                old_var = parent.of_interest_var[0] if parent.of_interest_var else None
                 parent.of_interest_var = [index.data()]
                 parent.of_interest_model.setStringList(parent.of_interest_var)
-                parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+                parent.variables_list.model().removeRow(index.row())
+                if old_var:
+                    parent.variables_list.model().insertRow(0)
+                    parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
                 show_r_script(parent)
                 break
         if all_string:
@@ -94,9 +98,13 @@ def assign_vardir(parent):
             type_of_var = index.data().split(" [")[1].replace("]", "")
             if type_of_var != "String":
                 all_string = False
+                old_var = parent.vardir_var[0] if parent.vardir_var else None
                 parent.vardir_var = [index.data()]
                 parent.vardir_model.setStringList(parent.vardir_var)
                 parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+                if old_var:
+                    parent.variables_list.model().insertRow(0)
+                    parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
                 show_r_script(parent)
                 break
         if all_string:

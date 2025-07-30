@@ -31,6 +31,8 @@ def run_model_eblup_area(parent):
         try:
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
+            if hasattr(parent, 'log_exception'):
+                parent.log_exception(e, "Run Model EBLUP Area")
             result = str(e)
             error = True
             return result, error, None
@@ -76,5 +78,7 @@ def run_model_eblup_area(parent):
         return results, error, df
         
     except Exception as e:
+        if hasattr(parent, 'log_exception'):
+            parent.log_exception(e, "Run Model EBLUP Area")
         error = True
         return str(e), error, None

@@ -26,7 +26,7 @@ class AboutDialog(QDialog):
         layout.addWidget(logo_label)
         
         # SAE Pisan Title
-        title_label = QLabel("SAE Pisan")
+        title_label = QLabel('<span style="font-family: \'Courier New\'">saePisan</span>')
         title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-size: 20px; font-weight: bold; color: black;")
         layout.addWidget(title_label)
@@ -46,31 +46,31 @@ class AboutDialog(QDialog):
         built_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(built_label)
         
-        download_label = QLabel("<b>Download:</b> <a href='https://sae-pisan-web.vercel.app/downloads'>Click here</a>")
+        download_label = QLabel("<b>Download:</b> <a href='https://saepisan.web.id/downloads'>Click here</a>")
         download_label.setOpenExternalLinks(True)
         download_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(download_label)
         
         desc_label = QLabel(
-            """SAE Pisan (Small Area Estimation Programming for Statistical Analysis) is a GUI-based desktop application designed to perform small area estimation (SAE) using statistical methods based on R.
+            """<span style="font-family: 'Courier New'">saePisan</span> (Small Area Estimation Programming for Statistical Analysis) is a GUI-based desktop application designed to perform small area estimation (SAE) using statistical methods based on R.
             """
         )
         desc_label.setWordWrap(True)
         desc_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(desc_label)
-        
-        institution_label = QLabel("""<b>Sae Pisan is suported by Politeknik Statistika STIS</b>""")
+
+        institution_label = QLabel("""<b><span style="font-family: 'Courier New'">saePisan</span> is suported by Politeknik Statistika STIS</b>""")
         institution_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(institution_label)
         
         support_label = QLabel(
-            """<b>Support:</b> For more information, please contact <a href='mailto: '></a>""")
+            """<b>Support:</b> For more information, please contact <a href='mailto: support@saepisan.web.id'>support@saepisan.web.id</a>""")
         support_label.setOpenExternalLinks(True)
         support_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(support_label)
         
         copyright_label = QLabel(
-            """<b>© 2024 SAE Pisan. All rights reserved.</b>
+            """<b>© 2024 <span style="font-family: 'Courier New'">saePisan</span>. All rights reserved.</b>
             """
         )
         copyright_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)

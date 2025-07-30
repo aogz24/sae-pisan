@@ -198,12 +198,14 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     out = {}
     out["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
     result = {}
-    # Bersihkan baris kosong di akhir script
+
+    # Bersihkan baris kosong hanya di bagian akhir script
     lines = r_script.splitlines()
     while lines and lines[-1].strip() == "":
         lines.pop()
     cleaned_script = "\n".join(lines)
 
+    # Widget untuk menampilkan script
     script_box = QTextEdit()
     script_box.setPlainText(cleaned_script)
     script_box.setReadOnly(True)
@@ -214,14 +216,24 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             border-radius: 4px;
             padding: 5px;
             font-family: "Courier New", Courier, monospace;
-            font-size: 9pt;
+            font-size: {parent.font_size}px;
         }
     """)
-    max_height = 400
-    calculated_height = script_box.fontMetrics().lineSpacing() * (cleaned_script.count('\n') + 2)
-    script_box.setFixedHeight(min(calculated_height, max_height))
-    script_box.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
+    # Hitung tinggi berdasarkan jumlah baris, batasi hingga max_height
+    num_lines = cleaned_script.count('\n') + 1
+    line_height = script_box.fontMetrics().lineSpacing()
+    calculated_height = line_height * num_lines + 10  # Tambah margin kecil
+    max_height = 400
+    script_box.setFixedHeight(min(calculated_height, max_height))
+
+    # Tampilkan scroll hanya jika tinggi lebih dari batas
+    script_box.setVerticalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOn if calculated_height > max_height
+        else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+
+    # Tambahkan ke layout
     card_layout.addWidget(label_script)
     card_layout.addWidget(script_box)
     # Bagian Output (jika ada)
@@ -236,9 +248,27 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
             model_label = QLabel(f"<b>Summary of {model_value}</b>")
             model_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             model_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            model_label.setStyleSheet("font-size: 20px; color: #333; margin-top: 5px;")
+            model_label.setStyleSheet("font-size: 20px; background-color: #ccc; margin-top: 5px;")
             card_layout.addWidget(model_label)
             result["Model"] = results["Model"]
+
+        if "Pre-Modeling" in results:
+            title_value = results["Pre-Modeling"]
+            title_label = QLabel(f"<b>Pre-Modeling : {title_value}</b>")
+            title_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title_label.setStyleSheet("font-size: 18px; background-color: #ccc; margin-top: 5px;")
+            card_layout.addWidget(title_label)
+            result["Pre-Modeling"] = results["Pre-Modeling"]
+        
+        if "Graph" in results:
+            graph_value = results["Graph"]
+            graph_label = QLabel(f"<b>Graph : {graph_value}</b>")
+            graph_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            graph_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            graph_label.setStyleSheet("font-size: 18px; background-color: #ccc; margin-top: 5px;")
+            card_layout.addWidget(graph_label)
+            result["Graph"] = results["Graph"]
 
         # Add timestamp for generation
         timestamp = datetime.now().strftime("%H:%M:%S %d-%m-%Y") if timestamps is None else timestamps
@@ -250,9 +280,7 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
 
         for key, value in results.items():
             # Skip displaying if the key is "Model"
-            if key == "Model":
-                continue
-            elif key=="Plot":
+            if key in ["Model", "Pre-Modeling", "Graph", "Plot"]:
                 continue
 
             # Tambahkan header untuk setiap key
@@ -277,11 +305,19 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
                 table_view.horizontalHeader().setFixedHeight(50)
 
-                # Hitung tinggi tabel berdasarkan jumlah baris
+                # Hitung tinggi tabel berdasarkan jumlah baris (maksimal 5 baris)
                 row_height = table_view.verticalHeader().defaultSectionSize()
                 header_height = table_view.horizontalHeader().height()
-                total_height = row_height * model.rowCount() + header_height + 20  # Tambahkan margin
+                max_visible_rows = 5
+                visible_rows = min(model.rowCount(), max_visible_rows)
+                total_height = row_height * visible_rows + header_height + 20  # Tambahkan margin
                 table_view.setFixedHeight(total_height)
+
+                # Enable scroll jika baris lebih dari 5
+                if model.rowCount() > max_visible_rows:
+                    table_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+                else:
+                    table_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
                 table_view.setStyleSheet("""
                     QTableView {

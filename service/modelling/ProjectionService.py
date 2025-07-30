@@ -26,9 +26,13 @@ def assign_of_interest(parent):
                 break
             else:
                 all_string = False
+                old_var = parent.of_interest_var[0] if parent.of_interest_var else None
                 parent.of_interest_var = [index.data()]
                 parent.of_interest_model.setStringList(parent.of_interest_var)
-                parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+                parent.variables_list.model().removeRow(index.row())
+                if old_var:
+                    parent.variables_list.model().insertRow(0)
+                    parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
                 show_r_script(parent)
                 break
         if all_string:
@@ -90,9 +94,13 @@ def assign_index(parent):
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
         for index in selected_indexes:
+            old_var = parent.index_var[0] if parent.index_var else None
             parent.index_var = [index.data()]
             parent.index_model.setStringList(parent.index_var)
             parent.variables_list.model().removeRow(selected_indexes[-1].row())  # Remove from variables list
+            if old_var:
+                parent.variables_list.model().insertRow(0)
+                parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
             show_r_script(parent)
             break
 
@@ -112,31 +120,36 @@ def assign_as_factor(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        old_var = parent.as_factor_var[0] if parent.as_factor_var else None
         last_index = selected_indexes[-1]  # Get the last selected index
         new_var = last_index.data()  # Get the data of the last selected variable
         parent.as_factor_var = [new_var]  # Assign only the last variable
         parent.as_factor_model.setStringList(parent.as_factor_var)
         parent.variables_list.model().removeRow(last_index.row())  # Remove the last selected variable from the list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
         
 def assign_domains(parent):
     """
-    Assigns the selected domain variable from the variables list to the domain model.
+    Assigns one or more selected domain variables from the variables list to the domain model.
     Parameters:
     parent (object): The parent object containing the variables list and domain model.
     The function performs the following steps:
     1. Retrieves the selected indexes from the parent's variables list.
-    2. If there are selected indexes, assigns the first selected variable to the parent's domain variable.
-    3. Updates the parent's domain model with the selected domain variable.
-    4. Removes the selected variable from the parent's variables list.
+    2. If there are selected indexes, assigns all selected variables to the parent's domain variable list.
+    3. Updates the parent's domain model with the selected domain variables.
+    4. Removes the selected variables from the parent's variables list.
     5. Calls the show_r_script function with the parent object.
     """
-    
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
-        parent.domain_var = [selected_indexes[0].data()]  # Only one variable
+        new_vars = [index.data() for index in selected_indexes]
+        parent.domain_var = list(set(parent.domain_var + new_vars))
         parent.domain_model.setStringList(parent.domain_var)
-        parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        for index in sorted(selected_indexes, reverse=True):
+            parent.variables_list.model().removeRow(index.row())
         show_r_script(parent)
         
 def assign_weight(parent):
@@ -160,9 +173,13 @@ def assign_weight(parent):
             type_of_var = index.data().split(" [")[1].replace("]", "")
             if type_of_var != "String":
                 all_string = False
+                old_var = parent.weight_var[0] if parent.weight_var else None
                 parent.weight_var = [index.data()]  # Only one variable
                 parent.weight_model.setStringList(parent.weight_var)
                 parent.variables_list.model().removeRow(index.row())  # Remove from variables list
+                if old_var:
+                    parent.variables_list.model().insertRow(0)
+                    parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
                 show_r_script(parent)
                 break
         if all_string:
@@ -187,9 +204,13 @@ def assign_strata(parent):
     
     selected_indexes = parent.variables_list.selectedIndexes()
     if selected_indexes:
+        old_var = parent.strata_var[0] if parent.strata_var else None
         parent.strata_var = [selected_indexes[0].data()]  # Only one variable
         parent.strata_model.setStringList(parent.strata_var)
         parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
 
 def unassign_variable(parent):
@@ -361,11 +382,20 @@ def generate_r_script(parent):
     def format_edit_var_before(var, prefix):
         return f'{var.split(" [")[0].replace(" ", "_")}{prefix}'
 
+    def format_domain_var(domain_var_list):
+        if not domain_var_list:
+            return 'NULL'
+        if len(domain_var_list) == 1:
+            return f'"{domain_var_list[0].split(" [")[0].replace(" ", "_")}"'
+        else:
+            names = [f'"{var.split(" [")[0].replace(" ", "_")}"' for var in domain_var_list]
+            return f'c({", ".join(names)})'
+    
     of_interest_var = format_single_var(parent.of_interest_var)
     auxilary_vars = format_var(parent.auxilary_vars)
     as_factor_var = format_var(parent.as_factor_var, as_factor=True)
     index_var = format_single_var(parent.index_var)
-    domain_var = format_single_var(parent.domain_var)
+    domain_var = format_domain_var(parent.domain_var)
     weight = format_single_var(parent.weight_var)
     strata = format_single_var(parent.strata_var) if parent.strata_var else 'NULL'
 
@@ -408,8 +438,12 @@ def generate_r_script(parent):
         for var in parent.as_factor_var:
             var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data_pe[["{var_name_edit}"]]);\n'
-            
-        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
+        
+        for var in parent.domain_var:
+            var_name_edit = format_edit_var(var, parent.model_name + parent.separator)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data_pe[["{var_name_edit}"]];\n'
+        
+        for var, prefix in [(weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var(var, prefix + parent.separator)
                 r_script += f'{var} <- data_pe[["{var_edit}"]];\n'
@@ -434,7 +468,11 @@ def generate_r_script(parent):
             var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data_pe[["{var_name_edit}"]]);\n'
 
-        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
+        for var in parent.domain_var:
+            var_name_edit = format_edit_var(var, parent.projection_name + parent.separator)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data_pe[["{var_name_edit}"]];\n'
+        
+        for var, prefix in [(weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var(var, prefix + parent.separator)
                 r_script += f'{var} <- data_pe[["{var_edit}"]];\n'
@@ -462,8 +500,12 @@ def generate_r_script(parent):
         for var in parent.as_factor_var:
             var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data_pe[["{var_name_edit}"]]);\n'
-
-        for var, prefix in [(domain_var, parent.model_name), (weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
+        
+        for var in parent.domain_var:
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.model_name)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data_pe[["{var_name_edit}"]];\n'
+        
+        for var, prefix in [(weight, parent.model_name), (strata, parent.model_name), (index_var, parent.model_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var_before(var, parent.separator + prefix)
                 r_script += f'{var} <- data_pe[["{var_edit}"]];\n'
@@ -487,8 +529,12 @@ def generate_r_script(parent):
         for var in parent.as_factor_var:
             var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
             r_script += f'{var.split(" [")[0].replace(" ", "_")} <- as.factor(data_pe[["{var_name_edit}"]]);\n'
-            
-        for var, prefix in [(domain_var, parent.projection_name), (weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
+        
+        for var in parent.domain_var:
+            var_name_edit = format_edit_var_before(var, parent.separator + parent.projection_name)
+            r_script += f'{var.split(" [")[0].replace(" ", "_")} <- data_pe[["{var_name_edit}"]];\n'    
+        
+        for var, prefix in [(weight, parent.projection_name), (strata, parent.projection_name), (index_var, parent.projection_name)]:
             if var and var != 'NULL':
                 var_edit = format_edit_var_before(var, parent.separator + prefix)
                 r_script += f'{var} <- data_pe[["{var_edit}"]];\n'
@@ -514,9 +560,9 @@ def generate_r_script(parent):
         r_script += f'model_pe <- projection(final_formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
     else:
         if strata == 'NULL':
-            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
+            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata={strata}, domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
         else:
-            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain="{domain_var}", model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
+            r_script += f'model_pe <- projection(formula, id="{index_var}", weight="{weight}", strata="{strata}", domain={domain_var}, model={model_var}, data_model=data_model, data_proj=data_proj, model_metric={parent.metric}, kfold={parent.k_fold}, grid={parent.grid})\n'
         return r_script
 
 def show_r_script(parent):

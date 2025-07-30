@@ -207,10 +207,10 @@ class CorrelationMatrixDialog(QDialog):
         current_items = target_model.stringList()
 
         filtered_items = []
-        contains_string = any("[String]" in item or "[None]" in item for item in items)
+        contains_string = any("[String]" in item or "[NULL]" in item for item in items)
 
         for item in items:
-            if "[String]" in item or "[None]" in item:
+            if "[String]" in item or "[NULL]" in item:
                 continue
 
             if target_widget == self.selected_list:
@@ -275,7 +275,7 @@ class CorrelationMatrixDialog(QDialog):
             if dtype == pl.Utf8:
                 tipe = "String"
             elif dtype == pl.Null:
-                tipe = "None"
+                tipe = "NULL"
             else:
                 tipe = "Numeric"
             self.columns.append(f"{col} [{tipe}]")
@@ -287,7 +287,7 @@ class CorrelationMatrixDialog(QDialog):
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.selected_model.stringList()
         
-        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
+        contains_invalid = any("[String]" in item or "[NULL]" in item for item in selected_items)
         selected_items = [item for item in selected_items if "[Numeric]" in item]
 
         if contains_invalid:
@@ -351,26 +351,34 @@ class CorrelationMatrixDialog(QDialog):
     def generate_r_script(self):
         """Function to generate R script for Correlation Matrix using ggcorrplot"""
         selected_columns = self.get_selected_columns()
-        if not selected_columns:
+        if not selected_columns or len(selected_columns) < 2:
             self.script_box.setPlainText("")
             return
 
         formatted_columns = ', '.join(f'"{col}"' for col in selected_columns)
         r_script = ""
 
-        # Step 1: Generate the correlation matrix
-        for method, checkbox in [("pearson", self.pearson_checkbox), ("spearman", self.spearman_checkbox), ("kendall", self.kendall_checkbox)]:
+        # Step 1: Generate the correlation matrix and plots based on selected methods
+        for method, checkbox in [("pearson", self.pearson_checkbox),
+                                ("spearman", self.spearman_checkbox),
+                                ("kendall", self.kendall_checkbox)]:
             if checkbox.isChecked():
                 correlation_matrix_method = f"correlation_matrix_{method}"
-                r_script += f"{correlation_matrix_method} <- cor(data[, c({formatted_columns})], use='complete.obs', method='{method}')\n"
-
-            if self.correlation_plot_checkbox.isChecked():
                 r_script += (
-                    f"correlation_plot_{method} <- ggcorrplot({correlation_matrix_method}, "
-                    f"method = 'square', type = 'upper', lab = TRUE) + "
-                    f"ggtitle('{method.title()} Correlation Matrix')\n\n"
+                    f"{correlation_matrix_method} <- cor(data[, c({formatted_columns})], "
+                    f"use='complete.obs', method='{method}')\n"
                 )
+
+                # Only generate the plot if the plot checkbox is checked
+                if self.correlation_plot_checkbox.isChecked():
+                    r_script += (
+                        f"correlation_plot_{method} <- ggcorrplot({correlation_matrix_method}, "
+                        f"method = 'square', type = 'upper', lab = TRUE) + "
+                        f"ggtitle('{method.title()} Correlation Matrix')\n\n"
+                    )
+
         self.script_box.setPlainText(r_script)
+
 
     def accept(self):
         r_script = self.script_box.toPlainText()

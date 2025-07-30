@@ -53,6 +53,7 @@ def run_correlation_matrix(parent):
         ro.r(parent.r_script)
 
         result_tables = {}
+        result_tables["Pre-Modeling"] = "Corelation Matrix"
         result_plots = []
 
         # Daftar metode yang mungkin digunakan

@@ -261,8 +261,8 @@ class VariableSelectionDialog(QDialog):
 
         for item in items:
             if target_widget in [self.dependent_variable_list, self.independent_variable_list]:
-                # Tolak jika [String] atau [None]
-                if "[String]" in item or "[None]" in item:
+                # Tolak jika [String] atau [NULL]
+                if "[String]" in item or "[NULL]" in item:
                     contains_invalid = True
                     continue
                 filtered_items.append(item)
@@ -333,7 +333,7 @@ class VariableSelectionDialog(QDialog):
             if dtype == pl.Utf8:
                 tipe = "String"
             elif dtype == pl.Null:
-                tipe = "None"
+                tipe = "NULL"
             else:
                 tipe = "Numeric"
             self.columns.append(f"{col} [{tipe}]")
@@ -357,7 +357,7 @@ class VariableSelectionDialog(QDialog):
 
         item = selected_items[0]
 
-        if "[String]" in item or "[None]" in item:
+        if "[String]" in item or "[NULL]" in item:
             QMessageBox.warning(self, "Warning", "Selected variable must be of type Numeric.")
             return
 
@@ -379,8 +379,8 @@ class VariableSelectionDialog(QDialog):
         selected_items = [index.data() for index in selected_indexes]
         selected_list = self.independent_variable_model.stringList()
 
-        contains_invalid = any("[String]" in item or "[None]" in item for item in selected_items)
-        selected_items = [item for item in selected_items if "[String]" not in item and "[None]" not in item]
+        contains_invalid = any("[String]" in item or "[NULL]" in item for item in selected_items)
+        selected_items = [item for item in selected_items if "[String]" not in item and "[NULL]" not in item]
 
         if contains_invalid:
             QMessageBox.warning(None, "Warning", "Selected variables must be of type Numeric.")
