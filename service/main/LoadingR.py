@@ -38,7 +38,6 @@ def loadR(splash):
         utils.install_packages("polars", repos="https://community.r-multiverse.org", lib=lib_path)
     splash.update_message()
     importr('sae', lib_loc=lib_path)
-    importr('saeHB', lib_loc=lib_path)
     importr('emdi', lib_loc=lib_path)
     importr('sae.projection', lib_loc=lib_path)
     splash.update_message()

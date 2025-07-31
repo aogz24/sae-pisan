@@ -31,6 +31,8 @@ def run_model_hb_area(parent):
     result = ""
     error = False
     try:
+        from rpy2.robjects.packages import importr
+        importr('saeHB')
         ro.r('datahb <- as.data.frame(r_df)')
         ro.r('attach(datahb)')
         try:
