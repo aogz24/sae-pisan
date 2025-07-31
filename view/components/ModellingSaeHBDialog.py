@@ -88,6 +88,7 @@ class ModelingSaeHBDialog(QDialog):
         screen_height = self.parent.screen().size().height()
         self.setMinimumHeight(int(round(screen_height * 0.82)))
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.Normal = False
 
         self.columns = []
         self.model_method = "Beta"
@@ -561,8 +562,18 @@ class ModelingSaeHBDialog(QDialog):
         
         data = self.model.get_data()
         variable = self.of_interest_var[0].split('[')[0].strip()
-        if not (data[variable].dtype == pl.Float64 and (data[variable] >= 0).all() and (data[variable] <= 1).all()):
-            QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
+        col = data[variable]
+        is_float = col.dtype == pl.Float64 or col.dtype == pl.Float32
+        values = col.to_numpy() if hasattr(col, "to_numpy") else col.to_list()
+        import numpy as np
+        if not isinstance(values, np.ndarray):
+            values = np.array(values)
+        valid_range = (values >= 0).all() and (self.Normal or (values <= 1).all())
+        if not (is_float and valid_range):
+            if not self.Normal:
+                QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
+            else:
+                QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float.")
             return
         
         r_script = get_script(self)
