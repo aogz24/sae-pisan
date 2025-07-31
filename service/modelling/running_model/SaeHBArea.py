@@ -40,7 +40,7 @@ def run_model_hb_area(parent):
                 parent.log_exception(e, "Run Model Hierarchical Bayesian Area")
             result = str(e)
             error = True
-            return result, error, None
+            return result, error, None, None
         
         from contextlib import contextmanager
         @contextmanager
@@ -121,4 +121,4 @@ def run_model_hb_area(parent):
         if hasattr(parent, 'log_exception'):
             parent.log_exception(e, "Run Model Hierarchical Bayesian Area")
         error = True
-        return str(e), error, None
+        return str(e), error, None, None
