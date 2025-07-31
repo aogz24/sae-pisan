@@ -24,7 +24,6 @@ def run_model_hb_area(parent):
     """
     
     import rpy2.robjects as ro
-    parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
     convert_df(df, parent)
