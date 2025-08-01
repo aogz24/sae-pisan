@@ -14,9 +14,8 @@ def convert_df(df, parent):
     
     import rpy2_arrow.polars as rpy2polars
     import rpy2.robjects as ro
-    parent.activate_R()
     
-    null_threshold = 0.3 * len(df)
+    null_threshold = 0.49 * len(df)
     cols_to_drop = [col for col in df.columns if df[col].null_count() >= null_threshold]
     if len(cols_to_drop)>0:
         df_pandas = df.to_pandas()

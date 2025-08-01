@@ -89,17 +89,67 @@ def test_get_selected_columns(correlation_matrix_dialog):
     assert result == ["var1", "var2", "var3"]
 
 
+import pytest
+
 @pytest.mark.parametrize(
-    "selected_columns, plot_checked, expected_in_script",
+    "selected_columns, method_checked, plot_checked, expected_parts",
     [
-        ([], False, ""), 
-        (["var1 [Numeric]", "var2 [Numeric]"], False, 'correlation_matrix <- cor(data[, c("var1", "var2")], use="complete.obs", method="pearson")'),  # Hanya kolom numerik
-        (["var1 [Numeric]", "var2 [Numeric]"], True, 'ggcorrplot(correlation_matrix'), 
+        # Tidak ada kolom → script kosong
+        ([], "pearson", False, []),
+
+        # Hanya pearson, tanpa plot
+        (
+            ["var1 [Numeric]", "var2 [Numeric]"],
+            "pearson",
+            False,
+            [
+                'correlation_matrix_pearson <- cor(data[, c("var1", "var2")], use=\'complete.obs\', method=\'pearson\')'
+            ]
+        ),
+
+        # Pearson + plot
+        (
+            ["var1 [Numeric]", "var2 [Numeric]"],
+            "pearson",
+            True,
+            [
+                'correlation_matrix_pearson <- cor(data[, c("var1", "var2")], use=\'complete.obs\', method=\'pearson\')',
+                'correlation_plot_pearson <- ggcorrplot(correlation_matrix_pearson, method = \'square\', type = \'upper\', lab = TRUE) + ggtitle(\'Pearson Correlation Matrix\')'
+            ]
+        ),
+
+        # Spearman + plot
+        (
+            ["var1 [Numeric]", "var2 [Numeric]"],
+            "spearman",
+            True,
+            [
+                'correlation_matrix_spearman <- cor(data[, c("var1", "var2")], use=\'complete.obs\', method=\'spearman\')',
+                'correlation_plot_spearman <- ggcorrplot(correlation_matrix_spearman, method = \'square\', type = \'upper\', lab = TRUE) + ggtitle(\'Spearman Correlation Matrix\')'
+            ]
+        ),
     ],
 )
-def test_generate_r_script(correlation_matrix_dialog, selected_columns, plot_checked, expected_in_script):
+def test_generate_r_script(correlation_matrix_dialog, selected_columns, method_checked, plot_checked, expected_parts):
+    # Set kolom
     correlation_matrix_dialog.selected_model.setStringList(selected_columns)
     correlation_matrix_dialog.correlation_plot_checkbox.setChecked(plot_checked)
+
+    # Set metode yang dicentang
+    correlation_matrix_dialog.pearson_checkbox.setChecked(method_checked == "pearson")
+    correlation_matrix_dialog.spearman_checkbox.setChecked(method_checked == "spearman")
+    correlation_matrix_dialog.kendall_checkbox.setChecked(method_checked == "kendall")
+
+    # Jalankan fungsi
     correlation_matrix_dialog.generate_r_script()
-    
-    assert expected_in_script in correlation_matrix_dialog.script_box.toPlainText()
+
+    # Ambil hasil script
+    script = correlation_matrix_dialog.script_box.toPlainText()
+
+    # Validasi script
+    for part in expected_parts:
+        assert part in script
+
+    # Kalau tidak ada yang diharapkan, pastikan script kosong
+    if not expected_parts:
+        assert script.strip() == ""

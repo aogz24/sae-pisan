@@ -51,7 +51,6 @@ def run_model_projection(parent):
     """
     
     import rpy2.robjects as ro
-    parent.activate_R()
     df = parent.model1.get_data()
     convert_df(df, parent)
     result = ""

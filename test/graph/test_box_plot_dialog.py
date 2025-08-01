@@ -76,45 +76,56 @@ def test_get_selected_columns(boxplot_dialog):
     """Test apakah get_selected_columns menghasilkan nama kolom yang benar"""
     boxplot_dialog.selected_model.setStringList(["var1 [Numeric]", "var2 [String]"])
     result = boxplot_dialog.get_selected_columns()
-    assert result == ["var1", "var2"]
+    assert result == ['`var1`', '`var2`']
+
+import pytest
 
 @pytest.mark.parametrize("selected_columns, method, expected_script", [
-    # Case 1: No columns selected - should show a message.
+    # Case 1: No columns selected
     ([], "Single Box plot", ""),
     ([], "Multiple Box Plot", ""),
-    # Case 2: Single Box Plot with one column.
+    
+    # Case 2: Single Box Plot with one column
     (
-        ["Var1"],
+        ["`Var1`"],
         "Single Box plot",
         (
-            "# Box plot for Var1\n"
-            "boxplot_Var1 <- ggplot(data, aes(y = Var1)) +\n"
-            "    geom_boxplot(fill = sample(colors(), 1)) +\n"
+            "# Box plot for `Var1`\n"
+            "boxplot_Var1 <- ggplot(data, aes(y = `Var1`)) +\n"
+            "    geom_boxplot(fill = 'darkorange3') +\n"
+            "    ggtitle('Box Plot: Var1') +\n"
+            "    ylab('Var1') +\n"
+            "    theme_minimal()\n"
+        ).strip()
+    ),
+    
+    # Case 3: Single Box Plot with two columns
+    (
+        ["`Var1`", "`Var2`"],
+        "Single Box plot",
+        (
+            "# Box plot for `Var1`\n"
+            "boxplot_Var1 <- ggplot(data, aes(y = `Var1`)) +\n"
+            "    geom_boxplot(fill = 'darkorange3') +\n"
             "    ggtitle('Box Plot: Var1') +\n"
             "    ylab('Var1') +\n"
             "    theme_minimal()\n\n"
+            "# Box plot for `Var2`\n"
+            "boxplot_Var2 <- ggplot(data, aes(y = `Var2`)) +\n"
+            "    geom_boxplot(fill = 'darkorange3') +\n"
+            "    ggtitle('Box Plot: Var2') +\n"
+            "    ylab('Var2') +\n"
+            "    theme_minimal()\n"
         ).strip()
     ),
-    # Case 3: Single Box Plot with two columns (each column gets its own plot).\n
+
+    # Case 4: Multiple Box Plot with two columns
     (
-        ["Var1", "Var2"],
-        "Single Box plot",
-        (
-            "# Box plot for Var1\n"
-            "boxplot_Var1 <- ggplot(data, aes(y = Var1)) +\n"
-            "    geom_boxplot(fill = sample(colors(), 1)) +\n"
-            "    ggtitle('Box Plot: Var1') +\n"
-            "    ylab('Var1') +\n"
-            "    theme_minimal()\n\n"
-        ).strip()
-    ),
-    # Case 4: Multiple Box Plot with two columns.\n
-    (
-        ["Var1", "Var2"],
+        ["`Var1`", "`Var2`"],
         "Multiple Box Plot",
         (
             "# Convert to long format for ggplot compatibility\n"
-            "data_long <- pivot_longer(data, cols = c(\"Var1\", \"Var2\"), \n"
+            "data_long <- pivot_longer(data, cols = c(`Var1`, `Var2`), \n"
             "    names_to = 'variable', values_to = 'value')\n\n"
             "# Create multiple box plot\n"
             "boxplot_multiple <- ggplot(data_long, aes(x = variable, y = value, fill = variable)) +\n"
@@ -131,4 +142,4 @@ def test_generate_r_script(boxplot_dialog, selected_columns, method, expected_sc
     boxplot_dialog.method_combo.currentText = lambda: method
     boxplot_dialog.generate_r_script()
     script = boxplot_dialog.script_box.toPlainText().strip()
-    assert expected_script in script
+    assert script == expected_script

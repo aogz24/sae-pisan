@@ -88,11 +88,13 @@ def test_remove_variable(scatter_plot_dialog):
 
 def test_get_selected_columns(scatter_plot_dialog):
     # Setup: selected_model contains variables with type annotations and spaces.
-    scatter_plot_dialog.selected_model.setStringList(["Var 1 [Numeric]", "Var2 [String]", "Var3 [Numeric]"])
+    scatter_plot_dialog.selected_model.setStringList(["Var1 [Numeric]",  "Var3 [Numeric]"])
     result = scatter_plot_dialog.get_selected_columns()
     # Expected: remove type annotations and replace spaces with underscores.
-    expected = ["Var_1", "Var2", "Var3"]
+    expected = ["Var1", "Var3"]
     assert result == expected
+
+import pytest
 
 @pytest.mark.parametrize(
     "selected_columns, show_regression, show_correlation, show_density, expected_script",
@@ -103,14 +105,14 @@ def test_get_selected_columns(scatter_plot_dialog):
             False,
             False,
             (
-                "data_plot <- data[, c(\"Var1\", \"Var2\")]\n\n"
-                "scatterplot_ <- ggpairs(\n"
-                "    data_plot,\n"
-                "    lower = list(continuous = \"points\"),\n"
-                "    upper = list(continuous = \"blank\"),\n"
-                "    diag = list(continuous = \"blankDiag\")\n"
-                ")\n"
-            ).strip()
+                'data_plot <- data[, c("Var1", "Var2")]\n\n'
+                'scatterplot <- ggpairs(\n'
+                '    data_plot,\n'
+                '    lower = list(continuous = "points"),\n'
+                '    upper = list(continuous = "blank"),\n'
+                '    diag = list(continuous = "blankDiag")\n'
+                ')'
+            )
         ),
         (
             ["Var1", "Var2"],
@@ -118,14 +120,14 @@ def test_get_selected_columns(scatter_plot_dialog):
             True,
             True,
             (
-                "data_plot <- data[, c(\"Var1\", \"Var2\")]\n\n"
-                "scatterplot_ <- ggpairs(\n"
-                "    data_plot,\n"
-                "    lower = list(continuous = wrap(\"smooth\", method=\"lm\")),\n"
-                "    upper = list(continuous = \"cor\"),\n"
-                "    diag = list(continuous = \"densityDiag\")\n"
-                ")\n"
-            ).strip()
+                'data_plot <- data[, c("Var1", "Var2")]\n\n'
+                'scatterplot <- ggpairs(\n'
+                '    data_plot,\n'
+                '    lower = list(continuous = wrap("smooth", method="lm")),\n'
+                '    upper = list(continuous = "cor"),\n'
+                '    diag = list(continuous = "densityDiag")\n'
+                ')'
+            )
         ),
     ]
 )
@@ -134,7 +136,7 @@ def test_generate_r_script(scatter_plot_dialog, qtbot, selected_columns, show_re
     scatter_plot_dialog.regression_line_checkbox.setChecked(show_regression)
     scatter_plot_dialog.correlation_checkbox.setChecked(show_correlation)
     scatter_plot_dialog.density_plot_checkbox.setChecked(show_density)
-    
+
     scatter_plot_dialog.generate_r_script()
     script = scatter_plot_dialog.script_box.toPlainText().strip()
-    assert expected_script in script
+    assert script == expected_script

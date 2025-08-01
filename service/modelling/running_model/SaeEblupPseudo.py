@@ -56,7 +56,6 @@ def run_model_eblup_pseudo(parent):
     """
     
     import rpy2.robjects as ro
-    parent.activate_R()
     df = parent.model1.get_data()
     df = df.filter(~pl.all_horizontal(pl.all().is_null()))
     convert_df(df, parent)

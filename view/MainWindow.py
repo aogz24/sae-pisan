@@ -130,7 +130,7 @@ class MainWindow(QMainWindow):
         
         super().__init__()
 
-        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.5.1")
+        self.setWindowTitle("saePisan: Small Area Estimation Programming for Statistical Analysis v1.5.2")
         columns = [f"Column {i+1}" for i in range(100)]
         self.data1 = pl.DataFrame({col: [None] * 100 for col in columns})
         self.data2 = pl.DataFrame({
@@ -334,12 +334,12 @@ class MainWindow(QMainWindow):
         self.file_menu = self.menu_bar.addMenu("File")
         
         self.recent_data = QAction("Open Recent data", self)
-        self.recent_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_D))
+        self.recent_data.setShortcut(QKeySequence("Ctrl+D"))
         self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'recentdata.svg')))
         self.recent_data.setStatusTip("Ctrl+D")
         
         self.load_action = QAction("Load File", self)
-        self.load_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_O))
+        self.load_action.setShortcut(QKeySequence.StandardKey.Open)
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
@@ -349,17 +349,17 @@ class MainWindow(QMainWindow):
         self.load_secondary_data.setStatusTip("Ctrl+2")
         
         self.save_action = QAction("Save Data", self)
-        self.save_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_S))
+        self.save_action.setShortcut(QKeySequence.StandardKey.Save)
         self.save_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedata.svg')))
         self.save_action.setStatusTip("Ctrl+S")
         
         self.save_data_output_action = QAction("Save Data Output", self)
-        self.save_data_output_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Modifier.SHIFT | Qt.Key.Key_S))
+        self.save_data_output_action.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.save_data_output_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savedataoutput.svg')))
         self.save_action.setStatusTip("Ctrl+Shift+S")
         
         self.save_output_pdf = QAction("Save Output to PDF", self)
-        self.save_output_pdf.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P))
+        self.save_output_pdf.setShortcut(QKeySequence.StandardKey.Print)
         self.save_output_pdf.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'savepdf.svg')))
         self.save_output_pdf.setStatusTip("Ctrl+P")
 
