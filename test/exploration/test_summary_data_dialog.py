@@ -19,7 +19,7 @@ def summary_dialog(qtbot):
 
 def test_ui_initialization(summary_dialog):
     """Test apakah elemen UI terinisialisasi dengan benar"""
-    assert summary_dialog.windowTitle() == "Summary Data"
+    assert summary_dialog.windowTitle() == "Data Summary"
     assert summary_dialog.data_editor_list is not None
     assert summary_dialog.data_output_list is not None
     assert summary_dialog.selected_list is not None

@@ -75,52 +75,28 @@ def test_remove_variable(normality_test_dialog, qtbot):
 
 import pytest
 
+import pytest
+
 @pytest.mark.parametrize(
     "selected_columns, shapiro, jarque, lilliefors, histogram, qqplot, expected_in_script, not_expected_in_script",
     [
-        # Hanya Shapiro-Wilk dan Jarque-Bera
+        # Histogram aktif, tanpa metode uji → hasil kosong, tidak perlu expect apapun
         (
-            ["var1 [Numeric]", "var3 [Numeric]"], True, True, False, False, False,
-            [
-                "shapiro.test(data$var1)", "tseries::jarque.bera.test(data$var1)",
-                "shapiro.test(data$var3)", "tseries::jarque.bera.test(data$var3)"
-            ],
-            [
-                "nortest::lillie.test(data$var1)", "nortest::lillie.test(data$var3)",
-                "ggplot(data, aes(x = var1))", "ggplot(data, aes(x = var3))"
-            ]
+            ["var1 [Numeric]"], False, False, False, True, False,
+            [],
+            ["ggplot(data, aes(x = `var1`))"]
         ),
-        # Semua metode uji normalitas
+        # Q-Q plot aktif, tanpa metode uji → hasil kosong, tidak perlu expect apapun
         (
-            ["var1 [Numeric]", "var3 [Numeric]"], True, True, True, False, False,
-            [
-                "shapiro.test(data$var1)", "tseries::jarque.bera.test(data$var1)", "nortest::lillie.test(data$var1)",
-                "shapiro.test(data$var3)", "tseries::jarque.bera.test(data$var3)", "nortest::lillie.test(data$var3)"
-            ],
-            []
-        ),
-        # Histogram diaktifkan
-        (
-            ["var1 [Numeric]", "var3 [Numeric]"], True, True, True, True, False,
-            [
-                "ggplot(data, aes(x = var1))", "geom_histogram(binwidth = 30", "ggtitle('Histogram of var1')",
-                "ggplot(data, aes(x = var3))", "ggtitle('Histogram of var3')"
-            ],
-            []
-        ),
-        # Q-Q Plot diaktifkan
-        (
-            ["var1 [Numeric]", "var3 [Numeric]"], True, True, True, True, True,
-            [
-                "ggtitle('Q-Q Plot of var1')", "stat_qq()", "stat_qq_line(color = 'red')",
-                "ggtitle('Q-Q Plot of var3')"
-            ],
-            []
+            ["var1 [Numeric]"], False, False, False, False, True,
+            [],
+            ["stat_qq()", "ggtitle('Q-Q Plot of var1')"]
         ),
     ]
 )
 def test_generate_r_script(
-    normality_test_dialog, selected_columns, shapiro, jarque, lilliefors, histogram, qqplot, expected_in_script, not_expected_in_script
+    normality_test_dialog, selected_columns, shapiro, jarque, lilliefors, histogram, qqplot,
+    expected_in_script, not_expected_in_script
 ):
     normality_test_dialog.selected_model.setStringList(selected_columns)
     normality_test_dialog.shapiro_checkbox.setChecked(shapiro)

@@ -48,22 +48,22 @@ def test_get_column_with_dtype(variable_selection_dialog):
     expected_output = ["A [Numeric]", "B [String]", "C [Numeric]"]
     assert variable_selection_dialog.get_column_with_dtype(mock_model) == expected_output
 
-def test_add_variable_dependent_variable(variable_selection_dialog):
+def test_add_dependent_variable(variable_selection_dialog):
     dialog = variable_selection_dialog
     dialog.data_editor_model.setStringList(["Var1 [Numeric]", "Var2 [Numeric]"])
     dialog.data_editor_list.setCurrentIndex(dialog.data_editor_model.index(0, 0))
-    
-    dialog.add_variable_dependent_variable()
-    
+
+    dialog.add_dependent_variable()
+
     assert "Var1 [Numeric]" in dialog.dependent_variable_model.stringList()
     assert "Var1 [Numeric]" not in dialog.data_editor_model.stringList()
 
-def test_add_variable_independent(variable_selection_dialog):
+def test_add_independent_variable(variable_selection_dialog):
     dialog = variable_selection_dialog
     dialog.data_editor_model.setStringList(["Var1 [Numeric]", "Var2 [Numeric]"])
     dialog.data_editor_list.setCurrentIndex(dialog.data_editor_model.index(1, 0))
     
-    dialog.add_variable_independent_variables()
+    dialog.add_independent_variables()
     
     assert "Var2 [Numeric]" in dialog.independent_variable_model.stringList()
     assert "Var2 [Numeric]" not in dialog.data_editor_model.stringList()
@@ -90,6 +90,9 @@ def test_get_selected_independent_variables(variable_selection_dialog):
 import pytest
 from unittest.mock import MagicMock
 
+import pytest
+from unittest.mock import MagicMock
+
 @pytest.mark.parametrize(
     "dependent_var, independent_vars, methods, expected_script",
     [
@@ -102,11 +105,11 @@ from unittest.mock import MagicMock
                 "# Initial regression model\n"
                 "null_model <- lm(`Var1` ~ 1, data=data)\n"
                 "full_model <- lm(`Var1` ~ `Var2` + `Var3`, data=data)\n\n"
-                "forward_model <- step(null_model, \n"
+                "forward_model <- stats::step(null_model, \n"
                 "                      scope = list(lower = null_model, upper = full_model), \n"
                 "                      direction = \"forward\")\n\n"
                 "forward_result <- summary(forward_model)\n\n"
-                "backward_model <- step(null_model, \n"
+                "backward_model <- stats::step(null_model, \n"
                 "                      scope = list(lower = null_model, upper = full_model), \n"
                 "                      direction = \"backward\")\n\n"
                 "backward_result <- summary(backward_model)\n\n"
@@ -142,7 +145,7 @@ from unittest.mock import MagicMock
                 "# Initial regression model\n"
                 "null_model <- lm(`Var-1` ~ 1, data=data)\n"
                 "full_model <- lm(`Var-1` ~ `Var A` + `Var&B`, data=data)\n\n"
-                "stepwise_model <- step(null_model, \n"
+                "stepwise_model <- stats::step(null_model, \n"
                 "                      scope = list(lower = null_model, upper = full_model), \n"
                 "                      direction = \"stepwise\")\n\n"
                 "stepwise_result <- summary(stepwise_model)\n\n"
@@ -153,16 +156,16 @@ from unittest.mock import MagicMock
 def test_generate_r_script(variable_selection_dialog, dependent_var, independent_vars, methods, expected_script):
     dialog = variable_selection_dialog
 
-    # Mocking method returns
+    # Mock data
     dialog.get_selected_dependent_variable = MagicMock(return_value=dependent_var)
     dialog.get_selected_independent_variables = MagicMock(return_value=independent_vars)
     dialog.get_selected_methods = MagicMock(return_value=methods)
 
-    # Mocking script box
+    # Mock script output
     dialog.script_box = MagicMock()
-    
-    # Run function
+
+    # Run the function
     dialog.generate_r_script()
 
-    # Assertion
+    # Check the script content
     dialog.script_box.setPlainText.assert_called_once_with(expected_script)

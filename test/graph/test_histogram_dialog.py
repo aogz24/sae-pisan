@@ -103,8 +103,10 @@ def test_get_selected_columns(histogram_dialog):
     histogram_dialog.selected_model.setStringList(["Var1 [Numeric]", "Var2 [String]", "Var3 [Numeric]"])
     # get_selected_columns() should strip type annotations and replace spaces with underscores.
     result = histogram_dialog.get_selected_columns()
-    expected = ["Var1", "Var2", "Var3"]
+    expected = ["`Var1`", "`Var2`", "`Var3`"]
     assert result == expected
+
+import pytest
 
 @pytest.mark.parametrize(
     "selected_columns, method, graph_option, bin_value, expected_script",
@@ -122,71 +124,63 @@ def test_get_selected_columns(histogram_dialog):
         (
             ["Var1"], "Single Histogram", "Bins", 10,
             (
-                "# Histogram for Var1\n"
-                "histogram_Var1 <- ggplot(data, aes(x = Var1)) +\n"
-                "    geom_histogram(bins = 10, fill = sample(colors(), 1)[[1]], color = 'black') +\n"
+                "histogram_Var1 <- ggplot(data, aes(x = `Var1`)) +\n"
+                "    geom_histogram(bins = 10, fill = 'darkorange3', color = 'black') +\n"
                 "    ggtitle('Histogram: Var1') +\n"
                 "    xlab('Var1') +\n"
                 "    ylab('Frequency') +\n"
-                "    theme_minimal()\n\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
         # Case 3: Single Histogram with Binwidth for one column
         (
             ["Var1"], "Single Histogram", "Binwidth", 5,
             (
-                "# Histogram for Var1\n"
-                "histogram_Var1 <- ggplot(data, aes(x = Var1)) +\n"
-                "    geom_histogram(binwidth = 5, fill = sample(colors(), 1)[[1]], color = 'black') +\n"
+                "histogram_Var1 <- ggplot(data, aes(x = `Var1`)) +\n"
+                "    geom_histogram(binwidth = 5, fill = 'darkorange3', color = 'black') +\n"
                 "    ggtitle('Histogram: Var1') +\n"
                 "    xlab('Var1') +\n"
                 "    ylab('Frequency') +\n"
-                "    theme_minimal()\n\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
         # Case 4: Multiple Histogram with Bins for two columns
         (
             ["Var1", "Var2"], "Multiple Histogram", "Bins", 15,
             (
-                "# Convert to long format for ggplot compatibility\n"
-                "data_long <- pivot_longer(data, cols = c(\"Var1\", \"Var2\"), \n"
+                "data_long <- pivot_longer(data, cols = c(`Var1`, `Var2`), \n"
                 "    names_to = 'variable', values_to = 'value')\n\n"
-                "# Create multiple histogram\n"
                 "histogram_multiple <- ggplot(data_long, aes(x = value, fill = variable)) +\n"
-                "    geom_histogram(bins = 15, alpha = 0.6, position = 'identity') +\n"
+                "    geom_histogram(bins = 15, alpha = 0.6, position = 'identity', color = 'black') +\n"
                 "    ggtitle('Multiple Histogram') +\n"
                 "    xlab('Value') +\n"
                 "    ylab('Frequency') +\n"
-                "    theme_minimal()\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
         # Case 5: Multiple Histogram with Binwidth for two columns
         (
             ["Var1", "Var2"], "Multiple Histogram", "Binwidth", 2,
             (
-                "# Convert to long format for ggplot compatibility\n"
-                "data_long <- pivot_longer(data, cols = c(\"Var1\", \"Var2\"), \n"
+                "data_long <- pivot_longer(data, cols = c(`Var1`, `Var2`), \n"
                 "    names_to = 'variable', values_to = 'value')\n\n"
-                "# Create multiple histogram\n"
                 "histogram_multiple <- ggplot(data_long, aes(x = value, fill = variable)) +\n"
-                "    geom_histogram(binwidth = 2, alpha = 0.6, position = 'identity') +\n"
+                "    geom_histogram(binwidth = 2, alpha = 0.6, position = 'identity', color = 'black') +\n"
                 "    ggtitle('Multiple Histogram') +\n"
                 "    xlab('Value') +\n"
                 "    ylab('Frequency') +\n"
-                "    theme_minimal()\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
     ],
 )
 def test_generate_r_script(histogram_dialog, selected_columns, method, graph_option, bin_value, expected_script):
-    # Override get_selected_columns() to return the test columns.
     histogram_dialog.get_selected_columns = lambda: selected_columns
-    # Override method_combo.currentText() to return the test method.
     histogram_dialog.method_combo.currentText = lambda: method
-    # Override graph_option_combo.currentText() and spinbox value.
     histogram_dialog.graph_option_combo.currentText = lambda: graph_option
     histogram_dialog.graph_option_spinbox.value = lambda: bin_value
 
     histogram_dialog.generate_r_script()
     script = histogram_dialog.script_box.toPlainText().strip()
-    assert expected_script in script
+
+    assert script == expected_script

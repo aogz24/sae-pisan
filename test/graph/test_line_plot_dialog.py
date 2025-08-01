@@ -102,6 +102,8 @@ def test_get_selected_vertical(line_plot_dialog):
     result = line_plot_dialog.get_selected_vertical()
     assert result == ["Value", "Pressure"]
 
+import pytest
+
 @pytest.mark.parametrize(
     "horizontal, vertical, method, expected_script",
     [
@@ -109,51 +111,49 @@ def test_get_selected_vertical(line_plot_dialog):
         (
             ["Time"], ["Value", "Pressure"], "Single Lineplot",
             (
-                "# Line plot for Time vs. Value\n"
-                "lineplot_Value <- ggplot(data, aes(x = Time, y = Value)) +\n"
-                "    geom_line(color = sample(colors(), 1)) +\n"
+                "lineplot_Value <- ggplot(data, aes(x = `Time`, y = `Value`)) +\n"
+                "    geom_line(color = 'darkorange3') +\n"
+                "    geom_point() +\n"
                 "    ggtitle(\"Line Plot: Time vs. Value\") +\n"
                 "    xlab(\"Time\") +\n"
                 "    ylab(\"Value\") +\n"
                 "    theme_minimal()\n\n"
-                "# Line plot for Time vs. Pressure\n"
-                "lineplot_Pressure <- ggplot(data, aes(x = Time, y = Pressure)) +\n"
-                "    geom_line(color = sample(colors(), 1)) +\n"
+                "lineplot_Pressure <- ggplot(data, aes(x = `Time`, y = `Pressure`)) +\n"
+                "    geom_line(color = 'darkorange3') +\n"
+                "    geom_point() +\n"
                 "    ggtitle(\"Line Plot: Time vs. Pressure\") +\n"
                 "    xlab(\"Time\") +\n"
                 "    ylab(\"Pressure\") +\n"
-                "    theme_minimal()\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
         # Case 2: Multiple Lineplot with two vertical variables.
         (
             ["Time"], ["Value", "Pressure"], "Multiple Lineplot",
             (
-                "# Multiple line plot for Time vs. multiple y variables\n\n"
-                "# Convert to long format for ggplot\n"
-                "data_long <- pivot_longer(data, cols = c(\"Value\", \"Pressure\"),\n"
+                "data_long <- pivot_longer(data, cols = c(`Value`, `Pressure`),\n"
                 "                        names_to = \"variable\", values_to = \"value\")\n\n"
-                "# Create line plot\n"
-                "lineplot_multiple <- ggplot(data_long, aes(x = Time, y = value, color = variable)) +\n"
+                "lineplot_Time_multiple <- ggplot(data_long, aes(x = `Time`, y = value, color = variable)) +\n"
                 "    geom_line() +\n"
+                "    geom_point() +\n"
                 "    ggtitle(\"Multiple Line Plot: Time vs. Value, Pressure\") +\n"
                 "    xlab(\"Time\") +\n"
                 "    ylab(\"Value\") +\n"
-                "    theme_minimal()\n"
-            ).strip()
+                "    theme_minimal()"
+            )
         ),
     ]
 )
+
 def test_generate_r_script(line_plot_dialog, qtbot, horizontal, vertical, method, expected_script):
     # Override selection methods to simulate user input.
     line_plot_dialog.get_selected_horizontal = lambda: horizontal
     line_plot_dialog.get_selected_vertical = lambda: vertical
-    # Override method_combo.currentText() to return our test method.
     line_plot_dialog.method_combo.currentText = lambda: method
-    
+
     # Generate the R script.
     line_plot_dialog.generate_r_script()
     script = line_plot_dialog.script_box.toPlainText().strip()
-    
-    # Assert that the expected script is contained in the generated script.
-    assert expected_script in script
+
+    # Assert exact match for clarity and precision.
+    assert script == expected_script
