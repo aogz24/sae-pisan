@@ -670,7 +670,6 @@ class ModelingSaeUnitDialog(QDialog):
         if self.reply is not None:
             self.reply.reject()
         display_script_and_output(self.parent, r_script, results)
-        self.console_dialog.close()
         enable_service(self, error, results)
         self.finnish = True
         self.close()

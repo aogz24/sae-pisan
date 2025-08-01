@@ -24,13 +24,14 @@ def run_model_hb_area(parent):
     """
     
     import rpy2.robjects as ro
-    parent.activate_R()
     df = parent.model1.get_data()
     df = df.drop_nulls()
     convert_df(df, parent)
     result = ""
     error = False
     try:
+        from rpy2.robjects.packages import importr
+        importr('saeHB')
         ro.r('datahb <- as.data.frame(r_df)')
         ro.r('attach(datahb)')
         try:
@@ -40,7 +41,7 @@ def run_model_hb_area(parent):
                 parent.log_exception(e, "Run Model Hierarchical Bayesian Area")
             result = str(e)
             error = True
-            return result, error, None
+            return result, error, None, None
         
         from contextlib import contextmanager
         @contextmanager
@@ -121,4 +122,4 @@ def run_model_hb_area(parent):
         if hasattr(parent, 'log_exception'):
             parent.log_exception(e, "Run Model Hierarchical Bayesian Area")
         error = True
-        return str(e), error, None
+        return str(e), error, None, None

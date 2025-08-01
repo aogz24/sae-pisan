@@ -15,3 +15,4 @@ class ModelingSaeHBNormalDialog(ModelingSaeHBDialog):
         super().__init__(parent)
         self.setWindowTitle("SAE HB Normal")
         self.model_method = "Normal"
+        self.Normal = True
