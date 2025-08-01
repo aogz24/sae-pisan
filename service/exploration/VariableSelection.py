@@ -55,14 +55,17 @@ def extract_formatted(r_output: str):
                 summary_info["R-squared"] = float(match.group(1))
                 summary_info["Adj R-squared"] = float(match.group(2))
 
-        # F-statistic
         elif "F-statistic" in line:
-            match = re.search(r"F-statistic:\s+([\d.]+) on (\d+) and (\d+) DF,\s+p-value:\s+([^\s]+)", line)
+            match = re.search(
+                r"F-statistic:\s+([\d.]+)\s+on\s+(\d+)\s+and\s+(\d+)\s+DF,\s+p-value:\s*([<>=]*\s*[\d.eE+-]+)",
+                line
+            )
             if match:
                 summary_info["F-statistic"] = float(match.group(1))
                 summary_info["DF1"] = int(match.group(2))
                 summary_info["DF2"] = int(match.group(3))
-                summary_info["p-value"] = match.group(4)
+                summary_info["p-value"] = match.group(4)  # akan jadi "< 2.2e-16"
+
 
         i += 1
 
@@ -122,19 +125,17 @@ def extract_formatted(r_output: str):
     coef_df = extract_coefficients(coef_lines)
 
     def summary_info_to_table(summary_info: dict) -> pl.DataFrame:
-        """
-        Convert summary info dictionary to a Polars DataFrame with float values.
-        """
         return pl.DataFrame({
             "Description": list(summary_info.keys()),
-            "Value": [float(v) for v in summary_info.values()]
+            "Value": [str(v) for v in summary_info.values()]
         })
 
+
     summary_table = summary_info_to_table(summary_info)
-    # print("Call:", call)
-    # print("Residuals DataFrame:", residual_df)
-    # print("Coefficients DataFrame:", coef_df)
-    # print("Summary Table:", summary_table)
+    print("Call:", call)
+    print("Residuals DataFrame:", residual_df)
+    print("Coefficients DataFrame:", coef_df)
+    print("Summary Table:", summary_table)
 
     return {
         "call": call,
@@ -165,7 +166,7 @@ def run_variable_selection(parent):
         result_dict = {}
         result_dict["Pre-Modeling"] = "Variable Selection"
         existing_objects = list(ro.r("ls()"))
-
+        print()
         # Daftar metode seleksi variabel
         methods = ["forward", "backward", "both"]
 
@@ -198,9 +199,9 @@ def run_variable_selection(parent):
                     # Tangkap output summary sebagai string
                     summary_text = ro.r(f'capture.output(print({result_var}))')
                     summary_text_joined = "\n".join(summary_text)
-                    # print(f"Summary Text for {method}:", summary_text_joined)
+                    print(f"Summary Text for {method}:", summary_text_joined)
                     parsed = extract_formatted(summary_text_joined)
-
+                    print(f"Parsed Output for {method}:", parsed)
                     # Masukkan ke result_dict satu per satu dengan key terpisah
                     result_dict[f"Regression Model {prefix} Selection"] = parsed["call"]
                     result_dict[f"Residual {prefix} Selection"] = parsed["residuals"]
