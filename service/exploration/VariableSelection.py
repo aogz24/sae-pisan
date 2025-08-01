@@ -191,6 +191,7 @@ def run_variable_selection(parent):
                         anova_pd = anova_pd.reset_index()
                     if 'Step' in anova_pd.columns:
                         anova_pd['Step'] = anova_pd['Step'].astype(str).str.replace('`', '', regex=False)
+                        anova_pd['Step'] = anova_pd['Step'].str.replace(r'^\+\s*', '', regex=True)
                     result_dict[f"Anova {method.capitalize()} Selection"] = pl.from_pandas(anova_pd)
                 except Exception as e:
                     result_dict[f"Anova {method.capitalize()} Selection"] = f"[ERROR] {e}"
