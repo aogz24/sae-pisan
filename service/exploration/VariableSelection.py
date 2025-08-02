@@ -21,9 +21,24 @@ def extract_formatted(r_output: str):
 
         # Call
         if line.startswith("Call:"):
-            call = lines[i + 1].strip()
-            i += 2
+            # ambil baris setelah "Call:" sampai kurung seimbang
+            j = i + 1
+            # skip kosong
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            parts = []
+            balance = 0
+            while j < len(lines):
+                part = lines[j].strip()
+                parts.append(part)
+                balance += part.count("(") - part.count(")")
+                j += 1
+                if balance == 0 and parts:  # sudah seimbang
+                    break
+            call = " ".join(p.rstrip("+").strip() for p in parts)
+            i = j
             continue
+
 
         # Residuals
         elif line.startswith("Residuals:"):
