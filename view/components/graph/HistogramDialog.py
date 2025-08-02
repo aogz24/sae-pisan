@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QStringListModel, QSize
 from PyQt6.QtGui import QIcon
 import polars as pl
+import re
 from model.Histogram import Histogram
 from controller.Graph.GraphController import HistogramController
 from service.utils.utils import display_script_and_output
@@ -109,7 +110,7 @@ class HistogramDialog(QDialog):
 
         # Layout kanan
         right_layout = QVBoxLayout()
-        self.selected_label = QLabel("Variabel", self)
+        self.selected_label = QLabel("Variable", self)
         self.selected_model = QStringListModel()
         self.selected_list = DragDropListView(parent=self)
         self.selected_list.setModel(self.selected_model)
@@ -136,7 +137,7 @@ class HistogramDialog(QDialog):
 
         # Dropdown untuk memilih antara Bins atau Binwidth
         self.graph_option_combo = QComboBox(self)
-        self.graph_option_combo.addItems(["Bins", "Binwidth"])
+        self.graph_option_combo.addItems(["Number of Interval", "Interval Size"])
         self.graph_option_combo.currentIndexChanged.connect(self.generate_r_script)
         graph_option_layout.addWidget(self.graph_option_combo)
 
@@ -385,17 +386,19 @@ class HistogramDialog(QDialog):
             return
 
         r_script = ""
-
         if method == "Single Histogram":
             for col in selected_columns:
-                col_safe = col.strip("`")  # Bersihkan backticks agar tidak dobel
+                raw = col.strip("`")
+                clean_name = re.sub(r"\W+", "_", raw)  # untuk nama objek (valid di R)
+                aes_var = f"`{raw}`"
+                bin_arg = f"bins = {bin_value}" if graph_option == "Bins" else f"binwidth = {bin_value}"
+
                 r_script += (
-                    f"histogram_{col_safe.replace(' ', '_')} <- ggplot(data, aes(x = `{col_safe}`)) +\n"  
-                    f"    geom_histogram("
-                    f"{'bins = ' + str(bin_value) if graph_option == 'Bins' else 'binwidth = ' + str(bin_value)}, "
-                    f"fill = 'darkorange3', color = 'black') +\n"
-                    f"    ggtitle('Histogram: {col_safe}') +\n"  # Tidak pakai backticks
-                    f"    xlab('{col_safe}') +\n"  # Tidak pakai backticks
+                    f"# Histogram for {raw}\n"
+                    f"histogram_{clean_name} <- ggplot(data, aes(x = {aes_var})) +\n"
+                    f"    geom_histogram({bin_arg}, fill = 'darkorange3', color = 'black') +\n"
+                    f"    ggtitle('Histogram: {raw}') +\n"
+                    f"    xlab('{raw}') +\n"
                     f"    ylab('Frequency') +\n"
                     f"    theme_minimal()\n\n"
                 )
