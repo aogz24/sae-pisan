@@ -8,7 +8,7 @@ from model.NormalityTest import NormalityTest
 from controller.Eksploration.EksplorationController import NormalityTestController
 from service.utils.utils import display_script_and_output
 from view.components.DragDropListView import DragDropListView
-
+import re
 
 class NormalityTestDialog(QDialog):
     """z
@@ -394,13 +394,24 @@ class NormalityTestDialog(QDialog):
     def get_selected_columns(self):
         return [item.rsplit(" [String]", 1)[0].rsplit(" [Numeric]", 1)[0] for item in self.selected_model.stringList()]
 
+    
     def generate_r_script(self):
+        def make_safe_object_name(raw):
+            name = re.sub(r'\W+', '_', raw)          # non-alphanumeric jadi underscore
+            name = re.sub(r'_+', '_', name)          # gabungkan underscore beruntun
+            name = name.strip('_')                   # buang underscore di pinggir
+            if re.match(r'^\d', name):               # kalau mulai angka, prefix
+                name = f"v_{name}"
+            return name or "var"
+
+        def escape_title(raw):
+            return raw.replace("'", "\\'")  # escape single quote agar aman di string R
+
         selected_vars = self.get_selected_columns()
-        
-        if len(selected_vars) == 0:
+        if not selected_vars:
             self.script_box.setPlainText("")
             return
-        
+
         selected_methods = []
         if self.shapiro_checkbox.isChecked():
             selected_methods.append("shapiro")
@@ -408,7 +419,7 @@ class NormalityTestDialog(QDialog):
             selected_methods.append("jarque_bera")
         if self.lilliefors_checkbox.isChecked():
             selected_methods.append("lilliefors")
-        
+
         if not selected_methods:
             self.script_box.setPlainText("")
             return
@@ -416,39 +427,49 @@ class NormalityTestDialog(QDialog):
         show_histogram = self.histogram_checkbox.isChecked()
         show_qqplot = self.qqplot_checkbox.isChecked()
 
-        r_script = ''
+        lines = []
 
         for var in selected_vars:
-            safe_var = var.replace(" ", "_")  # Ganti spasi jadi underscore untuk nama variabel
+            safe_name = make_safe_object_name(var)
+            title_safe = escape_title(var)
+            aes_var = f"`{var}`"
 
             for method in selected_methods:
                 if method == "shapiro":
-                    r_script += f"normality_results_{safe_var}_shapiro <- shapiro.test(data$`{var}`)\n"
+                    lines.append(
+                        f"normality_results_{safe_name}_shapiro <- shapiro.test(data${aes_var})"
+                    )
                 elif method == "jarque_bera":
-                    r_script += f"normality_results_{safe_var}_jarque <- tseries::jarque.bera.test(data$`{var}`)\n"
+                    lines.append(
+                        f"normality_results_{safe_name}_jarque <- tseries::jarque.bera.test(data${aes_var})"
+                    )
                 elif method == "lilliefors":
-                    r_script += f"normality_results_{safe_var}_lilliefors <- nortest::lillie.test(data$`{var}`)\n"
+                    lines.append(
+                        f"normality_results_{safe_name}_lilliefors <- nortest::lillie.test(data${aes_var})"
+                    )
 
             if show_histogram:
-                r_script += (
-                    f"histogram_{safe_var} <- ggplot(data, aes(x = `{var}`)) +\n"
+                lines.append(
+                    f"histogram_{safe_name} <- ggplot(data, aes(x = {aes_var})) +\n"
                     f"    geom_histogram(bins = 10, color = 'black', fill = 'darkorange3') +\n"
-                    f"    ggtitle('Histogram of {var}') +\n"
-                    f"    xlab('{var}') +\n"
-                    f"    ylab('Frequency')\n"
+                    f"    ggtitle('Histogram of {title_safe}') +\n"
+                    f"    xlab('{title_safe}') +\n"
+                    f"    ylab('Frequency')"
                 )
 
             if show_qqplot:
-                r_script += (
-                    f"qqplot_{safe_var} <- ggplot(data, aes(sample = `{var}`)) +\n"
+                lines.append(
+                    f"qqplot_{safe_name} <- ggplot(data, aes(sample = {aes_var})) +\n"
                     f"    stat_qq() +\n"
                     f"    stat_qq_line(color = 'darkorange3') +\n"
-                    f"    ggtitle('Q-Q Plot of {var}') +\n"
+                    f"    ggtitle('Q-Q Plot of {title_safe}') +\n"
                     f"    xlab('Theoretical Quantiles') +\n"
-                    f"    ylab('Sample Quantiles')\n"
+                    f"    ylab('Sample Quantiles')"
                 )
 
+        r_script = "\n\n".join(lines) + "\n"
         self.script_box.setPlainText(r_script)
+
 
     def accept(self):
         r_script = self.script_box.toPlainText()
