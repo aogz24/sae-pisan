@@ -569,10 +569,10 @@ class ModelingSaeHBDialog(QDialog):
         if not isinstance(values, np.ndarray):
             values = np.array(values)
         valid_range = (values >= 0).all() and (self.Normal or (values <= 1).all())
-        if not (is_float and valid_range):
+        if not (is_float):
             if not self.Normal:
                 QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
-            else:
+            elif valid_range:
                 QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float.")
             return
         
