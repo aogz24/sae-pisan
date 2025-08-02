@@ -33,36 +33,38 @@ def neet_logistic(WEIGHT, STRATA, PROV, REGENCY, income, sex, age, disability, e
     neet = np.random.binomial(1, prob)
     return neet, prob
 
-n_samples = 100
-prov_codes = [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 31, 32, 33, 34, 35, 36, 51, 52, 53, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 76, 81, 82, 91, 92]
-ID = np.arange(1, n_samples + 1)
-WEIGHT = np.round(np.random.normal(1.0, 0.3, n_samples), 3)
-STRATA = np.random.randint(1, 2, n_samples)
-PROV = np.random.choice(prov_codes, n_samples)
-REGENCY = [int(f"{prov}{np.random.randint(1, 100):02d}") for prov in PROV]
-income = np.round(np.random.normal(7500000, np.sqrt(2500000), n_samples), 2)
-sex = np.random.randint(0, 2, n_samples)
-age = np.random.randint(15, 66, n_samples)
-disability = np.random.randint(0, 2, n_samples)
-edu = np.random.randint(1, 7, n_samples)
-domain = np.random.randint(1, 11, n_samples)
+# Generate 10 datasets
+for i in range(10):
+    n_samples = 100
+    prov_codes = [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 31, 32, 33, 34, 35, 36, 51, 52, 53, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 76, 81, 82, 91, 92]
+    ID = np.arange(1, n_samples + 1)
+    WEIGHT = np.round(np.random.normal(1.0, 0.3, n_samples), 3)
+    STRATA = np.random.randint(1, 2, n_samples)
+    PROV = np.random.choice(prov_codes, n_samples)
+    REGENCY = [int(f"{prov}{np.random.randint(1, 100):02d}") for prov in PROV]
+    income = np.round(np.random.normal(7500000, np.sqrt(2500000), n_samples), 2)
+    sex = np.random.randint(0, 2, n_samples)
+    age = np.random.randint(15, 66, n_samples)
+    disability = np.random.randint(0, 2, n_samples)
+    edu = np.random.randint(1, 7, n_samples)
+    domain = np.random.randint(1, 11, n_samples)
 
-neet, prob = neet_logistic(WEIGHT, STRATA, PROV, REGENCY, income, sex, age, disability, edu, domain)
+    neet, prob = neet_logistic(WEIGHT, STRATA, PROV, REGENCY, income, sex, age, disability, edu, domain, random_state=i)
 
-df = pd.DataFrame({
-    'ID': ID,
-    'WEIGHT': WEIGHT,
-    'STRATA': STRATA,
-    'PROV': PROV,
-    'REGENCY': REGENCY,
-    'income': income,
-    'sex': sex,
-    'age': age,
-    'disability': disability,
-    'edu': edu,
-    'domain': domain,
-    'neet': neet
-})
+    df = pd.DataFrame({
+        'ID': ID,
+        'WEIGHT': WEIGHT,
+        'STRATA': STRATA,
+        'PROV': PROV,
+        'REGENCY': REGENCY,
+        'income': income,
+        'sex': sex,
+        'age': age,
+        'disability': disability,
+        'edu': edu,
+        'domain': domain,
+        'neet': neet
+    })
 
-print(df.head())
-# print(f"Summary Statistics:\n{df.describe()}")
+    df.to_csv(f"bangkitan/proj est/dataset_{i+1}.csv", index=False)
+    print(f"Dataset {i+1} has been generated and saved.")
