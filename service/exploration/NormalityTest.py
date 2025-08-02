@@ -3,6 +3,17 @@ import polars as pl
 import rpy2.robjects as ro
 import rpy2.robjects.lib.grdevices as grdevices
 from service.utils.convert import get_data
+import re
+
+def make_safe_object_name(raw):
+    name = re.sub(r'\W+', '_', raw)          # non-alphanumeric jadi underscore
+    name = re.sub(r'_+', '_', name)          # gabungkan underscore beruntun
+    name = name.strip('_')                   # buang underscore di pinggir
+    if re.match(r'^\d', name):               # kalau mulai angka, prefix
+        name = f"v_{name}"
+    return name or "var"
+
+
 
 def run_normality_test(parent):
     """
@@ -63,7 +74,7 @@ def run_normality_test(parent):
 
         for var in selected_vars:
 
-            safe_var = var.replace(" ", "_")
+            safe_var = make_safe_object_name(var)
 
             for test in test_names:
                 result_key = f"normality_results_{safe_var}_{test}"

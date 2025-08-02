@@ -64,12 +64,26 @@ def run_correlation_matrix(parent):
             plot_name = f"correlation_plot_{method}"
 
             if ro.r(f'exists("{matrix_name}")')[0]:
-                # Ambil tabel korelasi
+                # Ambil tabel korelasi dari R
                 matrix_df = ro.r(f'as.data.frame({matrix_name})')
                 pandas_df = pandas2ri.rpy2py(matrix_df)
-                pandas_df_rounded = pandas_df.round(5)  # Round to 10 decimal places
-                correlation_df = pl.from_pandas(pandas_df_rounded)
+
+                # Bulatkan nilai
+                pandas_df_rounded = pandas_df.round(5)
+
+                # Ambil nama variabel dari kolom (rownames seharusnya sama dengan colnames di korelasi)
+                var_names = list(pandas_df_rounded.columns)
+
+                # Tambahkan kolom "Variable" di Pandas sebelum convert
+                pandas_df_with_var = pandas_df_rounded.copy()
+                pandas_df_with_var.insert(0, "Variable", var_names)  # kolom di paling kiri
+
+                # Convert ke Polars
+                correlation_df = pl.from_pandas(pandas_df_with_var)
+
+                # Simpan ke result_tables
                 result_tables[f"{method.title()} Correlation"] = correlation_df
+                print(correlation_df)
 
             if ro.r(f'exists("{plot_name}")')[0]:
                 # Simpan plot korelasi ke file

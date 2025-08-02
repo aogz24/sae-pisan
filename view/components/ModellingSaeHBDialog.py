@@ -568,13 +568,15 @@ class ModelingSaeHBDialog(QDialog):
         import numpy as np
         if not isinstance(values, np.ndarray):
             values = np.array(values)
-        valid_range = (values >= 0).all() and (self.Normal or (values <= 1).all())
-        if not (is_float and valid_range):
-            if not self.Normal:
-                QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
-            else:
+        valid_range = (values >= 0).all() and (values <= 1).all()
+        if self.Normal:
+            if not is_float:
                 QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float.")
-            return
+                return
+        else:
+            if not is_float or not valid_range:
+                QMessageBox.warning(self, "Warning", f"The '{variable}' column must be of type float and have values between 0 and 1.")
+                return
         
         r_script = get_script(self)
         if not check_script(r_script):

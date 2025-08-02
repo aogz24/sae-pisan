@@ -63,8 +63,11 @@ def extract_formatted_multiple(r_output: str) -> tuple[pl.DataFrame, pl.DataFram
     lines = [line.strip(" '") for line in lines if line.strip()]
 
     # Regex for numeric summary (Min., 1st Qu., ..., Max.)
-    pattern_num = r'^\d+\s+([A-Za-z0-9_.\s]+)\s+(Min\.|1st Qu\.|Median|Mean|3rd Qu\.|Max\.|NA\'s)\s*:\s*(<NA>|[-\d.]+)'
-
+    pattern_num = (
+        r'^\s*\d+\s+(.+?)\s+'
+        r'(Min\.|1st Qu\.|Median|Mean|3rd Qu\.|Max\.|NA\'s)\s*:\s*'
+        r'(<NA>|[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)'
+    )
     
     # Regex for string summary (Length, Class, Mode)
     pattern_char = r'^\d+\s+([A-Za-z0-9_.\s]+)\s+(Length|Class|Mode)\s*:\s*(.*)'
