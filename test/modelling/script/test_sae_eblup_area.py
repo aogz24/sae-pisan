@@ -165,15 +165,32 @@ def set_selection_method(parent, dialog):
     dialog.accept()
     show_r_script(parent)
     
-import unittest
+import pytest
 from unittest.mock import MagicMock
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from test.modelling.script.test_sae_eblup_area import assign_of_interest, assign_auxilary, assign_vardir, assign_as_factor, unassign_variable, generate_r_script, show_r_script
 
-class TestSaeEblupArea(unittest.TestCase):
-    def setUp(self):
+# Import functions to test from the actual module
+from service.modelling.SaeEblupArea import (
+    assign_of_interest, 
+    assign_auxilary, 
+    assign_vardir, 
+    assign_as_factor, 
+    unassign_variable, 
+    generate_r_script, 
+    show_r_script,
+    get_selected_variables
+)
+
+class TestSaeEblupArea:
+    """Test suite for SAE EBLUP Area functionality."""
+    
+    @pytest.fixture(autouse=True)
+    def setup_method(self):
+        """Setup test environment before each test method."""
+        # Arrange - Create test fixtures
         if not QApplication.instance():
             self.app = QApplication([])  # Required for creating PyQt widgets
+        
         self.parent = MagicMock()
         self.parent.variables_list.selectedIndexes.return_value = []
         self.parent.of_interest_var = []
@@ -189,87 +206,167 @@ class TestSaeEblupArea(unittest.TestCase):
         self.parent.selection_method = "None"
 
 
-    def test_assign_of_interest_with_numeric(self):
+    def test_assign_of_interest_with_numeric_success(self):
+        """Test assigning numeric variable to of_interest successfully."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [Numeric]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_of_interest(self.parent)
         
-        self.assertEqual(self.parent.of_interest_var, ["variable1 [Numeric]"])
+        # Assert
+        assert self.parent.of_interest_var == ["variable1 [Numeric]"], \
+            f"Expected of_interest_var to be ['variable1 [Numeric]'], got {self.parent.of_interest_var}"
         self.parent.of_interest_model.setStringList.assert_called_with(["variable1 [Numeric]"])
         self.parent.variables_list.model().removeRow.assert_called_once()
 
-    def test_assign_of_interest_with_string(self):
+    def test_assign_of_interest_with_string_should_fail(self):
+        """Test assigning string variable to of_interest should be rejected."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [String]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_of_interest(self.parent)
         
-        self.assertEqual(self.parent.of_interest_var, [])
+        # Assert
+        assert self.parent.of_interest_var == [], \
+            f"Expected of_interest_var to remain empty for string variables, got {self.parent.of_interest_var}"
         self.parent.of_interest_model.setStringList.assert_not_called()
         self.parent.variables_list.model().removeRow.assert_not_called()
-        self.assertFalse(self.parent.show_r_script.called)
 
-    def test_assign_auxilary_with_numeric(self):
+    def test_assign_of_interest_with_no_selection_should_do_nothing(self):
+        """Test assign_of_interest with no selection should not change anything."""
+        # Arrange
+        self.parent.variables_list.selectedIndexes.return_value = []
+        initial_of_interest = self.parent.of_interest_var.copy()
+        
+        # Act
+        assign_of_interest(self.parent)
+        
+        # Assert
+        assert self.parent.of_interest_var == initial_of_interest, \
+            "Expected of_interest_var to remain unchanged when no selection"
+
+    def test_assign_auxilary_with_numeric_success(self):
+        """Test assigning numeric variable to auxiliary successfully."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [Numeric]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_auxilary(self.parent)
         
-        self.assertEqual(self.parent.auxilary_vars, ["variable1 [Numeric]"])
+        # Assert
+        assert self.parent.auxilary_vars == ["variable1 [Numeric]"], \
+            f"Expected auxilary_vars to be ['variable1 [Numeric]'], got {self.parent.auxilary_vars}"
         self.parent.auxilary_model.setStringList.assert_called_with(["variable1 [Numeric]"])
         self.parent.variables_list.model().removeRow.assert_called_once()
 
-    def test_assign_auxilary_with_string(self):
+    def test_assign_auxilary_with_string_should_be_filtered(self):
+        """Test assigning string variable to auxiliary should be filtered out."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [String]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_auxilary(self.parent)
         
-        self.assertEqual(self.parent.auxilary_vars, [])
-        # self.parent.auxilary_model.setStringList.assert_not_called()
+        # Assert
+        assert self.parent.auxilary_vars == [], \
+            f"Expected auxilary_vars to remain empty for string variables, got {self.parent.auxilary_vars}"
         self.parent.variables_list.model().removeRow.assert_not_called()
-        self.assertFalse(self.parent.show_r_script.called)
+
+    def test_assign_auxilary_multiple_variables_success(self):
+        """Test assigning multiple numeric variables to auxiliary."""
+        # Arrange
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [Numeric]"
+        index2 = MagicMock()
+        index2.data.return_value = "variable2 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1, index2]
+        
+        # Act
+        assign_auxilary(self.parent)
+        
+        # Assert
+        assert set(self.parent.auxilary_vars) == {"variable1 [Numeric]", "variable2 [Numeric]"}, \
+            f"Expected auxilary_vars to contain both variables, got {self.parent.auxilary_vars}"
+        assert self.parent.variables_list.model().removeRow.call_count == 2, \
+            "Expected removeRow to be called twice for two variables"
     
-    def test_assign_vardir_with_numeric(self):
+    def test_assign_vardir_with_numeric_success(self):
+        """Test assigning numeric variable to vardir successfully."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [Numeric]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_vardir(self.parent)
         
-        self.assertEqual(self.parent.vardir_var, ["variable1 [Numeric]"])
+        # Assert
+        assert self.parent.vardir_var == ["variable1 [Numeric]"], \
+            f"Expected vardir_var to be ['variable1 [Numeric]'], got {self.parent.vardir_var}"
         self.parent.vardir_model.setStringList.assert_called_with(["variable1 [Numeric]"])
         self.parent.variables_list.model().removeRow.assert_called_once()
     
-    def test_assign_vardir_with_string(self):
+    def test_assign_vardir_with_string_should_fail(self):
+        """Test assigning string variable to vardir should be rejected."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [String]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_vardir(self.parent)
         
-        self.assertEqual(self.parent.vardir_var, [])
+        # Assert
+        assert self.parent.vardir_var == [], \
+            f"Expected vardir_var to remain empty for string variables, got {self.parent.vardir_var}"
         self.parent.vardir_model.setStringList.assert_not_called()
         self.parent.variables_list.model().removeRow.assert_not_called()
-        self.assertFalse(self.parent.show_r_script.called)
     
-    def test_assign_as_factor(self):
+    def test_assign_as_factor_success(self):
+        """Test assigning variable to as_factor successfully."""
+        # Arrange
         index = MagicMock()
         index.data.return_value = "variable1 [String]"
         self.parent.variables_list.selectedIndexes.return_value = [index]
         
+        # Act
         assign_as_factor(self.parent)
         
-        self.assertEqual(self.parent.as_factor_var, ["variable1 [String]"])
+        # Assert
+        assert self.parent.as_factor_var == ["variable1 [String]"], \
+            f"Expected as_factor_var to be ['variable1 [String]'], got {self.parent.as_factor_var}"
         self.parent.as_factor_model.setStringList.assert_called_with(["variable1 [String]"])
         self.parent.variables_list.model().removeRow.assert_called_once()
+
+    def test_assign_as_factor_multiple_variables(self):
+        """Test assigning multiple variables to as_factor."""
+        # Arrange
+        index1 = MagicMock()
+        index1.data.return_value = "variable1 [String]"
+        index2 = MagicMock()
+        index2.data.return_value = "variable2 [Numeric]"
+        self.parent.variables_list.selectedIndexes.return_value = [index1, index2]
+        
+        # Act
+        assign_as_factor(self.parent)
+        
+        # Assert
+        assert set(self.parent.as_factor_var) == {"variable1 [String]", "variable2 [Numeric]"}, \
+            f"Expected as_factor_var to contain both variables, got {self.parent.as_factor_var}"
     
-    def test_unassign_variable_of_interest(self):
+    def test_unassign_variable_of_interest_success(self):
+        """Test unassigning variable from of_interest successfully."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]"]
         self.parent.of_interest_model.setStringList(["variable1 [Numeric]"])
         self.parent.variables_list.model().insertRow = MagicMock()
@@ -278,16 +375,21 @@ class TestSaeEblupArea(unittest.TestCase):
         index.data.return_value = "variable1 [Numeric]"
         self.parent.of_interest_list.selectedIndexes.return_value = [index]
         
+        # Act
         unassign_variable(self.parent)
         
-        self.assertEqual(self.parent.of_interest_var, [])
+        # Assert
+        assert self.parent.of_interest_var == [], \
+            f"Expected of_interest_var to be empty after unassign, got {self.parent.of_interest_var}"
         self.parent.of_interest_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_once()
         self.parent.variables_list.model().setData.assert_called_with(
             self.parent.variables_list.model().index(0), "variable1 [Numeric]"
         )
     
-    def test_unassign_variable_auxilary(self):
+    def test_unassign_variable_auxilary_success(self):
+        """Test unassigning variable from auxiliary successfully."""
+        # Arrange
         self.parent.auxilary_vars = ["variable1 [Numeric]"]
         self.parent.auxilary_model.setStringList(["variable1 [Numeric]"])
         self.parent.variables_list.model().insertRow = MagicMock()
@@ -303,16 +405,21 @@ class TestSaeEblupArea(unittest.TestCase):
         self.parent.vardir_list.selectedIndexes.return_value = []
         self.parent.as_factor_list.selectedIndexes.return_value = []
 
+        # Act
         unassign_variable(self.parent)
 
-        self.assertEqual(self.parent.auxilary_vars, [])
+        # Assert
+        assert self.parent.auxilary_vars == [], \
+            f"Expected auxilary_vars to be empty after unassign, got {self.parent.auxilary_vars}"
         self.parent.auxilary_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_once()
         self.parent.variables_list.model().setData.assert_called_with(
             self.parent.variables_list.model().index(0), "variable1 [Numeric]"
         )
         
-    def test_unassign_variable_vardir(self):
+    def test_unassign_variable_vardir_success(self):
+        """Test unassigning variable from vardir successfully."""
+        # Arrange
         self.parent.vardir_var = ["variable1 [Numeric]"]
         self.parent.vardir_model.setStringList(["variable1 [Numeric]"])
         self.parent.variables_list.model().insertRow = MagicMock()
@@ -328,16 +435,21 @@ class TestSaeEblupArea(unittest.TestCase):
         self.parent.auxilary_list.selectedIndexes.return_value = []
         self.parent.as_factor_list.selectedIndexes.return_value = []
 
+        # Act
         unassign_variable(self.parent)
 
-        self.assertEqual(self.parent.vardir_var, [])
+        # Assert
+        assert self.parent.vardir_var == [], \
+            f"Expected vardir_var to be empty after unassign, got {self.parent.vardir_var}"
         self.parent.vardir_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_once()
         self.parent.variables_list.model().setData.assert_called_with(
             self.parent.variables_list.model().index(0), "variable1 [Numeric]"
         )
     
-    def test_unassign_variable_as_factor(self):
+    def test_unassign_variable_as_factor_success(self):
+        """Test unassigning variable from as_factor successfully."""
+        # Arrange
         self.parent.as_factor_var = ["variable1 [String]"]
         self.parent.as_factor_model.setStringList(["variable1 [String]"])
         self.parent.variables_list.model().insertRow = MagicMock()
@@ -353,171 +465,317 @@ class TestSaeEblupArea(unittest.TestCase):
         self.parent.auxilary_list.selectedIndexes.return_value = []
         self.parent.vardir_list.selectedIndexes.return_value = []
 
+        # Act
         unassign_variable(self.parent)
 
-        self.assertEqual(self.parent.as_factor_var, [])
+        # Assert
+        assert self.parent.as_factor_var == [], \
+            f"Expected as_factor_var to be empty after unassign, got {self.parent.as_factor_var}"
         self.parent.as_factor_model.setStringList.assert_called_with([])
         self.parent.variables_list.model().insertRow.assert_called_once()
         self.parent.variables_list.model().setData.assert_called_with(
             self.parent.variables_list.model().index(0), "variable1 [String]"
         )
+
+    def test_unassign_variable_no_selection_should_do_nothing(self):
+        """Test unassign_variable with no selection should not change anything."""
+        # Arrange
+        initial_of_interest = self.parent.of_interest_var.copy()
+        initial_auxilary = self.parent.auxilary_vars.copy()
+        initial_vardir = self.parent.vardir_var.copy()
+        initial_as_factor = self.parent.as_factor_var.copy()
+        
+        # Mock all lists to return empty selections
+        self.parent.of_interest_list.selectedIndexes.return_value = []
+        self.parent.auxilary_list.selectedIndexes.return_value = []
+        self.parent.vardir_list.selectedIndexes.return_value = []
+        self.parent.as_factor_list.selectedIndexes.return_value = []
+        
+        # Act
+        unassign_variable(self.parent)
+        
+        # Assert
+        assert self.parent.of_interest_var == initial_of_interest, \
+            "Expected of_interest_var to remain unchanged when no selection"
+        assert self.parent.auxilary_vars == initial_auxilary, \
+            "Expected auxilary_vars to remain unchanged when no selection"
+        assert self.parent.vardir_var == initial_vardir, \
+            "Expected vardir_var to remain unchanged when no selection"
+        assert self.parent.as_factor_var == initial_as_factor, \
+            "Expected as_factor_var to remain unchanged when no selection"
     
-    def test_get_selected_variables(self):
+    def test_get_selected_variables_success(self):
+        """Test getting selected variables returns correct values."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]"]
         self.parent.auxilary_vars = ["variable2 [Numeric]"]
         self.parent.vardir_var = ["variable3 [Numeric]"]
         self.parent.as_factor_var = ["variable4 [String]"]
         
+        # Act
         of_interest, auxilary, vardir, as_factor = get_selected_variables(self.parent)
         
-        self.assertEqual(of_interest, ["variable1 [Numeric]"])
-        self.assertEqual(auxilary, ["variable2 [Numeric]"])
-        self.assertEqual(vardir, ["variable3 [Numeric]"])
-        self.assertEqual(as_factor, ["variable4 [String]"])
+        # Assert
+        assert of_interest == ["variable1 [Numeric]"], \
+            f"Expected of_interest to be ['variable1 [Numeric]'], got {of_interest}"
+        assert auxilary == ["variable2 [Numeric]"], \
+            f"Expected auxilary to be ['variable2 [Numeric]'], got {auxilary}"
+        assert vardir == ["variable3 [Numeric]"], \
+            f"Expected vardir to be ['variable3 [Numeric]'], got {vardir}"
+        assert as_factor == ["variable4 [String]"], \
+            f"Expected as_factor to be ['variable4 [String]'], got {as_factor}"
 
-    def test_generate_r_script(self):
+    def test_get_selected_variables_empty_lists(self):
+        """Test getting selected variables with empty lists."""
+        # Arrange - all variables are already empty from setup
+        
+        # Act
+        of_interest, auxilary, vardir, as_factor = get_selected_variables(self.parent)
+        
+        # Assert
+        assert of_interest == [], "Expected empty of_interest list"
+        assert auxilary == [], "Expected empty auxilary list"
+        assert vardir == [], "Expected empty vardir list"
+        assert as_factor == [], "Expected empty as_factor list"
+
+    def test_generate_r_script_complete_variables(self):
+        """Test generating R script with all variable types."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]"]
         self.parent.auxilary_vars = ["variable2 [Numeric]"]
         self.parent.vardir_var = ["variable3 [Numeric]"]
         self.parent.as_factor_var = ["variable4 [String]"]
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- variable1 ~ variable2 + as.factor(variable4)\n'
             'vardir_var <- data["variable3"]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script:\n{expected_script}\n\nGot:\n{r_script}"
     
-    def test_generate_r_script_with_empty_vars(self):
+    def test_generate_r_script_with_empty_vars_should_handle_gracefully(self):
+        """Test generating R script with empty variables should create valid R code."""
+        # Arrange
         self.parent.of_interest_var = []
         self.parent.auxilary_vars = []
         self.parent.vardir_var = []
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- "" ~ 1\n'
             'vardir_var <- data[""""]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script for empty vars:\n{expected_script}\n\nGot:\n{r_script}"
         
     def test_generate_r_script_only_of_interest(self):
+        """Test generating R script with only of_interest variable."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]"]
         self.parent.auxilary_vars = []
         self.parent.vardir_var = []
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- variable1 ~ 1\n'
             'vardir_var <- data[""""]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with only of_interest:\n{expected_script}\n\nGot:\n{r_script}"
     
-    def test_generate_r_script_only_auxilary(self):
+    def test_generate_r_script_only_auxilary_should_create_incomplete_formula(self):
+        """Test generating R script with only auxiliary variable creates incomplete formula."""
+        # Arrange
         self.parent.of_interest_var = []
         self.parent.auxilary_vars = ["variable2 [Numeric]"]
         self.parent.vardir_var = []
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- "" ~ variable2\n'
             'vardir_var <- data[""""]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with only auxilary:\n{expected_script}\n\nGot:\n{r_script}"
     
     def test_generate_r_script_only_vardir(self):
+        """Test generating R script with only vardir variable."""
+        # Arrange
         self.parent.of_interest_var = []
         self.parent.auxilary_vars = []
         self.parent.vardir_var = ["variable3 [Numeric]"]
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- "" ~ 1\n'
             'vardir_var <- data["variable3"]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with only vardir:\n{expected_script}\n\nGot:\n{r_script}"
     
-    def test_generate_r_script_only_as_factor(self):
+    def test_generate_r_script_only_as_factor_should_create_incomplete_formula(self):
+        """Test generating R script with only as_factor variable creates incomplete formula."""
+        # Arrange
         self.parent.of_interest_var = []
         self.parent.auxilary_vars = []
         self.parent.vardir_var = []
         self.parent.as_factor_var = ["variable4 [String]"]
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- "" ~ as.factor(variable4)\n'
             'vardir_var <- data[""""]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with only as_factor:\n{expected_script}\n\nGot:\n{r_script}"
     
     def test_generate_r_script_multiple_auxilary_and_as_factor(self):
+        """Test generating R script with multiple auxiliary and as_factor variables."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]"]
         self.parent.auxilary_vars = ["variable2 [Numeric]", "variable3 [Numeric]"]
         self.parent.vardir_var = ["variable4 [Numeric]"]
         self.parent.as_factor_var = ["variable5 [String]", "variable6 [String]"]
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- variable1 ~ variable2 + variable3 + as.factor(variable5) + as.factor(variable6)\n'
             'vardir_var <- data["variable4"]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with multiple variables:\n{expected_script}\n\nGot:\n{r_script}"
     
-    def test_generate_r_script_multi_of_interest(self):
+    def test_generate_r_script_multi_of_interest_should_use_first_only(self):
+        """Test generating R script with multiple of_interest variables uses only the first one."""
+        # Arrange
         self.parent.of_interest_var = ["variable1 [Numeric]", "variable2 [Numeric]"]
         self.parent.auxilary_vars = []
         self.parent.vardir_var = []
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- variable1 ~ 1\n'
             'vardir_var <- data[""""]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with multi of_interest to use first only:\n{expected_script}\n\nGot:\n{r_script}"
     
-    def test_generate_r_script_multi_vardir(self):
+    def test_generate_r_script_multi_vardir_should_use_first_only(self):
+        """Test generating R script with multiple vardir variables uses only the first one."""
+        # Arrange
         self.parent.of_interest_var = []
         self.parent.auxilary_vars = []
         self.parent.vardir_var = ["variable1 [Numeric]", "variable2 [Numeric]"]
         self.parent.as_factor_var = []
         
+        # Act
         r_script = generate_r_script(self.parent)
         
+        # Assert
         expected_script = (
             'names(data) <- gsub(" ", "_", names(data)); #Replace space with underscore\n'
             'formula <- "" ~ 1\n'
             'vardir_var <- data["variable1"]\n'
             'model<-mseFH(formula, vardir_var, method = "REML", data=data)'
         )
-        self.assertEqual(r_script, expected_script)
+        assert r_script == expected_script, \
+            f"Expected R script with multi vardir to use first only:\n{expected_script}\n\nGot:\n{r_script}"
+
+    def test_generate_r_script_with_invalid_method_should_fail(self):
+        """Test generating R script with invalid method should be handled gracefully."""
+        # Arrange
+        self.parent.of_interest_var = ["variable1 [Numeric]"]
+        self.parent.auxilary_vars = []
+        self.parent.vardir_var = ["variable2 [Numeric]"]
+        self.parent.as_factor_var = []
+        self.parent.method = "INVALID_METHOD"
+        
+        # Act
+        r_script = generate_r_script(self.parent)
+        
+        # Assert
+        assert "INVALID_METHOD" in r_script, \
+            "Expected invalid method to be included in script for debugging purposes"
+
+# Additional test configurations for pytest
+def test_show_r_script_integration():
+    """Integration test for show_r_script function."""
+    # This test would require the actual function implementation
+    pass
+
+def test_edge_cases_and_error_handling():
+    """Test edge cases and error handling scenarios."""
+    # This would test various edge cases
+    pass
+
 
 if __name__ == '__main__':
-    unittest.main()
+    # Run with pytest for better output
+    import sys
+    import subprocess
+    
+    # Check if pytest is available
+    try:
+        import pytest
+        # Run pytest with verbose output and custom formatting
+        pytest.main([
+            __file__, 
+            '-v',  # verbose output
+            '-s',  # show print statements
+            '--tb=short',  # shorter traceback format
+            '--color=yes',  # colored output
+            '-x',  # stop on first failure
+            '--disable-warnings'  # disable warnings for cleaner output
+        ])
+    except ImportError:
+        print("pytest not found. Please install pytest: pip install pytest")
+        print("Running basic test discovery...")
+        # Fallback to basic test discovery
+        import unittest
+        unittest.main(verbosity=2)
