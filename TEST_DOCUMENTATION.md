@@ -14,8 +14,9 @@ File ini berisi unit test untuk modul **SAE EBLUP Area** yang telah disesuaikan 
 ## 🧪 Test Coverage
 
 ### Functions Yang Di-test:
+
 1. `assign_of_interest()` - Assignment variabel of interest
-2. `assign_auxilary()` - Assignment variabel auxiliary 
+2. `assign_auxilary()` - Assignment variabel auxiliary
 3. `assign_vardir()` - Assignment variabel variance direction
 4. `assign_as_factor()` - Assignment variabel as factor
 5. `unassign_variable()` - Unassignment variabel dari semua kategori
@@ -24,6 +25,7 @@ File ini berisi unit test untuk modul **SAE EBLUP Area** yang telah disesuaikan 
 8. `show_r_script()` - Integration test untuk display R script
 
 ### Test Scenarios:
+
 - ✅ **Success cases**: Normal operation dengan data valid
 - ✅ **Failure cases**: Handling input yang tidak valid (e.g., String untuk Numeric field)
 - ✅ **Edge cases**: Empty lists, multiple variables, invalid methods
@@ -43,6 +45,7 @@ File ini berisi unit test untuk modul **SAE EBLUP Area** yang telah disesuaikan 
 ## 🚀 Cara Menjalankan Test
 
 ### Menggunakan pytest (Recommended):
+
 ```bash
 # Install pytest jika belum ada
 pip install pytest
@@ -58,12 +61,14 @@ python -m pytest test/modelling/script/test_sae_eblup_area_new.py::TestSaeEblupA
 ```
 
 ### Menggunakan script PowerShell:
+
 ```powershell
 # Jalankan script yang sudah disediakan
 .\run_tests.ps1
 ```
 
 ### Menjalankan dari Python file:
+
 ```bash
 # Jalankan file test langsung
 python test/modelling/script/test_sae_eblup_area_new.py
@@ -72,6 +77,7 @@ python test/modelling/script/test_sae_eblup_area_new.py
 ## 🎯 Test Design Principles
 
 ### AAA Pattern Example:
+
 ```python
 def test_assign_of_interest_with_numeric_success(self):
     """Test assigning numeric variable to of_interest successfully."""
@@ -80,16 +86,17 @@ def test_assign_of_interest_with_numeric_success(self):
     index.data.return_value = "variable1 [Numeric]"
     index.row.return_value = 0
     self.parent.variables_list.selectedIndexes.return_value = [index]
-    
+
     # Act - Execute the function under test
     assign_of_interest(self.parent)
-    
+
     # Assert - Verify the results
     assert self.parent.of_interest_var == ["variable1 [Numeric]"], \
         f"Expected of_interest_var to be ['variable1 [Numeric]'], got {self.parent.of_interest_var}"
 ```
 
 ### Descriptive Test Names:
+
 - `test_assign_of_interest_with_numeric_success()` - ✅ Clear what it tests
 - `test_assign_of_interest_with_string_should_show_warning()` - ✅ Explains expected behavior
 - `test_generate_r_script_with_invalid_method_should_fail()` - ✅ Describes failure scenario
@@ -109,9 +116,11 @@ test_assign_auxilary_multiple_variables_success PASSED [ 26%]
 ## ⚙️ Configuration Files
 
 ### pytest.ini
+
 File konfigurasi pytest untuk konsistensi output dan behavior.
 
 ### run_tests.ps1
+
 Script PowerShell untuk menjalankan test dengan output yang user-friendly.
 
 ## 🔧 Dependencies
@@ -132,7 +141,7 @@ unittest.mock (built-in)
 ## 🎉 Benefits
 
 1. **Maintainability**: Test yang jelas dan mudah dipahami
-2. **Reliability**: Comprehensive coverage untuk success dan failure cases  
+2. **Reliability**: Comprehensive coverage untuk success dan failure cases
 3. **Documentation**: Test names berfungsi sebagai living documentation
 4. **Debugging**: Error messages yang informatif memudahkan debugging
 5. **CI/CD Ready**: Compatible dengan automation pipelines
