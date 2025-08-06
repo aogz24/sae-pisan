@@ -161,6 +161,7 @@ def run_model_eblup_unit(parent):
             'MSE': mse})
         error = False
         ro.r('rm(data_unit, domain_unit, estimated_value_unit, n_size_unit, mse_unit, model_unit)')
+        ro.r("gc()")  # Clear R memory
         return results, error, df
         
     except Exception as e:

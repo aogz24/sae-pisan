@@ -89,6 +89,7 @@ def run_model_eblup_pseudo(parent):
             'RSE (%)': rse})
         error = False
         ro.r('rm(data_pseudo, model_pseudo, estimated_value_pseudo, mse_pseudo, domain_pseudo, refvar_pseudo)')
+        ro.r("gc()")  # Clear R memory
         return results, error, df
         
     except Exception as e:

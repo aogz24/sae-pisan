@@ -75,6 +75,7 @@ def run_model_eblup_area(parent):
             'RSE (%)': rse})
         error = False
         ro.r('rm(data, model, estimated_value, mse, method, convergence, iterations, refvar, goodness)')
+        ro.r("gc()")  # Clear R memory
         return results, error, df
         
     except Exception as e:
