@@ -112,13 +112,16 @@ def run_model_hb_area(parent):
         hb_75 = estimated_value["75%"]
         hb_97_5 = estimated_value["97.5%"]
         hb_sd = estimated_value["SD"]
+        rse = abs(hb_sd / hb_mean ) * 100
         df = pl.DataFrame({
             'HB Mean': hb_mean,
             'HB 25%': hb_25,
             'HB 50%': hb_50,
             'HB 75%': hb_75,
             'HB 97.5%': hb_97_5,
-            'Standard Deviation': hb_sd,})
+            'Standard Deviation': hb_sd,
+            'RSE': rse
+        })
         ro.r("detach(datahb)")
         ro.r("rm(datahb)")
         ro.r("rm(modelhb)")
