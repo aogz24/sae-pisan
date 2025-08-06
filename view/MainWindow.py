@@ -1059,17 +1059,51 @@ class MainWindow(QMainWindow):
             self.table_view2.resizeColumnsToContents()
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts for copy, paste, undo, and redo."""
+        """Handle keyboard shortcuts for copy, paste, undo, redo, and navigation."""
+        
+        # Handle standard shortcuts first
         if event.matches(QKeySequence.StandardKey.Copy):
             self.copy_selection()
+            return
         elif event.matches(QKeySequence.StandardKey.Paste):
             self.paste_selection()
+            return
         elif event.matches(QKeySequence.StandardKey.Undo):
             self.undo_action()
+            return
         elif event.matches(QKeySequence.StandardKey.Redo):
             self.redo_action()
-        else:
-            super().keyPressEvent(event)
+            return
+        
+        # Handle navigation shortcuts manually
+        modifiers = event.modifiers()
+        key = event.key()
+        
+        if modifiers == Qt.Modifier.CTRL:
+            if key == Qt.Key.Key_Up:
+                go_to_start_row(self)
+                return
+            elif key == Qt.Key.Key_Down:
+                go_to_end_row(self)
+                return
+            elif key == Qt.Key.Key_Left:
+                go_to_start_column(self)
+                return
+            elif key == Qt.Key.Key_Right:
+                go_to_end_column(self)
+                return
+            elif key == Qt.Key.Key_D:
+                # Handle Ctrl+D for recent data
+                self.load_temp_data()
+                return
+            elif key == Qt.Key.Key_2:
+                # Handle Ctrl+2 for secondary data
+                if hasattr(self, 'load_secondary_data') and self.load_secondary_data.triggered:
+                    self.load_secondary_data.triggered.emit()
+                return
+        
+        # Call parent implementation for unhandled events
+        super().keyPressEvent(event)
 
     def copy_selection(self):
         """Copy selected cells to clipboard."""
