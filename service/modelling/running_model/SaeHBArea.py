@@ -35,6 +35,12 @@ def run_model_hb_area(parent):
         ro.r('datahb <- as.data.frame(r_df)')
         ro.r('attach(datahb)')
         try:
+            ro.r("""
+                datahb[] <- lapply(datahb, function(x) {
+                if (is.factor(x) || is.character(x)) as.numeric(as.factor(x)) else x
+                })
+                """)
+            ro.r("print('Data converted to numeric factors')")
             ro.r(parent.r_script)  # Menjalankan skrip R
         except RRuntimeError as e:
             if hasattr(parent, 'log_exception'):
