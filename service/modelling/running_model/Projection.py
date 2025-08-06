@@ -84,6 +84,7 @@ def run_model_projection(parent):
         proj = ro.conversion.rpy2py(ro.globalenv['projection_pe'])
         df = pl.from_pandas(proj)
         error = False
+        ro.r("rm(data_pe, model_pe, summary_pe, pred_pe, projection_pe)")
         return results, error, df
         
     except Exception as e:

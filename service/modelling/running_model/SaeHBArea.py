@@ -120,6 +120,9 @@ def run_model_hb_area(parent):
             'HB 97.5%': hb_97_5,
             'Standard Deviation': hb_sd,})
         ro.r("detach(datahb)")
+        ro.r("rm(datahb)")
+        ro.r("rm(modelhb)")
+        ro.r("gc()")
         
         error = False
         return results, error, df, plot_paths

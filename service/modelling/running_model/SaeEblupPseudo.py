@@ -88,6 +88,7 @@ def run_model_eblup_pseudo(parent):
             'MSE': mse,
             'RSE (%)': rse})
         error = False
+        ro.r('rm(data_pseudo, model_pseudo, estimated_value_pseudo, mse_pseudo, domain_pseudo, refvar_pseudo)')
         return results, error, df
         
     except Exception as e:
