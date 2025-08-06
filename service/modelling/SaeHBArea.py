@@ -315,9 +315,9 @@ def generate_r_script(parent):
     
     # Generate model
     r_script += '# Running model\n'
-    r_script += 'library(saeHB)\n'
     
-    if vardir_var != '""':
+    if parent.Normal and vardir_var != '""':
+        r_script += f"vardir <- datahb${vardir_var}\n"
         r_script += f'modelhb <- {parent.model_method}({formula_to_use}, vardir = "{vardir_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
     else:
         r_script += f'modelhb <- {parent.model_method}({formula_to_use}, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
