@@ -75,11 +75,26 @@ def run_model_hb_area(parent):
             os.makedirs(temp_dir)
         plot_paths = []
 
-        for plot_name in plots:
-            plot_path = os.path.join(temp_dir, f"{plot_name}.png")
-            with png_device(plot_path):
+        for i, plot_name in enumerate(plots):
+            plot_path = os.path.join(temp_dir, f"{plot_name}_{i}.png")
+            
+            try:
+                grdevices.dev_off()
+            except:
+                pass
+            
+            grdevices.png(file=plot_path, width=800, height=600, res=100)
+            
+            try:
                 ro.r(f"{plot_name}()")
-            plot_paths.append(plot_path)
+                plot_paths.append(plot_path)
+            except Exception as e:
+                print(f"Error creating plot {plot_name}: {e}")
+            finally:
+                try:
+                    grdevices.dev_off()
+                except:
+                    pass
         
             
         ro.r('estimated_value_hb <- modelhb$Est')
