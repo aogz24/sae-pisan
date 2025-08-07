@@ -170,11 +170,11 @@ class ModelingSaeHBDialog(QDialog):
         self.right_layout.addWidget(self.vardir_label)
         self.right_layout.addWidget(self.vardir_list)
         
-        if not self.Normal:
-            self.assign_vardir_button.setEnabled(False)
-            self.assign_vardir_button.setVisible(False)
-            self.vardir_label.setVisible(False)
-            self.vardir_list.setVisible(False)
+        self.assign_vardir_button.setEnabled(False)
+        self.assign_vardir_button.setVisible(False)
+        self.vardir_label.setVisible(False)
+        self.vardir_list.setVisible(False)
+        
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         self.split_layout.addLayout(self.left_layout)
