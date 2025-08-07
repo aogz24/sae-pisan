@@ -54,34 +54,34 @@ def run_model_hb_area(parent):
                 grdevices.dev_off()
         
         script_png = """
-        # Import required libraries
-        library(coda)
-        
-        # Get the MCMC samples for plotting (similar to Normal.R)
-        result_mcmc <- modelhb$plot[[length(modelhb$plot)-1]]
-        
-        # Get parameter names for individual plots
-        param_names <- colnames(result_mcmc[[1]])
-        n_params <- length(param_names)
-        
-        sae_autocorr <- function(param_idx = NULL) {
-            if (is.null(param_idx)) {
-                coda::autocorr.plot(result_mcmc, col='brown2', lwd=2)
-            } else {
-                coda::autocorr.plot(result_mcmc[,param_idx], col='brown2', lwd=2, 
-                                    main=paste("Autocorrelation -", param_names[param_idx]))
+            # Import required libraries
+            library(coda)
+            
+            # Get the MCMC samples for plotting (similar to Normal.R)
+            result_mcmc <- modelhb$plot[[length(modelhb$plot)-1]]
+            
+            # Get parameter names for individual plots
+            param_names <- colnames(result_mcmc[[1]])
+            n_params <- length(param_names)
+            
+            sae_autocorr <- function(param_idx = NULL) {
+                if (is.null(param_idx)) {
+                    coda::autocorr.plot(result_mcmc, col='brown2', lwd=2)
+                } else {
+                    coda::autocorr.plot(result_mcmc[,param_idx], col='brown2', lwd=2, 
+                                        main=paste("Autocorrelation -", param_names[param_idx]))
+                }
             }
-        }
 
-        sae_trace_density <- function(param_idx = NULL) {
-            if (is.null(param_idx)) {
-                plot(result_mcmc, col='brown2', lwd=2)
-            } else {
-                plot(result_mcmc[,param_idx], col='brown2', lwd=2,
-                        main=paste("Trace and Density -", param_names[param_idx]))
+            sae_trace_density <- function(param_idx = NULL) {
+                if (is.null(param_idx)) {
+                    plot(result_mcmc, col='brown2', lwd=2)
+                } else {
+                    plot(result_mcmc[,param_idx], col='brown2', lwd=2,
+                            main=paste("Trace and Density -", param_names[param_idx]))
+                }
             }
-        }
-        """
+            """
         
         ro.r(script_png)
         
