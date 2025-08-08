@@ -45,7 +45,7 @@ def run_model_eblup_area(parent):
         itteration = ro.globalenv['iterations']
         itteration = int(float(itteration[0]))
         refvar = ro.globalenv['refvar']
-        refvar = int(float(refvar[0]))
+        refvar = str(float(refvar[0]))
         goodness_r = ro.conversion.rpy2py(ro.globalenv['goodness'])
         goodness = pl.DataFrame({
             'Logarithmic Likelihood': [goodness_r[0]],
