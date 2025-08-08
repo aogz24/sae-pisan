@@ -338,12 +338,12 @@ class MainWindow(QMainWindow):
         self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'recentdata.svg')))
         self.recent_data.setStatusTip("Ctrl+D")
         
-        self.load_action = QAction("Load File", self)
+        self.load_action = QAction("Open File", self)
         self.load_action.setShortcut(QKeySequence.StandardKey.Open)
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
-        self.load_secondary_data = QAction("Load File for Secondary Data", self)
+        self.load_secondary_data = QAction("Open File for Secondary Data", self)
         self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
         self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
