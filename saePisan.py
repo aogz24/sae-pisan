@@ -75,6 +75,11 @@ def main():
     splash.update_message()
     view.show()
     splash.finish(view)
+    
+    # Force focus dan aktivasi window
+    view.raise_()
+    view.activateWindow()
+    view.setFocus()
 
     # Mulai aplikasi
     sys.exit(app.exec())
