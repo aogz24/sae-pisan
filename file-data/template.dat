@@ -1,3 +1,7 @@
 Sequence Number 1 to Last Data=new_column <- seq_len(nrow(data))
-Compute RSE=new_column <- sqrt({variable1}) / {variable2} * 100
+Compute RSE=new_column <- sqrt(`{variable1}`) / `{variable2}` * 100
+Log Transformation=new_column <- log10(`{variable1}`)
+Natural Log (ln) Transformation=new_column <- log(`{variable1}`)
+Logit Transformation=new_column <- log(`{variable1}` / (1 - `{variable1}`))
+Power Transformation=new_column <- (`{variable1}`^{lambda})
 Custom=
