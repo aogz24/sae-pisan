@@ -338,12 +338,12 @@ class MainWindow(QMainWindow):
         self.recent_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'recentdata.svg')))
         self.recent_data.setStatusTip("Ctrl+D")
         
-        self.load_action = QAction("Load File", self)
+        self.load_action = QAction("Open File", self)
         self.load_action.setShortcut(QKeySequence.StandardKey.Open)
         self.load_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'open.svg')))
         self.load_action.setStatusTip("Ctrl+O")
         
-        self.load_secondary_data = QAction("Load File for Secondary Data", self)
+        self.load_secondary_data = QAction("Open File for Secondary Data", self)
         self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
         self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
@@ -1059,17 +1059,51 @@ class MainWindow(QMainWindow):
             self.table_view2.resizeColumnsToContents()
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts for copy, paste, undo, and redo."""
+        """Handle keyboard shortcuts for copy, paste, undo, redo, and navigation."""
+        
+        # Handle standard shortcuts first
         if event.matches(QKeySequence.StandardKey.Copy):
             self.copy_selection()
+            return
         elif event.matches(QKeySequence.StandardKey.Paste):
             self.paste_selection()
+            return
         elif event.matches(QKeySequence.StandardKey.Undo):
             self.undo_action()
+            return
         elif event.matches(QKeySequence.StandardKey.Redo):
             self.redo_action()
-        else:
-            super().keyPressEvent(event)
+            return
+        
+        # Handle navigation shortcuts manually
+        modifiers = event.modifiers()
+        key = event.key()
+        
+        if modifiers == Qt.Modifier.CTRL:
+            if key == Qt.Key.Key_Up:
+                go_to_start_row(self)
+                return
+            elif key == Qt.Key.Key_Down:
+                go_to_end_row(self)
+                return
+            elif key == Qt.Key.Key_Left:
+                go_to_start_column(self)
+                return
+            elif key == Qt.Key.Key_Right:
+                go_to_end_column(self)
+                return
+            elif key == Qt.Key.Key_D:
+                # Handle Ctrl+D for recent data
+                self.load_temp_data()
+                return
+            elif key == Qt.Key.Key_2:
+                # Handle Ctrl+2 for secondary data
+                if hasattr(self, 'load_secondary_data') and self.load_secondary_data.triggered:
+                    self.load_secondary_data.triggered.emit()
+                return
+        
+        # Call parent implementation for unhandled events
+        super().keyPressEvent(event)
 
     def copy_selection(self):
         """Copy selected cells to clipboard."""

@@ -44,6 +44,7 @@ def run_model_hb_area(parent):
             return result, error, None, None
         
         from contextlib import contextmanager
+        import rpy2.robjects.lib.grdevices as grdevices
         @contextmanager
         def png_device(filename, width=800, height=600, res=100):
             grdevices.png(file=filename, width=width, height=height, res=res)
@@ -53,33 +54,127 @@ def run_model_hb_area(parent):
                 grdevices.dev_off()
         
         script_png = """
-        sae_autocorr <- function() {
-            coda::autocorr.plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
-        }
+            # Import required libraries
+            library(coda)
+            
+            # Get the MCMC samples for plotting (similar to Normal.R)
+            result_mcmc <- modelhb$plot[[length(modelhb$plot)-1]]
+            
+            # Get parameter names for individual plots
+            param_names <- colnames(result_mcmc[[1]])
+            n_params <- length(param_names)
+            
+            sae_autocorr <- function(param_idx = NULL) {
+                if (is.null(param_idx)) {
+                    coda::autocorr.plot(result_mcmc, col='brown2', lwd=2)
+                } else {
+                    coda::autocorr.plot(result_mcmc[,param_idx], col='brown2', lwd=2, 
+                                        main=paste("Autocorrelation -", param_names[param_idx]))
+                }
+            }
 
-        sae_plot <- function() {
-            plot(modelhb$plot[[length(modelhb$plot)-1]], col='brown2', lwd=2)
-        }
-        """
+            sae_trace_density <- function(param_idx = NULL) {
+                if (is.null(param_idx)) {
+                    plot(result_mcmc, col='brown2', lwd=2)
+                } else {
+                    plot(result_mcmc[,param_idx], col='brown2', lwd=2,
+                            main=paste("Trace and Density -", param_names[param_idx]))
+                }
+            }
+            """
         
         ro.r(script_png)
         
-        r_objects = ro.r("ls()")
-        
-        import rpy2.robjects.lib.grdevices as grdevices
-        
-        plots = [obj for obj in r_objects if obj.startswith("sae_")]
-
+        # Create temp directory for plots
         temp_dir = os.path.join(os.getcwd(), "temp")
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
+        
         plot_paths = []
-
-        for plot_name in plots:
-            plot_path = os.path.join(temp_dir, f"{plot_name}.png")
-            with png_device(plot_path):
-                ro.r(f"{plot_name}()")
-            plot_paths.append(plot_path)
+        
+        # Get number of parameters
+        n_params = ro.r("length(param_names)")[0]
+        param_names = ro.r("param_names")
+        
+        # Generate autocorrelation plots - all parameters in one plot
+        autocorr_path = os.path.join(temp_dir, "sae_autocorr_all_plot.png")
+        try:
+            grdevices.dev_off()
+        except:
+            pass
+        
+        grdevices.png(file=autocorr_path, width=1200, height=800, res=100)
+        try:
+            ro.r("sae_autocorr()")
+            plot_paths.append(autocorr_path)
+        except Exception as e:
+            print(f"Error creating autocorrelation plot (all): {e}")
+        finally:
+            try:
+                grdevices.dev_off()
+            except:
+                pass
+        
+        # Generate individual autocorrelation plots for each parameter
+        for i in range(int(n_params)):
+            param_name = param_names[i].replace("[", "_").replace("]", "")
+            autocorr_param_path = os.path.join(temp_dir, f"sae_autocorr_{param_name}_plot.png")
+            try:
+                grdevices.dev_off()
+            except:
+                pass
+            
+            grdevices.png(file=autocorr_param_path, width=800, height=600, res=100)
+            try:
+                ro.r(f"sae_autocorr({i+1})")
+                plot_paths.append(autocorr_param_path)
+            except Exception as e:
+                print(f"Error creating autocorrelation plot for {param_name}: {e}")
+            finally:
+                try:
+                    grdevices.dev_off()
+                except:
+                    pass
+        
+        # Generate trace and density plots - all parameters in one plot
+        trace_density_path = os.path.join(temp_dir, "sae_trace_density_all_plot.png")
+        try:
+            grdevices.dev_off()
+        except:
+            pass
+            
+        grdevices.png(file=trace_density_path, width=1200, height=800, res=100)
+        try:
+            ro.r("sae_trace_density()")
+            plot_paths.append(trace_density_path)
+        except Exception as e:
+            print(f"Error creating trace/density plot (all): {e}")
+        finally:
+            try:
+                grdevices.dev_off()
+            except:
+                pass
+        
+        # Generate individual trace and density plots for each parameter
+        for i in range(int(n_params)):
+            param_name = param_names[i].replace("[", "_").replace("]", "")
+            trace_param_path = os.path.join(temp_dir, f"sae_trace_density_{param_name}_plot.png")
+            try:
+                grdevices.dev_off()
+            except:
+                pass
+            
+            grdevices.png(file=trace_param_path, width=800, height=600, res=100)
+            try:
+                ro.r(f"sae_trace_density({i+1})")
+                plot_paths.append(trace_param_path)
+            except Exception as e:
+                print(f"Error creating trace/density plot for {param_name}: {e}")
+            finally:
+                try:
+                    grdevices.dev_off()
+                except:
+                    pass
         
             
         ro.r('estimated_value_hb <- modelhb$Est')
@@ -88,7 +183,7 @@ def run_model_hb_area(parent):
         ro.r('coefficient_hb <- modelhb$coefficient')
         
         refvar = ro.globalenv['refVar_hb']
-        refvar = int(float(refvar[0]))
+        refvar = str(float(refvar[0]))
         coefficient = ro.conversion.rpy2py(ro.globalenv['coefficient_hb'])
         coefficient.reset_index(inplace=True)
         coefficient.columns = ['Parameter'] + list(coefficient.columns[1:])
@@ -106,14 +201,20 @@ def run_model_hb_area(parent):
         hb_75 = estimated_value["75%"]
         hb_97_5 = estimated_value["97.5%"]
         hb_sd = estimated_value["SD"]
+        rse = abs(hb_sd / hb_mean ) * 100
         df = pl.DataFrame({
             'HB Mean': hb_mean,
             'HB 25%': hb_25,
             'HB 50%': hb_50,
             'HB 75%': hb_75,
             'HB 97.5%': hb_97_5,
-            'Standard Deviation': hb_sd,})
+            'Standard Deviation': hb_sd,
+            'RSE': rse
+        })
         ro.r("detach(datahb)")
+        ro.r("rm(datahb)")
+        ro.r("rm(modelhb)")
+        ro.r("gc()")
         
         error = False
         return results, error, df, plot_paths

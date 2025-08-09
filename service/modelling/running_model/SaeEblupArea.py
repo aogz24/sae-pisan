@@ -45,7 +45,7 @@ def run_model_eblup_area(parent):
         itteration = ro.globalenv['iterations']
         itteration = int(float(itteration[0]))
         refvar = ro.globalenv['refvar']
-        refvar = int(float(refvar[0]))
+        refvar = str(float(refvar[0]))
         goodness_r = ro.conversion.rpy2py(ro.globalenv['goodness'])
         goodness = pl.DataFrame({
             'Logarithmic Likelihood': [goodness_r[0]],
@@ -74,6 +74,8 @@ def run_model_eblup_area(parent):
             'MSE': mse,
             'RSE (%)': rse})
         error = False
+        ro.r('rm(data, model, estimated_value, mse, method, convergence, iterations, refvar, goodness)')
+        ro.r("gc()")  # Clear R memory
         return results, error, df
         
     except Exception as e:

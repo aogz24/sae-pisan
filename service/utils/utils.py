@@ -157,6 +157,8 @@ import polars as pl
 from datetime import datetime
 import json
 import uuid
+from PyQt6.QtWidgets import QPushButton
+from PyQt6.QtWidgets import QHBoxLayout, QWidget, QSizePolicy
 
 def display_script_and_output(parent, r_script, results, plot_paths=None, timestamps=None):
     """
@@ -193,8 +195,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     card_layout.setSpacing(8)
 
     # Bagian Script
-    label_script = QLabel("<b>R Script:</b>")
-    label_script.setStyleSheet("color: #333; margin-bottom: 5px;")
     out = {}
     out["r_script"] = r_script  # Simpan r_script ke dalam data parent untuk referensi
     result = {}
@@ -209,15 +209,16 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     script_box = QTextEdit()
     script_box.setPlainText(cleaned_script)
     script_box.setReadOnly(True)
-    script_box.setStyleSheet("""
-        QTextEdit {
+    script_box.hide()
+    script_box.setStyleSheet(f"""
+        QTextEdit {{
             background-color: #fff;
             border: 1px solid #ccc;
             border-radius: 4px;
             padding: 5px;
             font-family: "Courier New", Courier, monospace;
             font-size: {parent.font_size}px;
-        }
+        }}
     """)
 
     # Hitung tinggi berdasarkan jumlah baris, batasi hingga max_height
@@ -233,9 +234,41 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
         else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
 
+    # Label dengan tombol show/hide di dalamnya (pakai layout horizontal)
+    label_widget = QWidget()
+    label_widget.setStyleSheet("QWidget { color: #333; margin-top: 10px; margin-bottom: 5px;}")
+    label_layout = QHBoxLayout(label_widget)
+    label_layout.setContentsMargins(0, 0, 0, 0)
+    label_layout.setSpacing(5)
+    
+    label_script = QLabel("<b>R Script:</b>")
+    label_script.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+    label_layout.addWidget(label_script, 0, Qt.AlignmentFlag.AlignLeft)
+
+
+    toggle_btn = QPushButton("▶")
+    toggle_btn.setStyleSheet("font-size: 14px; border: none; background: transparent;")
+    toggle_btn.setCheckable(True)
+    toggle_btn.setChecked(False)
+    toggle_btn.setMaximumWidth(22)
+    toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def toggle_script():
+        if toggle_btn.isChecked():
+            script_box.show()
+            toggle_btn.setText("▼")
+        else:
+            script_box.hide()
+            toggle_btn.setText("▶")
+
+    toggle_btn.toggled.connect(toggle_script)
+    label_layout.addWidget(toggle_btn, 0, Qt.AlignmentFlag.AlignRight)
+    label_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
     # Tambahkan ke layout
-    card_layout.addWidget(label_script)
+    card_layout.addWidget(label_widget)
     card_layout.addWidget(script_box)
+
     # Bagian Output (jika ada)
     if isinstance(results, dict):
         label_output = QLabel("<b>Output:</b>")
