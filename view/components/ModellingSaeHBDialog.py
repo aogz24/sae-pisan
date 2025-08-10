@@ -169,6 +169,12 @@ class ModelingSaeHBDialog(QDialog):
         self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.right_layout.addWidget(self.vardir_label)
         self.right_layout.addWidget(self.vardir_list)
+        
+        self.assign_vardir_button.setEnabled(False)
+        self.assign_vardir_button.setVisible(False)
+        self.vardir_label.setVisible(False)
+        self.vardir_list.setVisible(False)
+        
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         self.split_layout.addLayout(self.left_layout)
@@ -553,7 +559,7 @@ class ModelingSaeHBDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        if not self.vardir_var or self.vardir_var == [""]:
+        if self.Normal and (not self.vardir_var or self.vardir_var == [""]):
             QMessageBox.warning(self, "Warning", "Varians Direct cannot be empty.")
             self.ok_button.setEnabled(True)
             self.option_button.setEnabled(True)

@@ -14,10 +14,13 @@ for i in range(num_datasets):
     x1 = np.random.normal(0, 1, num_rows)
     x2 = np.random.normal(0, 1, num_rows)
     x3 = np.random.normal(0, 1, num_rows)
-    x4 = np.random.choice([0, 1], num_rows)
-    x5 = np.random.choice([0, 1, 2], num_rows)
+    x4 = np.random.choice(["a", "b"], num_rows)
+    x5 = np.random.choice(["sd", "smp", "sma"], num_rows)
     
-    X = np.vstack((x1, x2, x3, x4, x5)).T
+    x4_encoded = np.where(x4 == "a", 0, 1)  # a=0, b=1
+    x5_encoded = np.where(x5 == "sd", 0, np.where(x5 == "smp", 1, 2))  # sd=0, smp=1, sma=2
+    
+    X = np.vstack((x1, x2, x3, x4_encoded, x5_encoded)).T
     ui = np.random.normal(0, 1, num_rows)
     ei = np.random.normal(0, 1, num_rows)
     
@@ -31,7 +34,13 @@ for i in range(num_datasets):
     
     y= np.random.beta(alpha, beta_param)
     
-    df = pd.DataFrame(X, columns=['x1', 'x2', 'x3', 'x4', 'x5'])
+    df = pd.DataFrame({
+        'x1': x1,
+        'x2': x2,
+        'x3': x3,
+        'x4': x4,  # Original categorical values ("a", "b")
+        'x5': x5   # Original categorical values ("sd", "smp", "sma")
+    })
     df['y'] = y
     
     rse = np.random.uniform(10,50, size=num_rows)

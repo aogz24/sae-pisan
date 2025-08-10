@@ -245,63 +245,83 @@ def generate_r_script(parent):
     """
     
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
-    auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     
-    dummy_vars = []
-    dummy_creation_script = ""
-    if parent.as_factor_var:
-        for var in parent.as_factor_var:
-            var_name = var.split(" [")[0].replace(" ", "_")
-            dummy_creation_script += f'dummies_{var_name} <- model.matrix(~{var_name} - 1, datahb)\n'
-            dummy_creation_script += f'datahb <- cbind(datahb, dummies_{var_name})\n'
-            dummy_vars.append(f'colnames(dummies_{var_name})')
-
-    # Gabungkan semua dummy variable ke formula
-    dummy_vars_str = ""
-    if dummy_vars:
-        dummy_names = []
-        for var in parent.as_factor_var:
-            var_name = var.split(" [")[0].replace(" ", "_")
-            # You don't know the levels in Python, so use a placeholder for R to expand
-            dummy_names.append(f'colnames(dummies_{var_name})')
-        # Instead of using paste() in formula, expand in R before formula creation
-        dummy_vars_str = " + ".join([f'`{name}`' for name in dummy_names])
+    # Start R script
+    r_script = '# Change variable names (optional)\n'
+    r_script += 'names(datahb) <- gsub(" ", "_", names(datahb))\n\n'
     
+    # Create dummy variables if needed
+    if parent.as_factor_var:
+        r_script += '# Make dummy variables for factor variables\n'
+        for var in parent.as_factor_var:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            r_script += f'dummies_{var_name} <- model.matrix(~{var_name} - 1, datahb)\n'
+            r_script += f'datahb <- cbind(datahb, dummies_{var_name})\n'
+        r_script += '\n'
+
+    # Build RHS variables list
+    r_script += '# Get variabel RHS\n'
+    r_script += 'rhs_vars <- c('
     
-    r_script = f'names(datahb) <- gsub(" ", "_", names(datahb)); #Replace space with underscore\n'
-    r_script += dummy_creation_script
-
-    # Build the formula in R after dummies are created
-    r_script += "all_vars <- names(datahb)\n"
+    rhs_components = []
+    
+    # Add auxiliary variables
+    if parent.auxilary_vars:
+        for var in parent.auxilary_vars:
+            var_name = var.split(" [")[0].replace(" ", "_")
+            rhs_components.append(f'"{var_name}"')
+    
+    # Add dummy variables from factor variables
     if parent.as_factor_var:
         for var in parent.as_factor_var:
             var_name = var.split(" [")[0].replace(" ", "_")
-            r_script += f'all_vars <- c(all_vars, colnames(dummies_{var_name}))\n'
-
-    # Build the formula string in R
-    r_script += "rhs_vars <- c()"
-    if auxilary_vars != '""':
-        r_script += f'\nrhs_vars <- c(rhs_vars, "{auxilary_vars}")'
-    if parent.as_factor_var:
-        for var in parent.as_factor_var:
-            var_name = var.split(" [")[0].replace(" ", "_")
-            r_script += f'\nrhs_vars <- c(rhs_vars, colnames(dummies_{var_name}))'
-    r_script += '\nformula_str <- paste('
+            # Add the dummy variable columns to RHS
+            r_script_temp = f'colnames(dummies_{var_name})'
+            rhs_components.append(r_script_temp)
+    
+    if rhs_components:
+        # Handle the case where we have both regular vars and dummy vars
+        regular_vars = [comp for comp in rhs_components if comp.startswith('"')]
+        dummy_vars = [comp for comp in rhs_components if not comp.startswith('"')]
+        
+        if regular_vars and dummy_vars:
+            r_script += ', '.join(regular_vars) + ', ' + ', '.join(dummy_vars)
+        elif regular_vars:
+            r_script += ', '.join(regular_vars)
+        elif dummy_vars:
+            r_script += ', '.join(dummy_vars)
+    
+    r_script += ')  # \n\n'
+    
+    # Build formula
+    r_script += '# Arrange Formula\n'
     if of_interest_var != '""':
-        r_script += f'"{of_interest_var}", "~", paste(rhs_vars, collapse = " + "))\n'
+        r_script += f'formula_str <- paste("{of_interest_var} ~", paste(rhs_vars, collapse = " + "))\n'
     else:
-        r_script += '"", "~", paste(rhs_vars, collapse = " + "))\n'
-    r_script += "formula <- as.formula(formula_str)\n"
+        r_script += 'formula_str <- paste("~", paste(rhs_vars, collapse = " + "))\n'
+    r_script += 'formula <- as.formula(formula_str)\n\n'
     
-    if parent.selection_method=="Stepwise":
-        parent.selection_method = "both"
-    if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
-        r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
-        r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'modelhb<-{parent.model_method} (final_formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in} , data=datahb)'
+    
+    # Handle stepwise selection
+    if parent.selection_method and parent.selection_method != "None" and (parent.auxilary_vars or parent.as_factor_var):
+        selection_method = "both" if parent.selection_method == "Stepwise" else parent.selection_method.lower()
+        r_script += f'# Stepwise selection\n'
+        r_script += f'stepwise_model <- step(lm(formula, data=datahb), direction="{selection_method}")\n'
+        r_script += f'final_formula <- formula(stepwise_model)\n\n'
+        formula_to_use = "final_formula"
     else:
-        r_script += f'modelhb<-{parent.model_method} (formula, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in ={parent.burn_in}, data=datahb)'
+        formula_to_use = "formula"
+    
+    # Generate model
+    r_script += '# Running model\n'
+    
+    if parent.Normal and vardir_var != '""':
+        r_script += f"vardir <- datahb${vardir_var}\n"
+        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, vardir = "{vardir_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
+    else:
+        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
+    
     return r_script
 
 def show_r_script(parent):

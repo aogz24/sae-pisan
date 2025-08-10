@@ -154,12 +154,17 @@ def run_model_eblup_unit(parent):
         estimated_value = ro.r('estimated_value_unit')
         n_size = ro.r('n_size_unit')
         mse = ro.r('mse_unit')
+        rse = abs(mse**0.5/estimated_value*100)
         df = pl.DataFrame({
             'Domain': domain,
             'Eblup': estimated_value,
             'Sample size': n_size,
-            'MSE': mse})
+            'MSE': mse,
+            'RSE': rse
+        })
         error = False
+        ro.r('rm(data_unit, domain_unit, estimated_value_unit, n_size_unit, mse_unit, model_unit)')
+        ro.r("gc()")  # Clear R memory
         return results, error, df
         
     except Exception as e:
