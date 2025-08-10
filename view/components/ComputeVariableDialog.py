@@ -182,7 +182,7 @@ class ComputeVariableDialog(QDialog):
             variable1 = self.variable1_selection.currentText()
             script = script.replace("{variable1}", variable1)
 
-        elif template_name == "Power Transformation":
+        elif template_name in ["Power Transformation", "Box-Cox Transformation"]:
             self.variable_selected_label.setVisible(True)
             self.variable1_selection.setVisible(True)
             self.variable2_label.setVisible(False)
