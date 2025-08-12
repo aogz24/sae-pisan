@@ -122,7 +122,7 @@ class CorrelationMatrixDialog(QDialog):
         method_layout = QVBoxLayout()
         self.pearson_checkbox = QCheckBox("Pearson")
         self.spearman_checkbox = QCheckBox("Spearman")
-        self.kendall_checkbox = QCheckBox("Kendall")
+        self.kendall_checkbox = QCheckBox("Kendall’s Tau")
         self.pearson_checkbox.stateChanged.connect(self.generate_r_script)
         self.spearman_checkbox.stateChanged.connect(self.generate_r_script)
         self.kendall_checkbox.stateChanged.connect(self.generate_r_script)
@@ -386,9 +386,13 @@ class CorrelationMatrixDialog(QDialog):
         if not r_script.strip():
             if len(selected_columns) < 2:
                 QMessageBox.warning(self, "Select More Columns", "Please select at least two numeric columns to generate the correlation matrix.")
+                return
+            elif not (self.pearson_checkbox.isChecked() or self.spearman_checkbox.isChecked() or self.kendall_checkbox.isChecked()):
+                QMessageBox.warning(self, "Select Method", "Please select at least one correlation method")
+                return
             else:
                 QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
+                return
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)

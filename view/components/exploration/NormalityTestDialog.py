@@ -437,11 +437,11 @@ class NormalityTestDialog(QDialog):
             for method in selected_methods:
                 if method == "shapiro":
                     lines.append(
-                        f"normality_results_{safe_name}_shapiro <- shapiro.test(data${aes_var})"
+                        f"normality_results_{safe_name}_shapiro_wilk <- shapiro.test(data${aes_var})"
                     )
                 elif method == "jarque_bera":
                     lines.append(
-                        f"normality_results_{safe_name}_jarque <- tseries::jarque.bera.test(data${aes_var})"
+                        f"normality_results_{safe_name}_jarque_bera <- tseries::jarque.bera.test(data${aes_var})"
                     )
                 elif method == "lilliefors":
                     lines.append(
