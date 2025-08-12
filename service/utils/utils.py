@@ -426,10 +426,11 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
                 result["Plot"].append(dest_path)
                 os.remove(plot_path)
                 
-    # Tambahkan card ke layout utama
     parent.output_layout.addWidget(card_frame)
-    # parent.output_layout.addStretch()
-    parent.tab_widget.setCurrentWidget(parent.tab3)
+    if hasattr(parent, "scroll_area"):
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(0, lambda: parent.scroll_area.verticalScrollBar().setValue(parent.scroll_area.verticalScrollBar().maximum()))
+        parent.tab_widget.setCurrentWidget(parent.tab3)
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
     parent.data.append(out)
