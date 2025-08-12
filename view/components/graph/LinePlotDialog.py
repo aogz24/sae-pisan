@@ -444,6 +444,18 @@ class LinePlotDialog(QDialog):
     
     def accept(self):
         r_script = self.script_box.toPlainText()
+        selected_horizontal = self.get_selected_horizontal()
+        selected_vertical = self.get_selected_vertical()
+
+        if not selected_horizontal:
+            QMessageBox.warning(self, "No Variable", "Please select one variable for the Horizontal Axis.")
+            return
+        if len(selected_horizontal) > 1:
+            QMessageBox.warning(self, "Too Many Variables", "Only one variable is allowed for the Horizontal Axis.")
+            return
+        if not selected_vertical:
+            QMessageBox.warning(self, "No Variable", "Please select at least one variable for the Vertical Axis.")
+            return
         if not r_script:
             QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return

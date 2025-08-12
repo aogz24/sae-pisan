@@ -382,8 +382,12 @@ class CorrelationMatrixDialog(QDialog):
 
     def accept(self):
         r_script = self.script_box.toPlainText()
-        if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
+        selected_columns = self.get_selected_columns()
+        if not r_script.strip():
+            if len(selected_columns) < 2:
+                QMessageBox.warning(self, "Select More Columns", "Please select at least two numeric columns to generate the correlation matrix.")
+            else:
+                QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")

@@ -390,11 +390,12 @@ class BoxPlotDialog(QDialog):
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
-        if len(self.selected_model.stringList()) == 0:
-            QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
-            return
+            if len(self.selected_model.stringList()) == 0:
+                QMessageBox.warning(self, "No Variables Selected", "Please select at least one variable.")
+                return
+            else:
+                QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
+                return
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)

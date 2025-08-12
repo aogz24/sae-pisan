@@ -363,9 +363,14 @@ class SummaryDataDialog(QDialog):
         Runs the R script and handles the result, displaying messages based on success or failure.
         """
         r_script = self.script_box.toPlainText()
+        selected_columns = self.get_selected_columns()
         if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
+            if not selected_columns:
+                QMessageBox.warning(self, "No Variables", "Please select at least one numeric variable.")
+                return
+            else:
+                QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
+                return
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.icon_label.setVisible(True)

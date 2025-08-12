@@ -462,17 +462,18 @@ class VariableSelectionDialog(QDialog):
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
-
-        if len(self.get_selected_independent_variables()) < 2:
-            QMessageBox.warning(self, "Invalid Independent Variables", "Please select at least two independent variables.")
-            return
-        
-        selected_methods = self.get_selected_methods()
-        if not selected_methods:
-            QMessageBox.warning(self, "Invalid Selection Methods", "Please select at least one selection method.")
-            return
+            if len(self.get_selected_independent_variables()) < 2:
+                QMessageBox.warning(self, "Invalid Independent Variables", "Please select at least two independent variables.")
+                return
+            elif not self.get_selected_dependent_variable():
+                QMessageBox.warning(self, "Invalid Dependent Variable", "Please select a dependent variable.")
+                return
+            elif not self.get_selected_methods():
+                QMessageBox.warning(self, "Invalid Selection Methods", "Please select at least one selection method.")
+                return
+            else:
+                QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
+                return
         
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
