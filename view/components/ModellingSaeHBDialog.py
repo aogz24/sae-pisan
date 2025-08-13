@@ -250,9 +250,10 @@ class ModelingSaeHBDialog(QDialog):
         self.as_factor_var = []
         self.selection_method = "None"
         self.iter_update="3"
-        self.iter_mcmc="2000"
+        self.iter_mcmc="10000"
+        self.thin="2"
         
-        self.burn_in="1000"
+        self.burn_in="2000"
         
         self.run_model_finished.connect(self.on_run_model_finished)
         
