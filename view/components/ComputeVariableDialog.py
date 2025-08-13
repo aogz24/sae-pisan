@@ -169,21 +169,27 @@ class ComputeVariableDialog(QDialog):
             self.variable1_selection.setVisible(True)
             self.variable2_label.setVisible(True)
             self.variable2_selection.setVisible(True)
+            self.lambda_label.setVisible(False)
+            self.lambda_selection.setVisible(False)
             variable1 = self.variable1_selection.currentText()
             variable2 = self.variable2_selection.currentText()
             script = script.replace("{variable1}", variable1).replace("{variable2}", variable2)
 
         elif template_name in ["Log Transformation", "Natural Log (ln) Transformation", "Logit Transformation"]:
             self.variable_selected_label.setVisible(True)
+            self.variable1_label.setVisible(False)
             self.variable1_selection.setVisible(True)
             self.variable2_label.setVisible(False)
             self.variable2_selection.setVisible(False)
+            self.lambda_label.setVisible(False)
+            self.lambda_selection.setVisible(False)
 
             variable1 = self.variable1_selection.currentText()
             script = script.replace("{variable1}", variable1)
 
         elif template_name in ["Power Transformation", "Box-Cox Transformation"]:
             self.variable_selected_label.setVisible(True)
+            self.variable1_label.setVisible(False)
             self.variable1_selection.setVisible(True)
             self.variable2_label.setVisible(False)
             self.variable2_selection.setVisible(False)
