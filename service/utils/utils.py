@@ -429,7 +429,8 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     parent.output_layout.addWidget(card_frame)
     if hasattr(parent, "scroll_area"):
         from PyQt6.QtCore import QTimer
-        QTimer.singleShot(0, lambda: parent.scroll_area.verticalScrollBar().setValue(parent.scroll_area.verticalScrollBar().maximum()))
+        print(parent.scroll_area.verticalScrollBar().maximum())
+        QTimer.singleShot(100, lambda: parent.scroll_area.verticalScrollBar().setValue(parent.scroll_area.verticalScrollBar().maximum()))
         parent.tab_widget.setCurrentWidget(parent.tab3)
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
         parent.data = []
