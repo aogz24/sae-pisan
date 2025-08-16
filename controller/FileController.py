@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.styles import ParagraphStyle
 import io
+from service.command.LoadDataCommand import LoadDataCommand
+from service.command.LoadSecondaryDataCommand import LoadSecondaryDataCommand
 
 class FileController:
     """
@@ -115,8 +117,10 @@ class FileController:
         data = self.open_file()
         if data is None:
             return
-        else:    
-            self.model1.set_data(data)
+        else:
+            # Create and execute the LoadDataCommand
+            command = LoadDataCommand(self.model1, data)
+            self.model1.undo_stack.push(command)
             self.view.update_table(1, self.model1)
             QMessageBox.information(self.view, "Success", "File loaded successfully!")
             self.view.autosave_data()
@@ -167,20 +171,10 @@ class FileController:
             option = dialog.get_option()
         else:
             return
-        if option == 0:
-            common_cols = set(main_df.columns) & set(data.columns)
-            rename_map = {col: f"{col}_duplicate" for col in common_cols}
-            data = data.rename(rename_map)
-            merged_data = pl.concat([main_df, data], how="horizontal")
-        else:
-            for col in set(main_df.columns) & set(data.columns):
-                main_dtype = main_df[col].dtype
-                try:
-                    data = data.with_columns(pl.col(col).cast(main_dtype, strict=False))
-                except Exception as e:
-                    QMessageBox.critical(self.view, "Error", f"Failed to cast column '{col}': {e}")
-            merged_data = pl.concat([main_df, data], how="diagonal")
-        self.model1.set_data(merged_data)
+            
+        # Create and execute the LoadSecondaryDataCommand
+        command = LoadSecondaryDataCommand(self.model1, main_df, data, option)
+        self.model1.undo_stack.push(command)
         self.view.update_table(1, self.model1)
         self.view.autosave_data()
         
