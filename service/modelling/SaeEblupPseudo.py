@@ -159,6 +159,30 @@ def assign_domain(parent):
             parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
 
+def assign_sample_weight(parent):
+    """
+    Assigns a selected sample weight variable from the variables list to the sample weight variable of the parent object.
+    Parameters:
+    parent (object): The parent object that contains the variables list and sample weight variable.
+    The function performs the following steps:
+    1. Retrieves the selected indexes from the parent's variables list.
+    2. If there are selected indexes, it assigns the first selected index's data to the parent's sample weight variable.
+    3. Updates the parent's sample weight model with the new sample weight variable.
+    4. Removes the selected index from the variables list.
+    5. Calls the show_r_script function with the parent object.
+    """
+    
+    selected_indexes = parent.variables_list.selectedIndexes()
+    if selected_indexes:
+        old_var = parent.sample_weight_var[0] if parent.sample_weight_var else None
+        parent.sample_weight_var = [selected_indexes[0].data()]
+        parent.sample_weight_model.setStringList(parent.sample_weight_var)
+        parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
+        show_r_script(parent)
+
 def unassign_variable(parent):
     """
     Unassigns selected variables from various lists in the parent object and adds them back to the variables list.
@@ -213,7 +237,7 @@ def unassign_variable(parent):
         parent.as_factor_var = [var for var in parent.as_factor_var if var not in selected_items]
         parent.as_factor_model.setStringList(parent.as_factor_var)
         for item in selected_items:
-            parent.variables_list.model().insertRow(0)  # Add back to variables list
+            parent.variables_list.model().insertRow(0)
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
         show_r_script(parent)
         
@@ -225,7 +249,18 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
-        show_r_script()
+        show_r_script(parent)
+        return
+        
+    selected_indexes = parent.sample_weight_list.selectedIndexes()
+    if selected_indexes:
+        selected_items = [index.data() for index in selected_indexes]
+        parent.sample_weight_var = [var for var in parent.sample_weight_var if var not in selected_items]
+        parent.sample_weight_model.setStringList(parent.sample_weight_var)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
+        show_r_script(parent)
 
 def get_selected_variables(parent):
     """
@@ -262,6 +297,7 @@ def generate_r_script(parent):
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
+    sample_weight_var = f'"{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}"' if parent.sample_weight_var else 'NULL'
     
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
@@ -280,9 +316,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_pseudo<-fh(final_formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-fh(final_formula, vardir="{vardir_var}", combined_data=data_pseudo, domains={domain_var}, weight={sample_weight_var}, method="reblupbc", MSE=TRUE, mse_type="pseudo")'
     else:
-        r_script += f'model_pseudo<-fh(formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-fh(formula, vardir="{vardir_var}", combined_data=data_pseudo, domains={domain_var}, weight={sample_weight_var}, method="reblupbc", MSE=TRUE, mse_type="pseudo")'
     return r_script
 
 def show_r_script(parent):

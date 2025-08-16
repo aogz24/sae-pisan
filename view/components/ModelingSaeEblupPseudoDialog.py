@@ -44,6 +44,7 @@ class ModelingSaePseudoDialog(QDialog):
         assign_as_factor_button (QPushButton): Button to assign variables as factors.
         assign_vardir_button (QPushButton): Button to assign direct variance.
         assign_domain_button (QPushButton): Button to assign domain.
+        assign_sample_weight_button (QPushButton): Button to assign sample weight.
         of_interest_label (QLabel): Label for the variable of interest list.
         of_interest_list (QListView): List view for the variable of interest.
         of_interest_model (QStringListModel): Model for the variable of interest list.
@@ -59,6 +60,9 @@ class ModelingSaePseudoDialog(QDialog):
         domain_label (QLabel): Label for the domain list.
         domain_list (QListView): List view for the domain.
         domain_model (QStringListModel): Model for the domain list.
+        sample_weight_label (QLabel): Label for the sample weight list.
+        sample_weight_list (QListView): List view for the sample weight.
+        sample_weight_model (QStringListModel): Model for the sample weight list.
         option_button (QPushButton): Button to show options.
         text_script (QLabel): Label for the R script.
         icon_label (QLabel): Label for the running icon.
@@ -69,6 +73,7 @@ class ModelingSaePseudoDialog(QDialog):
         vardir_var (list): List of direct variance variables.
         as_factor_var (list): List of factors of auxiliary variables.
         domain_var (list): List of domain variables.
+        sample_weight_var (list): List of sample weight variables.
         selection_method (str): Method of selection.
         finnish (bool): Flag indicating if the process is finished.
         stop_thread (threading.Event): Event to stop the thread.
@@ -131,18 +136,22 @@ class ModelingSaePseudoDialog(QDialog):
         self.assign_vardir_button.setObjectName("arrow_button")
         self.assign_domain_button = QPushButton("🡆")
         self.assign_domain_button.setObjectName("arrow_button")
+        self.assign_sample_weight_button = QPushButton("🡆")
+        self.assign_sample_weight_button.setObjectName("arrow_button")
 
         self.assign_of_interest_button.clicked.connect(lambda: self.handle_assign(self.of_interest_list))
         self.assign_aux_button.clicked.connect(lambda: self.handle_assign(self.auxilary_list))
         self.assign_vardir_button.clicked.connect(lambda: self.handle_assign(self.vardir_list))
         self.assign_as_factor_button.clicked.connect(lambda: self.handle_assign(self.as_factor_list))
         self.assign_domain_button.clicked.connect(lambda: self.handle_assign(self.domain_list))
+        self.assign_sample_weight_button.clicked.connect(lambda: self.handle_assign(self.sample_weight_list))
         self.unassign_button.clicked.connect(self.handle_unassign)
         self.middle_layout.addWidget(self.assign_of_interest_button)
         self.middle_layout.addWidget(self.assign_aux_button)
         self.middle_layout.addWidget(self.assign_as_factor_button)
         self.middle_layout.addWidget(self.assign_vardir_button)
         self.middle_layout.addWidget(self.assign_domain_button)
+        self.middle_layout.addWidget(self.assign_sample_weight_button)
 
         # Layout kanan untuk daftar dependen, independen, vardir, dan major area
         self.right_layout = QVBoxLayout()
@@ -187,6 +196,14 @@ class ModelingSaePseudoDialog(QDialog):
         self.domain_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.right_layout.addWidget(self.domain_label)
         self.right_layout.addWidget(self.domain_list)
+        
+        self.sample_weight_label = QLabel("Sample Weight:")
+        self.sample_weight_list = DragDropListView(parent=self)
+        self.sample_weight_model = QStringListModel()
+        self.sample_weight_list.setModel(self.sample_weight_model)
+        self.sample_weight_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.right_layout.addWidget(self.sample_weight_label)
+        self.right_layout.addWidget(self.sample_weight_list)
 
         # Menambahkan layout kiri, tengah, dan kanan ke layout utama
         self.split_layout.addLayout(self.left_layout)
@@ -358,7 +375,7 @@ class ModelingSaePseudoDialog(QDialog):
         # Get selected items from any right-side list
         right_side_lists = [
             self.of_interest_list, self.auxilary_list, self.as_factor_list, 
-            self.vardir_list, self.domain_list
+            self.vardir_list, self.domain_list, self.sample_weight_list
         ]
         
         selected_from_right = []
@@ -394,7 +411,8 @@ class ModelingSaePseudoDialog(QDialog):
             self.auxilary_list: self.auxilary_model,
             self.as_factor_list: self.as_factor_model,
             self.vardir_list: self.vardir_model,
-            self.domain_list: self.domain_model
+            self.domain_list: self.domain_model,
+            self.sample_weight_list: self.sample_weight_model
         }
         
         # Find which list has selected items
@@ -458,6 +476,8 @@ class ModelingSaePseudoDialog(QDialog):
                 assign_vardir(self)
             elif target_list == self.domain_list:
                 assign_domain(self)
+            elif target_list == self.sample_weight_list:
+                assign_sample_weight(self)
         
         # Find source list
         source_list = None
@@ -473,7 +493,8 @@ class ModelingSaePseudoDialog(QDialog):
             self.auxilary_list: self.auxilary_model,
             self.as_factor_list: self.as_factor_model,
             self.vardir_list: self.vardir_model,
-            self.domain_list: self.domain_model
+            self.domain_list: self.domain_model,
+            self.sample_weight_list: self.sample_weight_model
         }
 
         # Drag dari variables_list ke kanan (assign)
@@ -487,7 +508,7 @@ class ModelingSaePseudoDialog(QDialog):
                 unassign_variable(self)
         
         # Drag between right-side lists (unassign then assign)
-        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list, self.domain_list]:
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list, self.domain_list, self.sample_weight_list]:
             if source_list == target_list:
                 # Same list, do nothing
                 return
@@ -532,12 +553,14 @@ class ModelingSaePseudoDialog(QDialog):
         self.auxilary_model.setStringList([])
         self.as_factor_model.setStringList([])
         self.domain_model.setStringList([])
+        self.sample_weight_model.setStringList([])
         self.of_interest_model.setStringList([])
         self.of_interest_var = []
         self.auxilary_vars = []
         self.vardir_var = []
         self.as_factor_var = []
         self.domain_var = []
+        self.sample_weight_var = []
         self.selection_method = "None"
     
     def accept(self):
@@ -559,6 +582,14 @@ class ModelingSaePseudoDialog(QDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
+        if not self.sample_weight_var or self.sample_weight_var == [""]:
+            reply = QMessageBox.warning(self, "Warning", "Sample Weight is empty. Do you want to continue?",
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.No:
+                self.ok_button.setEnabled(True)
+                self.option_button.setEnabled(True)
+                self.ok_button.setText("Run Model")
+                return
         
         r_script = get_script(self)
         if not check_script(r_script):
