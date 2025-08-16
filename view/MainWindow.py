@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame, QSpacerItem,
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, 
-    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
+    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel, QHeaderView
 )
-from PyQt6.QtCore import Qt, QSize, QTimer 
+from PyQt6.QtCore import Qt, QSize, QTimer, QItemSelectionModel, QEvent
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
+from view.components.ExcelLikeItemDelegate import ExcelLikeItemDelegate
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -277,6 +278,37 @@ class MainWindow(QMainWindow):
         self.spreadsheet.horizontalHeader().sectionDoubleClicked.connect(self.rename_column)
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
+        
+        # Excel-like editing setup
+        self.excel_delegate = ExcelLikeItemDelegate(self.spreadsheet)
+        self.spreadsheet.setItemDelegate(self.excel_delegate)
+        
+        # Set edit triggers to make it Excel-like
+        self.spreadsheet.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked | 
+            QAbstractItemView.EditTrigger.AnyKeyPressed |
+            QAbstractItemView.EditTrigger.EditKeyPressed
+        )
+        
+        # Enable tab navigation between cells
+        self.spreadsheet.setTabKeyNavigation(True)
+        
+        # Adjust header behavior to be more Excel-like
+        self.spreadsheet.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.spreadsheet.horizontalHeader().setStretchLastSection(True)
+        
+        # Allow cell resizing more like Excel
+        self.spreadsheet.horizontalHeader().setSectionsMovable(True)
+        self.spreadsheet.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        
+        # Connect cell changed signal to move to next cell
+        self.spreadsheet.installEventFilter(self)
+        
+        # Set alternating row colors for better readability (like Excel)
+        self.spreadsheet.setAlternatingRowColors(True)
+        
+        # Enable sorting when clicking on headers (like Excel)
+        self.spreadsheet.setSortingEnabled(True)
 
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
@@ -343,7 +375,7 @@ class MainWindow(QMainWindow):
         self.load_action.setStatusTip("Ctrl+O")
         
         self.load_secondary_data = QAction("Open File for Secondary Data", self)
-        self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
+        self.load_secondary_data.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_2))
         self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
         
@@ -535,22 +567,22 @@ class MainWindow(QMainWindow):
         
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
-        self.go_to_start_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Up))
+        self.go_to_start_row_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Up))
         self.go_to_start_row_action.triggered.connect(lambda : go_to_start_row(self))
         self.addAction(self.go_to_start_row_action)
 
         self.go_to_end_row_action = QAction(self)
-        self.go_to_end_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Down))
+        self.go_to_end_row_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Down))
         self.go_to_end_row_action.triggered.connect(lambda : go_to_end_row(self))
         self.addAction(self.go_to_end_row_action)
 
         self.go_to_start_column_action = QAction(self)
-        self.go_to_start_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Left))
+        self.go_to_start_column_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Left))
         self.go_to_start_column_action.triggered.connect(lambda : go_to_start_column(self))
         self.addAction(self.go_to_start_column_action)
 
         self.go_to_end_column_action = QAction(self)
-        self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
+        self.go_to_end_column_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Right))
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
 
@@ -1078,24 +1110,62 @@ class MainWindow(QMainWindow):
         modifiers = event.modifiers()
         key = event.key()
         
-        if modifiers == Qt.Modifier.CTRL:
-            if key == Qt.Key.Key_Up:
-                go_to_start_row(self)
-                return
-            elif key == Qt.Key.Key_Down:
-                go_to_end_row(self)
-                return
-            elif key == Qt.Key.Key_Left:
-                go_to_start_column(self)
-                return
-            elif key == Qt.Key.Key_Right:
-                go_to_end_column(self)
-                return
-            elif key == Qt.Key.Key_D:
-                # Handle Ctrl+D for recent data
-                self.load_temp_data()
-                return
-            elif key == Qt.Key.Key_2:
+        # Only apply Excel-like shortcuts when data editor tab is active
+        if self.tab_widget.currentIndex() == 0:
+            # Excel-like shortcuts
+            if modifiers == Qt.KeyboardModifier.ControlModifier:
+                if key == Qt.Key.Key_Up:
+                    go_to_start_row(self)
+                    return
+                elif key == Qt.Key.Key_Down:
+                    go_to_end_row(self)
+                    return
+                elif key == Qt.Key.Key_Left:
+                    go_to_start_column(self)
+                    return
+                elif key == Qt.Key.Key_Right:
+                    go_to_end_column(self)
+                    return
+                elif key == Qt.Key.Key_Home:
+                    # Go to first cell (like Excel)
+                    first_index = self.model1.index(0, 0)
+                    self.spreadsheet.setCurrentIndex(first_index)
+                    return
+                elif key == Qt.Key.Key_End:
+                    # Go to last populated cell (like Excel)
+                    last_row = self.model1.rowCount(None) - 1
+                    last_col = self.model1.columnCount(None) - 1
+                    last_index = self.model1.index(last_row, last_col)
+                    self.spreadsheet.setCurrentIndex(last_index)
+                    return
+                elif key == Qt.Key.Key_Space:
+                    # Select entire column (like Excel)
+                    current = self.spreadsheet.currentIndex()
+                    if current.isValid():
+                        self.spreadsheet.selectColumn(current.column())
+                        return
+                elif key == Qt.Key.Key_D:
+                    # Handle Ctrl+D for recent data
+                    self.load_temp_data()
+                    return
+            
+            # Shift+Space selects entire row (like Excel)
+            elif modifiers == Qt.KeyboardModifier.ShiftModifier and key == Qt.Key.Key_Space:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.selectRow(current.row())
+                    return
+            
+            # F2 to edit the current cell (like Excel)
+            elif key == Qt.Key.Key_F2 and modifiers == Qt.KeyboardModifier.NoModifier:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.edit(current)
+                    return
+        
+        # Handle other shortcuts for any tab
+        if modifiers == Qt.KeyboardModifier.ControlModifier:
+            if key == Qt.Key.Key_2:
                 # Handle Ctrl+2 for secondary data
                 if hasattr(self, 'load_secondary_data') and self.load_secondary_data.triggered:
                     self.load_secondary_data.triggered.emit()
@@ -1513,21 +1583,22 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
-        
         try:
             reply = QMessageBox.question(self, 'Confirm Exit',
-                                     'Are you sure you want to exit?',
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                     QMessageBox.StandardButton.No)
+                                         'Are you sure you want to exit?',
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                         QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                self.autosave_data()
                 import rpy2.robjects as ro
                 if 'saeHB' in ro.r('loadedNamespaces()'):
                     ro.r('detach("package:saeHB", unload=TRUE)')
                 if 'rjags' in ro.r('loadedNamespaces()'):
                     ro.r("unloadNamespace('rjags')")
                 
-                #to kill the process
+                # Autosave before closing
+                self.autosave_data()
+                
+                # to kill the process
                 import os
                 import psutil
 
@@ -1541,4 +1612,53 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.log_exception(e, "Close Event")
             QMessageBox.warning(self, 'Error', f'An error occurred while closing the application: {e}')
+            event.accept()  # Force close if there's an error
+            
+    def eventFilter(self, obj, event):
+        """
+        Handle events for Excel-like behavior, especially for keyboard navigation
+        between cells after editing.
+        """
+        if obj == self.spreadsheet and event.type() == QEvent.Type.KeyPress:
+            key = event.key()
+            
+            # Handle Enter key to move down like Excel
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    # If not in edit mode, start editing
+                    if not self.spreadsheet.state() == QAbstractItemView.State.EditingState:
+                        self.spreadsheet.edit(current)
+                    else:
+                        # If already editing, move down after edit completes
+                        next_row = min(current.row() + 1, self.model1.rowCount(None) - 1)
+                        next_index = self.model1.index(next_row, current.column())
+                        self.spreadsheet.setCurrentIndex(next_index)
+                        return True
+            
+            # Handle Tab key to move right like Excel
+            elif key == Qt.Key.Key_Tab:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    # If not in edit mode, start editing
+                    if not self.spreadsheet.state() == QAbstractItemView.State.EditingState:
+                        self.spreadsheet.edit(current)
+                    else:
+                        # If already editing, move right after edit completes
+                        next_col = min(current.column() + 1, self.model1.columnCount(None) - 1)
+                        next_index = self.model1.index(current.row(), next_col)
+                        self.spreadsheet.setCurrentIndex(next_index)
+                        return True
+                        
+            # F2 to edit current cell (like Excel)
+            elif key == Qt.Key.Key_F2:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.edit(current)
+                    return True
+        
+        # Delegate handles post-edit navigation
+        
+        return super().eventFilter(obj, event)
+                
 
