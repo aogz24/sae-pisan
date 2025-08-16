@@ -659,7 +659,7 @@ class ModelingSaeUnitDialog(QDialog):
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(check_run_time)
-        timer.start(60000)
+        timer.start(5*60*1000)
     
     def on_run_model_finished(self, results, error, sae_model, r_script):
         if self.console_dialog:
