@@ -1113,20 +1113,59 @@ class MainWindow(QMainWindow):
             clipboard.setText(data)
 
     def paste_selection(self):
-        """Paste clipboard content to selected cells."""
+        """Paste clipboard content to selected cells, Excel-style."""
         clipboard = QApplication.clipboard()
         clipboard_text = clipboard.text()
         data = [row.split('\t') for row in clipboard_text.split('\n') if row]  # Parse clipboard data into a 2D array
         
-        selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection and data:
-            start_row = selection[0].row()
-            start_col = selection[0].column()
+        if not data:
+            return  # No data to paste
             
-            # Use PasteCommand to handle undo/redo for the entire paste operation
+        selection = self.spreadsheet.selectionModel().selectedIndexes()
+        if selection:
+            # Group selection by row to prepare for Excel-like pasting
+            selection_by_row = self.group_by_row(selection)
+            
+            # Sort each row by column to ensure we start from left to right
+            for i in range(len(selection_by_row)):
+                selection_by_row[i] = sorted(selection_by_row[i], key=lambda x: x.column())
+                
+            # Get the top-left cell of the selection as the starting point
+            start_row = min(index.row() for index in selection)
+            start_col = min(index.column() for index in selection)
+            
+            # Get the dimensions of the selection
+            selection_height = max(index.row() for index in selection) - start_row + 1
+            selection_width = max(index.column() for index in selection) - start_col + 1
+            
+            # Create a single undo command for the entire paste operation
             from service.command.PasteCommand import PasteCommand
-            paste_command = PasteCommand(self.model1, start_row, start_col, data)
-            self.model1.undo_stack.push(paste_command)
+            
+            # Excel-like paste: fill the selected range by repeating the clipboard data if needed
+            if len(selection_by_row) > 1 or len(selection_by_row[0]) > 1:
+                # For multiple cell selection: calculate how many times to repeat the data
+                data_height = len(data)
+                data_width = max(len(row) for row in data)
+                
+                # Create a new data array that fills the entire selection
+                filled_data = []
+                for i in range(selection_height):
+                    row_data = []
+                    for j in range(selection_width):
+                        # Get the corresponding value from clipboard data, wrapping around if needed
+                        if i < data_height and j < len(data[i % data_height]):
+                            row_data.append(data[i % data_height][j % len(data[i % data_height])])
+                        else:
+                            row_data.append("")  # Empty cell if no data
+                    filled_data.append(row_data)
+                
+                # Apply the filled data to the selection
+                paste_command = PasteCommand(self.model1, start_row, start_col, filled_data)
+                self.model1.undo_stack.push(paste_command)
+            else:
+                # Single cell selection: paste all data starting from this cell
+                paste_command = PasteCommand(self.model1, start_row, start_col, data)
+                self.model1.undo_stack.push(paste_command)
             
             # No need to manually set data here since redo() is automatically called when a command is pushed
 
