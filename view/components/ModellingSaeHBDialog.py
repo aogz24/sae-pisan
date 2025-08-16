@@ -653,7 +653,7 @@ class ModelingSaeHBDialog(QDialog):
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(check_run_time)
-        timer.start(60000)
+        timer.start(5*60000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script, plot_paths):
         if self.console_dialog:
