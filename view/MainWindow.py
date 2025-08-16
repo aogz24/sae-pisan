@@ -1115,15 +1115,20 @@ class MainWindow(QMainWindow):
     def paste_selection(self):
         """Paste clipboard content to selected cells."""
         clipboard = QApplication.clipboard()
-        data = clipboard.text().split('\n')
+        clipboard_text = clipboard.text()
+        data = [row.split('\t') for row in clipboard_text.split('\n') if row]  # Parse clipboard data into a 2D array
+        
         selection = self.spreadsheet.selectionModel().selectedIndexes()
-        if selection:
+        if selection and data:
             start_row = selection[0].row()
             start_col = selection[0].column()
-            for i, row in enumerate(data):
-                for j, value in enumerate(row.split('\t')):
-                    index = self.model1.index(start_row + i, start_col + j)
-                    self.model1.setData(index, value, Qt.ItemDataRole.EditRole)
+            
+            # Use PasteCommand to handle undo/redo for the entire paste operation
+            from service.command.PasteCommand import PasteCommand
+            paste_command = PasteCommand(self.model1, start_row, start_col, data)
+            self.model1.undo_stack.push(paste_command)
+            
+            # No need to manually set data here since redo() is automatically called when a command is pushed
 
     def undo_action(self):
         """Undo the last action."""
