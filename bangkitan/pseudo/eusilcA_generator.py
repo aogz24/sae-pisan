@@ -4,7 +4,7 @@ import os
 
 # Parameters
 population_size = 1000  # Total population size
-sample_size = 100      # Sample size (in this case same as population since we want 100%)
+sample_size = 100      # Sample size (fixed at 100)
 num_districts = 5      # Number of districts
 num_states = 3         # Number of states
 num_datasets = 10     # Number of different datasets to generate
@@ -71,7 +71,7 @@ def generate_eusilcA_data():
         tax_adj = -np.random.normal(1000, 500) if np.random.random() > 0.5 else 0
         
         # Generate weight (sampling weight)
-        weight = population_size / sample_size  # In this case it's 1 since we're sampling 100%
+        weight = np.random.uniform(0.5, 10)  # Random weight for sampling
         
         # Add data to the dictionary
         data["eqIncome"].append(eq_income)
@@ -123,8 +123,31 @@ for dataset_num in range(1, num_datasets + 1):
     # Save population data - ensure proper CSV formatting
     population_df.to_csv(f"bangkitan/pseudo/populations/eusilcA_pop_{dataset_num}.csv", index=False)
     
-    # Since sample size is the same as population size, sample data is the same as population data
-    sample_df = population_df.copy()
+    # Take a random sample of 100 records from the population data
+    sample_indices = np.random.choice(population_size, sample_size, replace=False)
+    sample_df = population_df.iloc[sample_indices].copy()
+    
+    # Generate varied weights for the sample data
+    # Base weight is population_size / sample_size = 10
+    # Adding variability based on state and district to make weights more realistic
+    base_weight = population_size / sample_size
+    
+    # Create state and district adjustment factors
+    state_factors = {state: np.random.uniform(0.8, 1.2) for state in states}
+    district_factors = {district: np.random.uniform(0.85, 1.15) for district in districts}
+    
+    # Apply varied weights based on state and district plus some random variation
+    weights = []
+    for _, row in sample_df.iterrows():
+        state_factor = state_factors[row['state']]
+        district_factor = district_factors[row['district']]
+        # Add some individual random variation (±15%)
+        individual_factor = np.random.uniform(0.85, 1.15)
+        weight = base_weight * state_factor * district_factor * individual_factor
+        weights.append(round(weight, 2))  # Round to 2 decimal places
+    
+    sample_df["weight"] = weights
+    
     sample_df.to_csv(f"bangkitan/pseudo/samples/eusilcA_smp_{dataset_num}.csv", index=False)
     
     if dataset_num % 20 == 0:

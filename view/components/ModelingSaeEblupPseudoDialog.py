@@ -267,7 +267,6 @@ class ModelingSaePseudoDialog(QDialog):
 
         self.of_interest_var = []
         self.auxilary_vars = []
-        self.vardir_var = []
         self.as_factor_var = []
         self.domain_var = [] 
         self.selection_method = "None"
@@ -363,7 +362,7 @@ class ModelingSaePseudoDialog(QDialog):
         # Get selected items from any right-side list
         right_side_lists = [
             self.of_interest_list, self.auxilary_list, self.as_factor_list, 
-            self.vardir_list, self.domain_list, self.sample_weight_list
+            self.domain_list, self.sample_weight_list
         ]
         
         selected_from_right = []
@@ -398,7 +397,6 @@ class ModelingSaePseudoDialog(QDialog):
             self.of_interest_list: self.of_interest_model,
             self.auxilary_list: self.auxilary_model,
             self.as_factor_list: self.as_factor_model,
-            self.vardir_list: self.vardir_model,
             self.domain_list: self.domain_model,
             self.sample_weight_list: self.sample_weight_model
         }
@@ -426,7 +424,6 @@ class ModelingSaePseudoDialog(QDialog):
             self.of_interest_list: "of_interest",
             self.auxilary_list: "auxilary",
             self.as_factor_list: "as_factor",
-            self.vardir_list: "vardir",
             self.domain_list: "domain"
         }
         
@@ -460,8 +457,6 @@ class ModelingSaePseudoDialog(QDialog):
                 assign_auxilary(self)
             elif target_list == self.as_factor_list:
                 assign_as_factor(self)
-            elif target_list == self.vardir_list:
-                assign_vardir(self)
             elif target_list == self.domain_list:
                 assign_domain(self)
             elif target_list == self.sample_weight_list:
@@ -480,7 +475,6 @@ class ModelingSaePseudoDialog(QDialog):
             self.of_interest_list: self.of_interest_model,
             self.auxilary_list: self.auxilary_model,
             self.as_factor_list: self.as_factor_model,
-            self.vardir_list: self.vardir_model,
             self.domain_list: self.domain_model,
             self.sample_weight_list: self.sample_weight_model
         }
@@ -496,7 +490,7 @@ class ModelingSaePseudoDialog(QDialog):
                 unassign_variable(self)
         
         # Drag between right-side lists (unassign then assign)
-        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.vardir_list, self.domain_list, self.sample_weight_list]:
+        elif target_list in [self.of_interest_list, self.auxilary_list, self.as_factor_list, self.domain_list, self.sample_weight_list]:
             if source_list == target_list:
                 # Same list, do nothing
                 return
@@ -537,15 +531,13 @@ class ModelingSaePseudoDialog(QDialog):
             for col, dtype in zip(self.model.get_data().columns, self.model.get_data().dtypes)
         ]
         self.variables_model.setStringList(self.columns)
-        self.vardir_model.setStringList([])
+        self.of_interest_model.setStringList([])
         self.auxilary_model.setStringList([])
         self.as_factor_model.setStringList([])
         self.domain_model.setStringList([])
         self.sample_weight_model.setStringList([])
-        self.of_interest_model.setStringList([])
         self.of_interest_var = []
         self.auxilary_vars = []
-        self.vardir_var = []
         self.as_factor_var = []
         self.domain_var = []
         self.sample_weight_var = []

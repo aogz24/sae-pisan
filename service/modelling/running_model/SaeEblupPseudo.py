@@ -9,6 +9,7 @@ def extract_output_results(output):
     Extracts results from the given output string and returns it as a dictionary.
     """
     import re
+    import polars as pl
     results = {}
     
     # Extract model type
@@ -176,17 +177,24 @@ def run_model_eblup_pseudo(parent):
         # Get data from the model
         ro.r('estimated_value_pseudo <- predict(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$Mean \n domain_pseudo <-model_pseudo$MSE$Domain')
         domain = ro.conversion.rpy2py(ro.globalenv['domain_pseudo'])
-        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_pseudo'])
-        print(type(estimated_value))
         mse = ro.conversion.rpy2py(ro.globalenv['mse_pseudo'])
-            
-        estimated_value = estimated_value.flatten()
-        rse = abs(mse**0.5/estimated_value*100)
-        df = pl.DataFrame({
-            'Domain': domain,
-            'Eblup': estimated_value,
-            'MSE': mse,
-            'RSE (%)': rse})
+        estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_pseudo'])
+
+        # estimated_value is a pandas DataFrame, convert to polars DataFrame
+        df = pl.from_pandas(estimated_value)
+        print("ini c: ",df)
+        # Add domain and mse columns to df
+        df = df.with_columns([
+            pl.Series('Domain', domain),
+            pl.Series('MSE', mse)
+        ])
+        print("ini a: ",df)
+        # Optionally, add RSE (%) column using estimated_value$Mean for EBLUP
+        if 'Mean' in df.columns:
+            df = df.with_columns(
+            (df['MSE'] ** 0.5 / df['Mean'] * 100).abs().alias('RSE (%)')
+            )
+        print("ini b: ",df)
         error = False
         # Clean up R objects
         ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo"), envir=globalenv())')
