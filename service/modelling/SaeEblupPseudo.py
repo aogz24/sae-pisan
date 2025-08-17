@@ -291,14 +291,14 @@ def generate_r_script(parent):
     Returns:
         str: The generated R script as a string.
     """
-    
+
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
     vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
-    sample_weight_var = f'"{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}"' if parent.sample_weight_var else 'NULL'
-    
+    sample_weight_var = f'{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}' if parent.sample_weight_var else ''
+
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
     elif as_factor_var=='""':
@@ -311,14 +311,18 @@ def generate_r_script(parent):
     r_script = f'names(data_pseudo) <- gsub(" ", "_", names(data_pseudo)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
     r_script += f'vardir_var_pseudo <- data_pseudo["{vardir_var}"]\n'
+    r_script += f'pop_data <- data_pseudo[is.na(data_pseudo${sample_weight_var}), ]\n'
+    r_script += f'smp_data <- data_pseudo[!is.na(data_pseudo${sample_weight_var}), ]\n'
+    
     if parent.selection_method=="Stepwise":
         parent.selection_method = "both"
+        
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_pseudo<-fh(final_formula, vardir="{vardir_var}", combined_data=data_pseudo, domains={domain_var}, weight={sample_weight_var}, method="reblupbc", MSE=TRUE, mse_type="pseudo")'
+        r_script += f'model_pseudo<-ebp(final_formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores())'
     else:
-        r_script += f'model_pseudo<-fh(formula, vardir="{vardir_var}", combined_data=data_pseudo, domains={domain_var}, weight={sample_weight_var}, method="reblupbc", MSE=TRUE, mse_type="pseudo")'
+        r_script += f'model_pseudo<-ebp(formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores())'
     return r_script
 
 def show_r_script(parent):
@@ -329,7 +333,7 @@ def show_r_script(parent):
                 `generate_r_script(parent)` is expected to return a string representing the R script.
                 `parent.r_script_edit` is expected to have a method `setText` to set the generated R script.
     """
-    
+
     r_script = generate_r_script(parent)
     parent.r_script_edit.setText(r_script)
 
@@ -341,7 +345,7 @@ def get_script(parent):
     Returns:
         str: The text content of the `r_script_edit` widget as a plain string.
     """
-    
+
     return parent.r_script_edit.toPlainText()  
 
 def show_options(parent):
@@ -353,7 +357,7 @@ def show_options(parent):
     When the OK button is clicked, the `set_selection_method` function is called.
     When the Cancel button is clicked, the dialog is rejected.
     """
-    
+
     options_dialog = QDialog(parent)
     options_dialog.setWindowTitle("Options")
 
@@ -393,7 +397,7 @@ def set_selection_method(parent, dialog):
     Returns:
         None
     """
-    
+
     # parent.selection_method = parent.method_combo.currentText()
     dialog.accept()
     show_r_script(parent)
