@@ -180,8 +180,6 @@ def run_model_eblup_pseudo(parent):
         import pandas as pd
         import numpy as np
         
-        # More direct approach to get the estimator data
-        # Use R to convert the estimator to a proper data frame first
         ro.r('''
         # Ensure estimator is a proper data frame
         if(is.list(estimator) && !is.data.frame(estimator)) {
@@ -198,7 +196,6 @@ def run_model_eblup_pseudo(parent):
         
         # Now convert to Python
         estimator_raw = ro.conversion.rpy2py(ro.globalenv['estimator'])
-        print("Estimator raw:", type(estimator_raw))
         
         # Handle direct conversion
         if isinstance(estimator_raw, pd.DataFrame):
@@ -243,10 +240,8 @@ def run_model_eblup_pseudo(parent):
             )
         error = False
         # Clean up R objects
-        ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo"), envir=globalenv())')
-        ro.r('if(exists("refvar_pseudo")) rm(refvar_pseudo, envir=globalenv())')
-        ro.r('if(exists("vardir_var_pseudo")) rm(vardir_var_pseudo, envir=globalenv())')
-        ro.r("gc()")  # Clear R memory
+        ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo", "estimator", "varcof"), envir=globalenv())'))
+        ro.r("gc()")
         return results, error, df
         
     except Exception as e:
