@@ -118,7 +118,9 @@ for dataset_num in range(1, num_datasets + 1):
     # Generate population data
     population_df = generate_eusilcA_data()
     
-    # Save population data
+    population_df = population_df.drop(columns=["weight"])
+    
+    # Save population data - ensure proper CSV formatting
     population_df.to_csv(f"bangkitan/pseudo/populations/eusilcA_pop_{dataset_num}.csv", index=False)
     
     # Since sample size is the same as population size, sample data is the same as population data

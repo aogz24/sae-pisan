@@ -11,8 +11,17 @@ def extract_output_results(output):
     import re
     results = {}
     
-    results['Model'] = 'Pseudo Empirical Best Linear Unbiased Prediction (Fay-Herriot)'
+    # Extract model type
+    if "Empirical Best Prediction" in output:
+        results['Model'] = 'Empirical Best Prediction'
+    else:
+        results['Model'] = 'Pseudo Empirical Best Linear Unbiased Prediction (Fay-Herriot)'
 
+    # Extract Call/Formula
+    call_match = re.search(r"Call:[\s\n]+ebp\(fixed = (.*?)(?=,|\))", output, re.DOTALL)
+    if call_match:
+        results['Call'] = call_match.group(1).strip()
+    
     # Extract threshold information if available
     threshold_match = re.search(r"The threshold for the HCR and the PG is automatically set to (\d+)% of the median of the dependent variable and equals ([\d.]+)", output)
     if threshold_match:
@@ -27,25 +36,62 @@ def extract_output_results(output):
     out_sample_match = re.search(r"Out-of-sample domains:\s+(\d+)", output)
     in_sample_match = re.search(r"In-sample domains:\s+(\d+)", output)
     
-    # Alternative pattern from the image
-    if not out_sample_match:
-        out_sample_match = re.search(r"Out-of-sample domains:\s+(\d+)", output) or re.search(r"Out-of-sample domains:\s+(\d+)", output)
-    
-    if not in_sample_match:
-        in_sample_match = re.search(r"In-sample domains:\s+(\d+)", output) or re.search(r"In-sample domains:\s+(\d+)", output)
-    
     if out_sample_match:
         results['Out of sample domains'] = int(out_sample_match.group(1))
     if in_sample_match:
         results['In Sample domains'] = int(in_sample_match.group(1))
 
+    # Extract sample sizes
+    units_sample_match = re.search(r"Units in sample:\s+(\d+)", output)
+    units_pop_match = re.search(r"Units in population:\s+(\d+)", output)
+    
+    if units_sample_match:
+        results['Units in sample'] = int(units_sample_match.group(1))
+    if units_pop_match:
+        results['Units in population'] = int(units_pop_match.group(1))
+    
+    # Extract domain statistics (from the table in the image)
+    # This is complex data, might need to store it as text or parse into a structure
+    domains_stats_match = re.search(r"Sample_domains\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", output)
+    pop_domains_match = re.search(r"Population_domains\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", output)
+    
+    if domains_stats_match:
+        results['Sample_domains'] = {
+            'Min': float(domains_stats_match.group(1)),
+            '1st Qu': float(domains_stats_match.group(2)),
+            'Median': float(domains_stats_match.group(3)),
+            'Mean': float(domains_stats_match.group(4)),
+            '3rd Qu': float(domains_stats_match.group(5)),
+            'Max': float(domains_stats_match.group(6))
+        }
+    
+    if pop_domains_match:
+        results['Population_domains'] = {
+            'Min': float(pop_domains_match.group(1)),
+            '1st Qu': float(pop_domains_match.group(2)),
+            'Median': float(pop_domains_match.group(3)),
+            'Mean': float(pop_domains_match.group(4)),
+            '3rd Qu': float(pop_domains_match.group(5)),
+            'Max': float(pop_domains_match.group(6))
+        }
+
+    # Extract ICC value
+    icc_match = re.search(r"ICC:\s+([\d.]+)", output)
+    if icc_match:
+        results['ICC'] = float(icc_match.group(1))
+
     # Extract transformation
     transformation_match = re.search(r"Transformation:\s+([\w\s]+)", output)
-    if not transformation_match:
-        transformation_match = re.search(r"Transformation:\s+([\w\s]+)", output)
-    
     if transformation_match:
         results['Transformation'] = transformation_match.group(1).strip()
+
+    # Extract explanatory measures
+    if "Explanatory measures for the mixed model" in output:
+        results['Has Explanatory Measures'] = True
+    
+    # Extract residual diagnostics
+    if "Residual diagnostics for the mixed model" in output:
+        results['Has Residual Diagnostics'] = True
 
     # Extract model fit details if available
     model_fit_match = re.search(r"Model fit:(.*?)(?=\n\n|\Z)", output, re.DOTALL)
@@ -123,24 +169,16 @@ def run_model_eblup_pseudo(parent):
             error = True
             return result, error, None
         # Capture the model output first for better extraction
-        # result_str = ro.r('capture.output(print(model_pseudo))')
-        # result = "\n".join(result_str)
-        # results = extract_output_results(result)
+        result_str = ro.r('capture.output(summary(model_pseudo))')
+        result = "\n".join(result_str)
+        results = extract_output_results(result)
         
         # Get data from the model
-        ro.r('estimated_value_pseudo <- getResponse(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$FH \n domain_pseudo <-model_pseudo$MSE$Domain')
+        ro.r('estimated_value_pseudo <- predict(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$Mean \n domain_pseudo <-model_pseudo$MSE$Domain')
         domain = ro.conversion.rpy2py(ro.globalenv['domain_pseudo'])
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_pseudo'])
+        print(type(estimated_value))
         mse = ro.conversion.rpy2py(ro.globalenv['mse_pseudo'])
-        
-        # Check if refVar exists in the model and get it safely
-        try:
-            ro.r('refvar_pseudo <- if(exists("model_pseudo$refVar")) model_pseudo$refVar else NULL')
-            ro.r('vardir_var_pseudo <- if(exists("model_pseudo$vardir")) model_pseudo$vardir else matrix(0, nrow=length(domain_pseudo), ncol=1)')
-            vardir_var = ro.conversion.rpy2py(ro.globalenv['vardir_var_pseudo'])
-            vardir_var = vardir_var.to_numpy()[:, 0]
-        except:
-            vardir_var = [0] * len(domain)
             
         estimated_value = estimated_value.flatten()
         rse = abs(mse**0.5/estimated_value*100)
@@ -155,7 +193,7 @@ def run_model_eblup_pseudo(parent):
         ro.r('if(exists("refvar_pseudo")) rm(refvar_pseudo, envir=globalenv())')
         ro.r('if(exists("vardir_var_pseudo")) rm(vardir_var_pseudo, envir=globalenv())')
         ro.r("gc()")  # Clear R memory
-        return None, error, df
+        return results, error, df
         
     except Exception as e:
         if hasattr(parent, 'log_exception'):

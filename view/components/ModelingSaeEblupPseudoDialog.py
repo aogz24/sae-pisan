@@ -132,8 +132,6 @@ class ModelingSaePseudoDialog(QDialog):
         self.assign_aux_button.setObjectName("arrow_button")
         self.assign_as_factor_button = QPushButton("🡆")
         self.assign_as_factor_button.setObjectName("arrow_button")
-        self.assign_vardir_button = QPushButton("🡆")
-        self.assign_vardir_button.setObjectName("arrow_button")
         self.assign_domain_button = QPushButton("🡆")
         self.assign_domain_button.setObjectName("arrow_button")
         self.assign_sample_weight_button = QPushButton("🡆")
@@ -141,7 +139,6 @@ class ModelingSaePseudoDialog(QDialog):
 
         self.assign_of_interest_button.clicked.connect(lambda: self.handle_assign(self.of_interest_list))
         self.assign_aux_button.clicked.connect(lambda: self.handle_assign(self.auxilary_list))
-        self.assign_vardir_button.clicked.connect(lambda: self.handle_assign(self.vardir_list))
         self.assign_as_factor_button.clicked.connect(lambda: self.handle_assign(self.as_factor_list))
         self.assign_domain_button.clicked.connect(lambda: self.handle_assign(self.domain_list))
         self.assign_sample_weight_button.clicked.connect(lambda: self.handle_assign(self.sample_weight_list))
@@ -149,7 +146,6 @@ class ModelingSaePseudoDialog(QDialog):
         self.middle_layout.addWidget(self.assign_of_interest_button)
         self.middle_layout.addWidget(self.assign_aux_button)
         self.middle_layout.addWidget(self.assign_as_factor_button)
-        self.middle_layout.addWidget(self.assign_vardir_button)
         self.middle_layout.addWidget(self.assign_domain_button)
         self.middle_layout.addWidget(self.assign_sample_weight_button)
 
@@ -180,14 +176,6 @@ class ModelingSaePseudoDialog(QDialog):
         self.as_factor_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.right_layout.addWidget(self.as_factor_label)
         self.right_layout.addWidget(self.as_factor_list)
-        
-        self.vardir_label = QLabel("Direct Variance:")
-        self.vardir_list = DragDropListView(parent=self)
-        self.vardir_model = QStringListModel()
-        self.vardir_list.setModel(self.vardir_model)
-        self.vardir_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.right_layout.addWidget(self.vardir_label)
-        self.right_layout.addWidget(self.vardir_list)
         
         self.domain_label = QLabel("Domain:")
         self.domain_list = DragDropListView(parent=self)
@@ -564,32 +552,18 @@ class ModelingSaePseudoDialog(QDialog):
         self.selection_method = "None"
     
     def accept(self):
-        if (not self.vardir_var or self.vardir_var == [""]) and (not self.of_interest_var or self.of_interest_var == [""]):
-            QMessageBox.warning(self, "Warning", "Varians Direct and variable of interest cannot be empty.")
-            self.ok_button.setEnabled(True)
-            self.option_button.setEnabled(True)
-            self.ok_button.setText("Run Model")
-            return
         if not self.of_interest_var or self.of_interest_var == [""]:
             QMessageBox.warning(self, "Warning", "Variable of interest cannot be empty.")
             self.ok_button.setEnabled(True)
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        if not self.vardir_var or self.vardir_var == [""]:
-            QMessageBox.warning(self, "Warning", "Varians Direct cannot be empty.")
+        if not self.sample_weight_var or self.sample_weight_var == [""]:
+            QMessageBox.warning(self, "Warning", "Sample weight cannot be empty.")
             self.ok_button.setEnabled(True)
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        if not self.sample_weight_var or self.sample_weight_var == [""]:
-            reply = QMessageBox.warning(self, "Warning", "Sample Weight is empty. Do you want to continue?",
-                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.No:
-                self.ok_button.setEnabled(True)
-                self.option_button.setEnabled(True)
-                self.ok_button.setText("Run Model")
-                return
         
         r_script = get_script(self)
         if not check_script(r_script):

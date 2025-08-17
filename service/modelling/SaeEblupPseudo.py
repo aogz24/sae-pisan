@@ -294,7 +294,6 @@ def generate_r_script(parent):
 
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
-    vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
     as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
     sample_weight_var = f'{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}' if parent.sample_weight_var else ''
@@ -310,7 +309,6 @@ def generate_r_script(parent):
 
     r_script = f'names(data_pseudo) <- gsub(" ", "_", names(data_pseudo)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
-    r_script += f'vardir_var_pseudo <- data_pseudo["{vardir_var}"]\n'
     r_script += f'pop_data <- data_pseudo[is.na(data_pseudo${sample_weight_var}), ]\n'
     r_script += f'smp_data <- data_pseudo[!is.na(data_pseudo${sample_weight_var}), ]\n'
     
