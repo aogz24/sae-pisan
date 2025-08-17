@@ -174,27 +174,73 @@ def run_model_eblup_pseudo(parent):
         result = "\n".join(result_str)
         results = extract_output_results(result)
         
+
         # Get data from the model
-        ro.r('estimated_value_pseudo <- predict(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$Mean \n domain_pseudo <-model_pseudo$MSE$Domain')
-        domain = ro.conversion.rpy2py(ro.globalenv['domain_pseudo'])
+        ro.r('estimated_value_pseudo <- predict(model_pseudo)\n mse_pseudo <- model_pseudo$MSE$Mean \n domain_pseudo <-model_pseudo$MSE$Domain \n estimator<-estimators(model_pseudo) \n varcof <- getVarCov.ebp(model_pseudo)')
+        import pandas as pd
+        import numpy as np
+        
+        # More direct approach to get the estimator data
+        # Use R to convert the estimator to a proper data frame first
+        ro.r('''
+        # Ensure estimator is a proper data frame
+        if(is.list(estimator) && !is.data.frame(estimator)) {
+          # If it's a list with components like 'ind', extract the data frame
+          if("ind" %in% names(estimator) && is.data.frame(estimator$ind)) {
+            estimator <- estimator$ind
+          }
+        }
+        # Make sure all columns have proper names
+        if(is.data.frame(estimator)) {
+          names(estimator) <- make.names(names(estimator))
+        }
+        ''')
+        
+        # Now convert to Python
+        estimator_raw = ro.conversion.rpy2py(ro.globalenv['estimator'])
+        print("Estimator raw:", type(estimator_raw))
+        
+        # Handle direct conversion
+        if isinstance(estimator_raw, pd.DataFrame):
+            estimator = estimator_raw
+        else:
+            # If it's not already a DataFrame, create one
+            try:
+                estimator = pd.DataFrame(estimator_raw)
+            except Exception as e:
+                print(f"Error converting to DataFrame: {e}")
+                # Create an empty DataFrame as fallback
+                estimator = pd.DataFrame()
+        
+        # Convert all object and category columns to string to avoid polars conversion errors
+        for col in estimator.columns:
+            if estimator[col].dtype.name in ['category', 'object'] or str(estimator[col].dtype).startswith('category'):
+                estimator[col] = estimator[col].astype(str)
+        
+        # Convert to polars DataFrame
+        estimator_df = pl.from_pandas(estimator)
+        results["Estimators"] = estimator_df
+        
+        random_effect_variance = ro.globalenv['varcof']
+        # Convert numpy ndarray to float if possible
+        if isinstance(random_effect_variance, np.ndarray) and random_effect_variance.size == 1:
+            random_effect_variance = float(random_effect_variance.item())
+        results["Random Effect Variance"] = random_effect_variance
+
         mse = ro.conversion.rpy2py(ro.globalenv['mse_pseudo'])
         estimated_value = ro.conversion.rpy2py(ro.globalenv['estimated_value_pseudo'])
 
         # estimated_value is a pandas DataFrame, convert to polars DataFrame
         df = pl.from_pandas(estimated_value)
-        print("ini c: ",df)
-        # Add domain and mse columns to df
+        
         df = df.with_columns([
-            pl.Series('Domain', domain),
             pl.Series('MSE', mse)
         ])
-        print("ini a: ",df)
-        # Optionally, add RSE (%) column using estimated_value$Mean for EBLUP
+        
         if 'Mean' in df.columns:
             df = df.with_columns(
             (df['MSE'] ** 0.5 / df['Mean'] * 100).abs().alias('RSE (%)')
             )
-        print("ini b: ",df)
         error = False
         # Clean up R objects
         ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo"), envir=globalenv())')

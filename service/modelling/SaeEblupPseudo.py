@@ -220,17 +220,6 @@ def unassign_variable(parent):
         show_r_script(parent)
         return
 
-    selected_indexes = parent.vardir_list.selectedIndexes()
-    if selected_indexes:
-        selected_items = [index.data() for index in selected_indexes]
-        parent.vardir_var = [var for var in parent.vardir_var if var not in selected_items]
-        parent.vardir_model.setStringList(parent.vardir_var)
-        for item in selected_items:
-            parent.variables_list.model().insertRow(0)  # Add back to variables list
-            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
-        show_r_script(parent)
-        return
-
     selected_indexes = parent.as_factor_list.selectedIndexes()
     if selected_indexes:
         selected_items = [index.data() for index in selected_indexes]
