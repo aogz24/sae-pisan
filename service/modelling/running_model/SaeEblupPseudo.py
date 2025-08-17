@@ -240,7 +240,7 @@ def run_model_eblup_pseudo(parent):
             )
         error = False
         # Clean up R objects
-        ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo", "estimator", "varcof"), envir=globalenv())'))
+        ro.r('rm(list=c("data_pseudo", "model_pseudo", "estimated_value_pseudo", "mse_pseudo", "domain_pseudo", "estimator", "varcof"), envir=globalenv())')
         ro.r("gc()")
         return results, error, df
         
