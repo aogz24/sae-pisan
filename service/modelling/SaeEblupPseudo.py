@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QHBoxLayout
 from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QLabel, QLineEdit
 
 def assign_of_interest(parent):
     """
@@ -283,7 +284,7 @@ def generate_r_script(parent):
 
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
-    as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
+    as_factor_var = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
     sample_weight_var = f'{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}' if parent.sample_weight_var else ''
 
@@ -307,9 +308,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_pseudo<-ebp(final_formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores())'
+        r_script += f'model_pseudo<-ebp(final_formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores(), L={parent.L}, B={parent.B})'
     else:
-        r_script += f'model_pseudo<-ebp(formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores())'
+        r_script += f'model_pseudo<-ebp(formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores(), L={parent.L}, B={parent.B})'
     return r_script
 
 def show_r_script(parent):
@@ -337,25 +338,32 @@ def get_script(parent):
 
 def show_options(parent):
     """
-    Displays an options dialog with OK and Cancel buttons.
+    Displays an options dialog with two text edits for "L" and "B", and OK/Cancel buttons.
     Parameters:
     parent (QWidget): The parent widget for the dialog.
-    The dialog allows the user to confirm or cancel their selection.
-    When the OK button is clicked, the `set_selection_method` function is called.
-    When the Cancel button is clicked, the dialog is rejected.
+    When OK is clicked, the entered options are stored in the parent object and set_selection_method is called.
     """
 
     options_dialog = QDialog(parent)
     options_dialog.setWindowTitle("Options")
 
     layout = QVBoxLayout()
+    
+    from PyQt6.QtGui import QIntValidator
 
-    # method_label = QLabel("Stepwise Selection Method:")
-    # layout.addWidget(method_label)
+    l_label = QLabel("L:")
+    layout.addWidget(l_label)
+    parent.l_edit = QLineEdit()
+    parent.l_edit.setText("50")
+    parent.l_edit.setValidator(QIntValidator(1, 999999, parent.l_edit))  # Only allow integer input
+    layout.addWidget(parent.l_edit)
 
-    # parent.method_combo = QComboBox()
-    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    # layout.addWidget(parent.method_combo)
+    b_label = QLabel("Bootstrap:")
+    layout.addWidget(b_label)
+    parent.b_edit = QLineEdit()
+    parent.b_edit.setText("50")
+    parent.b_edit.setValidator(QIntValidator(1, 999999, parent.b_edit))  # Only allow integer input
+    layout.addWidget(parent.b_edit)
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -367,7 +375,10 @@ def show_options(parent):
 
     options_dialog.setLayout(layout)
 
-    ok_button.clicked.connect(lambda: set_selection_method(parent, options_dialog))
+    def on_ok():
+        set_selection_method(parent, options_dialog)
+
+    ok_button.clicked.connect(on_ok)
     cancel_button.clicked.connect(options_dialog.reject)
 
     options_dialog.exec()
@@ -386,5 +397,7 @@ def set_selection_method(parent, dialog):
     """
 
     # parent.selection_method = parent.method_combo.currentText()
+    parent.L = parent.l_edit.text()
+    parent.B = parent.b_edit.text()
     dialog.accept()
     show_r_script(parent)

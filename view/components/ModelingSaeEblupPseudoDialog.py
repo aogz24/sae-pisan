@@ -243,7 +243,8 @@ class ModelingSaePseudoDialog(QDialog):
         self.main_layout.addLayout(self.script_layout)
         
         # self.option_button.clicked.connect(lambda : show_options(self))
-        self.option_button.setDisabled(True)
+        self.option_button.setDisabled(False)
+        self.option_button.clicked.connect(lambda : show_options(self))
         
         # Area teks untuk menampilkan dan mengedit skrip R
         self.r_script_edit = QTextEdit()
@@ -264,12 +265,15 @@ class ModelingSaePseudoDialog(QDialog):
         self.main_layout.addLayout(self.button_layout)
 
         self.setLayout(self.main_layout)
+        
 
         self.of_interest_var = []
         self.auxilary_vars = []
         self.as_factor_var = []
         self.domain_var = [] 
         self.selection_method = "None"
+        self.L = "50"
+        self.B = "50"
         self.finnish = False
         
         self.run_model_finished.connect(self.on_run_model_finished)
