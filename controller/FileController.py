@@ -176,6 +176,7 @@ class FileController:
         command = LoadSecondaryDataCommand(self.model1, main_df, data, option)
         self.model1.undo_stack.push(command)
         self.view.update_table(1, self.model1)
+        QMessageBox.information(self.view, "Success", "Secondary loaded successfully!")
         self.view.autosave_data()
         
     def save_data(self):
