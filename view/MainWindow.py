@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize, QTimer, QItemSelectionModel, QEvent
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 from view.components.ExcelLikeItemDelegate import ExcelLikeItemDelegate
+from view.components.TutorialManager import TutorialManager
 import polars as pl
 from model.TableModel import TableModel
 import os
@@ -157,7 +158,16 @@ class MainWindow(QMainWindow):
         self.autosave_timer.timeout.connect(self.autosave_data)
         self.autosave_timer.start(self.autosave_interval)
         self.setup_logging()
+        
+        # Set up tutorial manager
+        self.tutorial_manager = TutorialManager(self)
+        self.tutorial_manager.tutorial_completed.connect(self.on_tutorial_completed)
+        self.tutorial_manager.tutorial_skipped.connect(self.on_tutorial_skipped)
+        
         self.showMaximized()
+        
+        # Show tutorial for first-time users
+        self.check_first_run()
 
     def setup_logging(self):
         """Setup logging to AppData folder"""
@@ -269,6 +279,7 @@ class MainWindow(QMainWindow):
 
         # Tab pertama (Data Editor)
         self.tab1 = QWidget()
+        self.tab1.setObjectName("tab1")
         self.spreadsheet = QTableView(self.tab1)
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
@@ -316,6 +327,7 @@ class MainWindow(QMainWindow):
 
         # Tab kedua (Data Output)
         self.tab2 = QWidget()
+        self.tab2.setObjectName("tab2")
         self.table_view2 = QTableView(self.tab2)
         self.table_view2.setModel(self.model2)
         self.table_view2.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -325,6 +337,7 @@ class MainWindow(QMainWindow):
 
         # Tab ketiga (Output)
         self.tab3 = QWidget()
+        self.tab3.setObjectName("tab3")
         self.scroll_area = QScrollArea(self.tab3)
         
         # Tab output
@@ -524,6 +537,12 @@ class MainWindow(QMainWindow):
         action_r_packages_info.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'R.svg')))
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
+        
+        # Add Interactive Tutorial option
+        action_tutorial = QAction("Interactive Tutorial", self)
+        action_tutorial.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'information.svg')))
+        action_tutorial.triggered.connect(self.start_tutorial)
+        menu_about.addAction(action_tutorial)
         
 
         # Tool Bar
@@ -1580,6 +1599,95 @@ class MainWindow(QMainWindow):
         )
         toast.set_border_radius(8)
         toast.show()
+    
+    def start_tutorial(self):
+        """Start the interactive tutorial"""
+        try:
+            if hasattr(self, 'tutorial_manager') and self.tutorial_manager:
+                self.tutorial_manager.start_tutorial()
+            else:
+                self.logger.error("Tutorial manager not initialized")
+        except Exception as e:
+            self.logger.error(f"Error starting tutorial: {e}")
+            # Show error toast
+            error_toast = CustomToast(
+                parent=self,
+                title="Tutorial Error",
+                text="Could not start the tutorial. Please try again later.",
+                duration=3000,
+                position="top-right"
+            )
+            error_toast.set_border_radius(8)
+            error_toast.set_background_color("#FFEBEE")  # Light red
+            error_toast.show()
+        
+    def on_tutorial_completed(self):
+        """Handle the tutorial completion event"""
+        toast = CustomToast(
+            parent=self,
+            title="Tutorial Completed",
+            text="You've completed the saePisan tutorial! You can access it again anytime from the About menu.",
+            duration=5000,
+            position="bottom-right"
+        )
+        toast.set_border_radius(8)
+        toast.set_background_color("#E8F5E9")  # Light green
+        toast.set_duration_bar_color("#4CAF50")  # Green
+        toast.show()
+        
+    def on_tutorial_skipped(self):
+        """Handle the tutorial skipped event"""
+        toast = CustomToast(
+            parent=self,
+            title="Tutorial Skipped",
+            text="You can restart the tutorial anytime from the About menu.",
+            duration=3000,
+            position="bottom-right"
+        )
+        toast.set_border_radius(8)
+        toast.show()
+    
+    def check_first_run(self):
+        """Check if this is the first time the app is run and show tutorial if it is"""
+        try:
+            app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(app_data_dir, exist_ok=True)
+            tutorial_flag_file = os.path.join(app_data_dir, 'tutorial_shown.flag')
+            
+            # If the flag file doesn't exist, this is the first run
+            if not os.path.exists(tutorial_flag_file):
+                # Add a longer delay to ensure window is fully initialized
+                QTimer.singleShot(3000, self._show_welcome_and_tutorial)
+                
+                # Create the flag file to mark that tutorial has been shown
+                with open(tutorial_flag_file, 'w') as f:
+                    f.write(f"Tutorial shown on {datetime.datetime.now().isoformat()}")
+        except Exception as e:
+            self.logger.error(f"Error checking first run: {e}")
+    
+    def _show_welcome_and_tutorial(self):
+        """Show welcome message and start tutorial after a delay"""
+        # Show welcome message
+        welcome_toast = CustomToast(
+            parent=self,
+            title="Welcome to saePisan!",
+            text="Starting interactive tutorial to help you get familiar with the application. You can skip or restart it anytime.",
+            duration=5000,
+            position="top-right"
+        )
+        welcome_toast.set_border_radius(8)
+        welcome_toast.set_background_color("#E1F5FE")  # Light blue
+        welcome_toast.show()
+        
+        # Start tutorial with a short delay after the welcome message
+        QTimer.singleShot(3000, self.start_tutorial)
+        
+    def resizeEvent(self, event):
+        """Handle window resize events"""
+        super().resizeEvent(event)
+        # Resize the tutorial overlay if it's active
+        if hasattr(self, 'tutorial_manager') and self.tutorial_manager:
+            self.tutorial_manager.resize_overlay()
     
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
