@@ -8,6 +8,7 @@ from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 from view.components.ExcelLikeItemDelegate import ExcelLikeItemDelegate
 from view.components.TutorialManager import TutorialManager
 import polars as pl
+import datetime
 from model.TableModel import TableModel
 import os
 from service.table.GoToRow import go_to_start_row, go_to_end_row
@@ -145,7 +146,10 @@ class MainWindow(QMainWindow):
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
-        self.font_size = 12
+        
+        # Load font size preference from settings
+        from view.components.FontPreferenceDialog import load_font_preference
+        self.font_size = load_font_preference()
         self.set_font_size(self.font_size)
         self.data = []
 
@@ -633,7 +637,7 @@ class MainWindow(QMainWindow):
     def change_font_size(self):
         """
         Opens a dialog to change the font size of the application.
-        The dialog presents three font size options: "Small", "Medium", and "Big".
+        The dialog presents four font size options: "Small", "Medium", "Large", and "Extra Large".
         The user can select a font size from a combo box, and the selected size
         will be applied to the application if the user confirms the selection.
         The dialog also displays a sample text ("AaBbCc") that updates in real-time
@@ -652,7 +656,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 12, "Large": 16}
+        sizes = {"Small": 10, "Medium": 12, "Large": 16, "Extra Large": 20}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
@@ -694,6 +698,21 @@ class MainWindow(QMainWindow):
             selected_size = combo_box.currentText()
             self.set_font_size(sizes[selected_size])
             self.font_size = sizes[selected_size]
+            
+            # Save the font preference
+            from view.components.FontPreferenceDialog import save_font_preference
+            save_font_preference(self.font_size)
+            
+            # Show confirmation toast
+            toast = CustomToast(
+                parent=self,
+                title="Font Size Updated",
+                text=f"Font size changed to {selected_size}",
+                duration=2000,
+                position="bottom-right"
+            )
+            toast.set_border_radius(8)
+            toast.show()
 
     def set_font_size(self, size):
         """
@@ -1648,22 +1667,68 @@ class MainWindow(QMainWindow):
         toast.show()
     
     def check_first_run(self):
-        """Check if this is the first time the app is run and show tutorial if it is"""
+        """Check if this is the first time the app is run and show font preference and tutorial if it is"""
         try:
             app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
             os.makedirs(app_data_dir, exist_ok=True)
             tutorial_flag_file = os.path.join(app_data_dir, 'tutorial_shown.flag')
+            settings_file = os.path.join(app_data_dir, 'settings.json')
             
-            # If the flag file doesn't exist, this is the first run
             if not os.path.exists(tutorial_flag_file):
-                # Add a longer delay to ensure window is fully initialized
-                QTimer.singleShot(3000, self._show_welcome_and_tutorial)
+                # First show the font preference dialog after splash screen completes
+                QTimer.singleShot(1500, self._show_font_preference_dialog)
+                
+                # Then show the welcome and tutorial with a longer delay
+                QTimer.singleShot(5000, self._show_welcome_and_tutorial)
                 
                 # Create the flag file to mark that tutorial has been shown
                 with open(tutorial_flag_file, 'w') as f:
                     f.write(f"Tutorial shown on {datetime.datetime.now().isoformat()}")
         except Exception as e:
-            self.logger.error(f"Error checking first run: {e}")
+            self.log_exception(e, "Error checking first run")
+    
+    def _show_font_preference_dialog(self):
+        """Show font preference dialog and apply selected font size"""
+        try:
+            from view.components.FontPreferenceDialog import FontPreferenceDialog, save_font_preference
+            
+            dialog = FontPreferenceDialog(self)
+            
+            # Make sure dialog is modal and appears on top
+            dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+            
+            # Connect the font size selection signal
+            dialog.font_size_selected.connect(self._apply_font_preference)
+            
+            # Show the dialog
+            dialog.exec()
+        except Exception as e:
+            self.log_exception(e, "Error showing font preference dialog")
+    
+    def _apply_font_preference(self, font_size):
+        """Apply the selected font size preference and save it"""
+        try:
+            # Apply the font size
+            self.font_size = font_size
+            self.set_font_size(font_size)
+            
+            # Save the preference
+            from view.components.FontPreferenceDialog import save_font_preference
+            save_font_preference(font_size)
+            
+            # Show confirmation toast
+            toast = CustomToast(
+                parent=self,
+                title="Font Size Applied",
+                text=f"Your preferred font size has been applied. You can change it anytime in Settings.",
+                duration=3000,
+                position="bottom-right"
+            )
+            toast.set_border_radius(8)
+            toast.show()
+        except Exception as e:
+            self.log_exception(e, "Error applying font preference")
     
     def _show_welcome_and_tutorial(self):
         """Show welcome message and start tutorial after a delay"""
