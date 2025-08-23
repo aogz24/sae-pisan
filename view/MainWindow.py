@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
         
         # Add Interactive Tutorial option
         action_tutorial = QAction("Interactive Tutorial", self)
-        action_tutorial.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'information.svg')))
+        action_tutorial.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'tutorial.svg')))
         action_tutorial.triggered.connect(self.start_tutorial)
         menu_about.addAction(action_tutorial)
         
