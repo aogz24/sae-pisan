@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QScrollArea, QWidget, QApplication
 import polars as pl
 from view.components.CsvDialogOption import CSVOptionsDialog
 from view.components.ExcelDialogOption import ExcelOptionsDialog
@@ -127,9 +127,17 @@ class FileController:
         
     
     def load_secondary_data(self):
-        """_summary_
-        Load file CSV, Excel, atau Text to first model (Sheet 2) for secondary data and update tabel.
         """
+        Load file CSV, Excel, atau Text to first model (Sheet 2) for secondary data and update tabel.
+        Allows merging data with two options:
+        1. Horizontal: Add columns from secondary data to main data
+        2. Diagonal: Add rows and unique columns from secondary data to main data
+        
+        For diagonal merge, the function can:
+        - Auto-detect columns with identical names
+        - Allow manual column mapping for columns with different names but same meaning
+        """
+
         main_df = self.model1.get_data()
         if main_df is None:
             QMessageBox.warning(self.view, "Warning", "No data loaded in Sheet 1. Please load data first.")
@@ -166,17 +174,269 @@ class FileController:
             def get_option(self):
                 return self.combo.currentIndex()
 
+        class ColumnMappingDialog(QDialog):
+            def __init__(self, main_columns, sec_columns, same_names=None, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle("Map Columns for Diagonal Merge")
+                self.auto_mappings = []  # Mappings for auto-detected columns
+                self.manual_mappings = []  # Manual mappings added by the user
+                self.main_columns = main_columns
+                self.sec_columns = sec_columns
+                self.same_names = same_names or []
+                
+                # Initialize auto mappings with same name columns
+                for col in self.same_names:
+                    self.auto_mappings.append((col, col))
+                
+                # Set dialog size to max 80% of screen size
+                screen_size = QApplication.primaryScreen().size()
+                max_width = int(screen_size.width() * 0.8)
+                max_height = int(screen_size.height() * 0.8)
+                self.resize(min(800, max_width), min(600, max_height))
+                
+                layout = QVBoxLayout(self)
+                
+                # Add explanation
+                explanation = QLabel(
+                    "<b>Column Mapping:</b><br>"
+                    "This dialog helps you map columns from the secondary data to the main data.<br>"
+                    "- Columns with the same name are automatically matched but can be modified.<br>"
+                    "- You can add additional column mappings for different column names with the same meaning.<br>"
+                    "- Unmapped columns from secondary data will be added as new columns."
+                )
+                explanation.setWordWrap(True)
+                layout.addWidget(explanation)
+                layout.addSpacing(10)
+                
+                # Create scroll area for the main content
+                scroll_area = QScrollArea()
+                scroll_area.setWidgetResizable(True)
+                scroll_content = QWidget()
+                scroll_layout = QVBoxLayout(scroll_content)
+                
+                # Auto-detected mappings section
+                if self.same_names:
+                    auto_label = QLabel("<b>Auto-detected matches:</b>")
+                    auto_label.setWordWrap(True)
+                    scroll_layout.addWidget(auto_label)
+                    
+                    for i, col in enumerate(self.same_names):
+                        row_layout = QHBoxLayout()
+                        
+                        # Source column (secondary data)
+                        row_layout.addWidget(QLabel(f"Secondary column: {col}"))
+                        
+                        row_layout.addWidget(QLabel("maps to"))
+                        
+                        # Target column selection (main data)
+                        target_combo = QComboBox()
+                        target_combo.addItems(self.main_columns)
+                        target_combo.setCurrentText(col)  # Default to same name
+                        target_combo.setProperty("index", i)  # Store index for identification
+                        target_combo.setProperty("type", "auto")
+                        target_combo.currentTextChanged.connect(self.update_auto_mapping)
+                        
+                        row_layout.addWidget(target_combo)
+                        
+                        # Delete button
+                        delete_btn = QPushButton("Remove")
+                        delete_btn.setProperty("index", i)
+                        delete_btn.setProperty("type", "auto")
+                        delete_btn.clicked.connect(self.remove_mapping)
+                        row_layout.addWidget(delete_btn)
+                        
+                        scroll_layout.addLayout(row_layout)
+                    
+                    scroll_layout.addSpacing(10)
+                
+                # Manual mapping section
+                manual_label = QLabel("<b>Add column mapping:</b>")
+                manual_label.setWordWrap(True)
+                scroll_layout.addWidget(manual_label)
+                
+                # Get all available columns for mapping
+                all_main_cols = list(self.main_columns)
+                all_sec_cols = list(self.sec_columns)
+                
+                # Add mapping controls
+                mapping_layout = QHBoxLayout()
+                self.sec_combo = QComboBox()
+                self.sec_combo.addItems(all_sec_cols)
+                self.main_combo = QComboBox()
+                self.main_combo.addItems(all_main_cols)
+                
+                add_btn = QPushButton("Add Mapping")
+                add_btn.clicked.connect(self.add_mapping)
+                
+                mapping_layout.addWidget(QLabel("Secondary column:"))
+                mapping_layout.addWidget(self.sec_combo)
+                mapping_layout.addWidget(QLabel("maps to"))
+                mapping_layout.addWidget(self.main_combo)
+                mapping_layout.addWidget(add_btn)
+                
+                scroll_layout.addLayout(mapping_layout)
+                scroll_layout.addSpacing(20)
+                
+                # Container for manual mappings
+                self.manual_container = QWidget()
+                self.manual_layout = QVBoxLayout(self.manual_container)
+                self.manual_layout.setContentsMargins(0, 0, 0, 0)
+                scroll_layout.addWidget(QLabel("<b>Current manual mappings:</b>"))
+                scroll_layout.addWidget(self.manual_container)
+                
+                # Add stretcher to push everything up
+                scroll_layout.addStretch()
+                
+                # Finish setting up scroll area
+                scroll_area.setWidget(scroll_content)
+                layout.addWidget(scroll_area)
+                
+                # Buttons at bottom
+                btn_layout = QHBoxLayout()
+                ok_btn = QPushButton("OK")
+                ok_btn.clicked.connect(self.accept)
+                cancel_btn = QPushButton("Cancel")
+                cancel_btn.clicked.connect(self.reject)
+                btn_layout.addWidget(cancel_btn)
+                btn_layout.addWidget(ok_btn)
+                
+                layout.addLayout(btn_layout)
+                self.setLayout(layout)
+            
+            def update_auto_mapping(self):
+                # Update auto mapping when target combo box changes
+                sender = self.sender()
+                index = sender.property("index")
+                sec_col = self.same_names[index]
+                main_col = sender.currentText()
+                
+                # Update the mapping
+                self.auto_mappings[index] = (sec_col, main_col)
+            
+            def add_mapping(self):
+                if not self.main_combo.count() or not self.sec_combo.count():
+                    return
+                    
+                sec_col = self.sec_combo.currentText()
+                main_col = self.main_combo.currentText()
+                
+                # Check if this mapping already exists
+                all_mappings = self.get_all_mappings()
+                for src, tgt in all_mappings:
+                    if src == sec_col:
+                        QMessageBox.warning(self, "Duplicate Mapping", 
+                                           f"Secondary column '{sec_col}' is already mapped to '{tgt}'.")
+                        return
+                
+                # Add to manual mappings
+                self.manual_mappings.append((sec_col, main_col))
+                
+                # Add to UI
+                self.add_mapping_to_ui(len(self.manual_mappings) - 1, sec_col, main_col)
+            
+            def add_mapping_to_ui(self, index, sec_col, main_col):
+                row_layout = QHBoxLayout()
+                
+                # Source column (secondary data)
+                row_layout.addWidget(QLabel(f"Secondary column: {sec_col}"))
+                
+                row_layout.addWidget(QLabel("maps to"))
+                
+                # Target column selection (main data)
+                target_combo = QComboBox()
+                target_combo.addItems(self.main_columns)
+                target_combo.setCurrentText(main_col)
+                target_combo.setProperty("index", index)
+                target_combo.setProperty("type", "manual")
+                target_combo.currentTextChanged.connect(self.update_manual_mapping)
+                
+                row_layout.addWidget(target_combo)
+                
+                # Delete button
+                delete_btn = QPushButton("Remove")
+                delete_btn.setProperty("index", index)
+                delete_btn.setProperty("type", "manual")
+                delete_btn.clicked.connect(self.remove_mapping)
+                
+                row_layout.addWidget(delete_btn)
+                
+                # Add to manual layout
+                self.manual_layout.addLayout(row_layout)
+            
+            def update_manual_mapping(self):
+                # Update manual mapping when target combo box changes
+                sender = self.sender()
+                index = sender.property("index")
+                main_col = self.manual_mappings[index][0]
+                target_col = sender.currentText()
+                
+                # Update the mapping
+                self.manual_mappings[index] = (main_col, target_col)
+            
+            def remove_mapping(self):
+                # Remove a mapping when delete button is clicked
+                sender = self.sender()
+                index = sender.property("index")
+                mapping_type = sender.property("type")
+                
+                if mapping_type == "auto":
+                    # Remove from auto mappings
+                    del self.auto_mappings[index]
+                    del self.same_names[index]
+                    
+                    # Clear and rebuild the UI (simplest approach)
+                    # This would require more complex code to properly handle just removing one item
+                    # For now, we'll just accept the dialog and reopen it if needed
+                    self.accept()
+                elif mapping_type == "manual":
+                    # Remove from manual mappings
+                    del self.manual_mappings[index]
+                    
+                    # Clear and rebuild all manual mappings UI
+                    # This is simpler than trying to remove just one layout
+                    for i in reversed(range(self.manual_layout.count())): 
+                        item = self.manual_layout.itemAt(i)
+                        if item:
+                            if item.layout():
+                                for j in reversed(range(item.layout().count())):
+                                    item.layout().itemAt(j).widget().deleteLater()
+                                self.manual_layout.removeItem(item)
+                            elif item.widget():
+                                item.widget().deleteLater()
+                    
+                    # Rebuild manual mappings UI
+                    for i, (main_col, sec_col) in enumerate(self.manual_mappings):
+                        self.add_mapping_to_ui(i, main_col, sec_col)
+            
+            def get_all_mappings(self):
+                # Return both auto-detected and manual mappings
+                return self.auto_mappings + self.manual_mappings
+
         dialog = MergeOptionDialog(self.view)
         if dialog.exec():
             option = dialog.get_option()
         else:
             return
+
+        mapping_columns = None
+        if option == 1:  # Diagonal
+            # Detect columns with the same name
+            main_cols = list(main_df.columns)
+            sec_cols = list(data.columns)
+            same_names = list(set(main_cols) & set(sec_cols))
             
+            # Show column mapping dialog
+            col_dialog = ColumnMappingDialog(main_cols, sec_cols, same_names, self.view)
+            if col_dialog.exec():
+                mapping_columns = col_dialog.get_all_mappings()
+            else:
+                return
+
         # Create and execute the LoadSecondaryDataCommand
-        command = LoadSecondaryDataCommand(self.model1, main_df, data, option)
+        command = LoadSecondaryDataCommand(self.model1, main_df, data, option, mapping_columns)
         self.model1.undo_stack.push(command)
         self.view.update_table(1, self.model1)
-        QMessageBox.information(self.view, "Success", "Secondary loaded successfully!")
+        QMessageBox.information(self.view, "Success", "Secondary data loaded successfully!")
         self.view.autosave_data()
         
     def save_data(self):
