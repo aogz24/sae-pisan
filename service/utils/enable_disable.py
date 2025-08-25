@@ -20,9 +20,7 @@ def enable_service(parent, error, results):
     parent.icon_label.setVisible(False)
     parent.r_script_edit.clear()
     parent.r_script_edit.setReadOnly(False)
-    if not error:
-        QMessageBox.information(parent, "Success", "Modelling finished!")
-    else:
+    if error:
         QMessageBox.critical(parent, "Error", str(results))
     parent.ok_button.setText("Run Model")
     

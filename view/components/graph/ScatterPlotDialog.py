@@ -359,11 +359,22 @@ class ScatterPlotDialog(QDialog):
     def accept(self):
         r_script = self.script_box.toPlainText()
         selected_columns = self.get_selected_columns()
-        if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
+        selected_items = self.selected_model.stringList()
+
+        # Validasi minimal 2 variabel
         if len(selected_columns) < 2:
-            QMessageBox.warning(self, "Scatter Plot", "Please select at least 2 variables.")
+            QMessageBox.warning(self, "Scatter Plot", "Please select at least 2 numeric variables.")
+            return
+
+        # Validasi hanya numeric
+        non_numeric = [item for item in selected_items if "[Numeric]" not in item]
+        if non_numeric:
+            QMessageBox.warning(self, "Scatter Plot", "All selected variables must be numeric.")
+            return
+
+        # Validasi script tidak kosong
+        if not r_script.strip():
+            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
 
         r_script = self.script_box.toPlainText()

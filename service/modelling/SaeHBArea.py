@@ -318,10 +318,10 @@ def generate_r_script(parent):
     
     if parent.Normal and vardir_var != '""':
         r_script += f"vardir <- datahb${vardir_var}\n"
-        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, vardir = "{vardir_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
+        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, vardir = "{vardir_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin}, data = datahb)'
     else:
-        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, data = datahb)'
-    
+        r_script += f'modelhb <- {parent.model_method}({formula_to_use}, iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin}, data = datahb)'
+
     return r_script
 
 def show_r_script(parent):
@@ -379,22 +379,29 @@ def show_options(parent):
     parent.iter_update.setText("3")  # Set default value to 3
     layout.addWidget(parent.iter_update)
     
-    iter_mcmc_label = QLabel("Number of Total Iterations per Chain:")
+    iter_mcmc_label = QLabel("Number of MCMC:")
     layout.addWidget(iter_mcmc_label)
     
     parent.iter_mcmc = QLineEdit()
     parent.iter_mcmc.setValidator(QIntValidator())
-    parent.iter_mcmc.setText("2000")  # Set default value to 2000
+    parent.iter_mcmc.setText("10000")
     layout.addWidget(parent.iter_mcmc)
     
-    burn_in_label = QLabel("Number of iterations to discard at the beginning:")
+    burn_in_label = QLabel("Burn in:")
     layout.addWidget(burn_in_label)
     
     parent.burn_in = QLineEdit()
     parent.burn_in.setValidator(QIntValidator())
-    parent.burn_in.setText("1000")  # Set default value to 1000
+    parent.burn_in.setText("2000")  # Set default value to 2000
     layout.addWidget(parent.burn_in)
-    
+
+    thin_label = QLabel("Thin:")
+    layout.addWidget(thin_label)
+
+    parent.thin = QLineEdit()
+    parent.thin.setValidator(QIntValidator())
+    parent.thin.setText("2")  # Set default value to 2
+    layout.addWidget(parent.thin)
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -430,5 +437,6 @@ def set_selection_method(parent, dialog):
     parent.iter_update = parent.iter_update.text()
     parent.iter_mcmc = parent.iter_mcmc.text()
     parent.burn_in = parent.burn_in.text()
+    parent.thin = parent.thin.text()
     dialog.accept()
     show_r_script(parent)

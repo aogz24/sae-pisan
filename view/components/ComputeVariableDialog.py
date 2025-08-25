@@ -1,6 +1,7 @@
+
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QComboBox, QTextEdit, QMessageBox, QInputDialog
 from service.compute import run_compute
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QDoubleValidator
 from PyQt6.QtCore import QSize, Qt
 import os
 import shutil
@@ -90,6 +91,10 @@ class ComputeVariableDialog(QDialog):
         self.template_selection.setCurrentIndex(0)
         self.layout.addWidget(self.template_selection)
 
+        self.variable_selected_label = QLabel("Variable :")
+        self.variable_selected_label.setVisible(False)
+        self.layout.addWidget(self.variable_selected_label)
+
         self.variable1_label = QLabel("Select Nominator:")
         self.variable1_label.setVisible(False)
         self.layout.addWidget(self.variable1_label)
@@ -105,6 +110,17 @@ class ComputeVariableDialog(QDialog):
         self.variable2_selection.addItems(self.column_names)
         self.variable2_selection.setVisible(False)
         self.layout.addWidget(self.variable2_selection)
+
+        # Label Lambda
+        self.lambda_label = QLabel("Lambda:")
+        self.lambda_label.setVisible(False)
+        self.layout.addWidget(self.lambda_label)
+
+        # Input Lambda (hanya angka)
+        self.lambda_selection = QLineEdit()
+        self.lambda_selection.setVisible(False)
+        self.lambda_selection.setValidator(QDoubleValidator())  # hanya menerima angka
+        self.layout.addWidget(self.lambda_selection)
 
         self.script_label = QLabel("R Script:")
 
@@ -140,6 +156,7 @@ class ComputeVariableDialog(QDialog):
         self.template_selection.currentIndexChanged.connect(self.update_script_input)
         self.variable1_selection.currentIndexChanged.connect(self.update_script_input)
         self.variable2_selection.currentIndexChanged.connect(self.update_script_input)
+        self.lambda_selection.textChanged.connect(self.update_script_input)
 
         # Initialize script input with the first template
         self.update_script_input(0)
@@ -152,9 +169,37 @@ class ComputeVariableDialog(QDialog):
             self.variable1_selection.setVisible(True)
             self.variable2_label.setVisible(True)
             self.variable2_selection.setVisible(True)
+            self.lambda_label.setVisible(False)
+            self.lambda_selection.setVisible(False)
             variable1 = self.variable1_selection.currentText()
             variable2 = self.variable2_selection.currentText()
             script = script.replace("{variable1}", variable1).replace("{variable2}", variable2)
+
+        elif template_name in ["Log Transformation", "Natural Log (ln) Transformation", "Logit Transformation"]:
+            self.variable_selected_label.setVisible(True)
+            self.variable1_label.setVisible(False)
+            self.variable1_selection.setVisible(True)
+            self.variable2_label.setVisible(False)
+            self.variable2_selection.setVisible(False)
+            self.lambda_label.setVisible(False)
+            self.lambda_selection.setVisible(False)
+
+            variable1 = self.variable1_selection.currentText()
+            script = script.replace("{variable1}", variable1)
+
+        elif template_name in ["Power Transformation", "Box-Cox Transformation"]:
+            self.variable_selected_label.setVisible(True)
+            self.variable1_label.setVisible(False)
+            self.variable1_selection.setVisible(True)
+            self.variable2_label.setVisible(False)
+            self.variable2_selection.setVisible(False)
+
+            self.lambda_label.setVisible(True)
+            self.lambda_selection.setVisible(True)
+            variable1 = self.variable1_selection.currentText()
+            lambda_value = self.lambda_selection.text()
+            script = script.replace("{variable1}", variable1).replace("{lambda}", lambda_value)
+
         else:
             self.variable1_label.setVisible(False)
             self.variable1_selection.setVisible(False)
@@ -164,7 +209,7 @@ class ComputeVariableDialog(QDialog):
 
     def set_model(self, model):
         self.model = model
-        self.column_names = [col.replace(" ", "_") for col in self.model.get_data().columns]
+        # self.column_names = [col.replace(" ", "_") for col in self.model.get_data().columns]
         self.variable1_selection.clear()
         self.variable1_selection.addItems(self.column_names)
         self.variable2_selection.clear()

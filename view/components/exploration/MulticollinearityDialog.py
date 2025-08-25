@@ -449,11 +449,12 @@ class MulticollinearityDialog(QDialog):
     def accept(self):
         r_script = self.script_box.toPlainText()
         if not r_script:
-            QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
-            return
-
-        if len(self.get_selected_independent_variables()) < 2:
-            QMessageBox.warning(self, "Invalid Independent Variables", "Please select at least two independent variables.")
+            if len(self.get_selected_independent_variables()) < 2:
+                QMessageBox.warning(self, "Invalid Independent Variables", "Please select at least two independent variables.")
+            elif not self.get_selected_dependent_variable():
+                QMessageBox.warning(self, "Invalid Dependent Variable", "Please select a dependent variable.")
+            else:
+                QMessageBox.warning(self, "Empty Script", "Please generate a script before running.")
             return
         
         self.run_button.setText("Running...")

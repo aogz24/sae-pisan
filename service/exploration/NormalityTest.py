@@ -59,17 +59,17 @@ def run_normality_test(parent):
 
         selected_vars = parent.selected_columns
         plot_paths = []  
-        test_names = ["shapiro", "jarque", "lilliefors"]
+        test_names = ["shapiro_wilk", "jarque_bera", "lilliefors"]
 
         # Prepare data containers
-        shapiro_data = []
-        jarque_data = []
-        lillie_data = []
+        shapiro_wilk_data = []
+        jarque_bera_data = []
+        lilliefors_data = []
 
         test_map = {
-            "shapiro": shapiro_data,
-            "jarque": jarque_data,
-            "lilliefors": lillie_data
+            "shapiro_wilk": shapiro_wilk_data,
+            "jarque_bera": jarque_bera_data,
+            "lilliefors": lilliefors_data
         }
 
         for var in selected_vars:
@@ -100,12 +100,12 @@ def run_normality_test(parent):
         # Build parent.result only with non-empty tables
         result_dict = {}
         result_dict["Pre-Modeling"] = "Normality Test"
-        if shapiro_data:
-            result_dict["Shapiro Test Results"] = pl.DataFrame(shapiro_data)
-        if jarque_data:
-            result_dict["Jarque Test Results"] = pl.DataFrame(jarque_data)
-        if lillie_data:
-            result_dict["Lilliefors Test Results"] = pl.DataFrame(lillie_data)
+        if shapiro_wilk_data:
+            result_dict["Shapiro-Wilk Test Results"] = pl.DataFrame(shapiro_wilk_data)
+        if jarque_bera_data:
+            result_dict["Jarque-Bera Test Results"] = pl.DataFrame(jarque_bera_data)
+        if lilliefors_data:
+            result_dict["Lilliefors Test Results"] = pl.DataFrame(lilliefors_data)
 
         parent.result = result_dict
         parent.plot = plot_paths if plot_paths else None
