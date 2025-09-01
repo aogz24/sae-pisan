@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.save_output_pdf)
 
         # Menu "Exploration"
-        self.menu_exploration = self.menu_bar.addMenu("Pre-Modeling")
+        self.menu_exploration = self.menu_bar.addMenu("Exploration")
 
         self.action_summary_data = QAction("Data Summary", self)
         self.action_summary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'summary.svg')))
@@ -380,6 +380,11 @@ class MainWindow(QMainWindow):
         self.action_normality_test.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'normality.svg')))
         self.action_normality_test.triggered.connect(self.open_normality_test_dialog_lazy)
 
+
+        self.menu_exploration.addAction(self.action_summary_data)
+        self.menu_exploration.addAction(self.action_normality_test)
+
+        self.menu_premodeling = self.menu_bar.addMenu("Pre-Modeling")
         self.action_correlation = QAction("Correlation", self)
         self.action_correlation.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'correlation.svg')))
         self.action_correlation.triggered.connect(self.open_correlation_matrix_dialog_lazy)
@@ -392,11 +397,9 @@ class MainWindow(QMainWindow):
         self.action_variable_selection.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'varselection.svg')))
         self.action_variable_selection.triggered.connect(self.open_variable_selection_dialog_lazy)
 
-        self.menu_exploration.addAction(self.action_summary_data)
-        self.menu_exploration.addAction(self.action_normality_test)
-        self.menu_exploration.addAction(self.action_correlation)
-        self.menu_exploration.addAction(self.action_multicollinearity)
-        self.menu_exploration.addAction(self.action_variable_selection)
+        self.menu_premodeling.addAction(self.action_correlation)
+        self.menu_premodeling.addAction(self.action_multicollinearity)
+        self.menu_premodeling.addAction(self.action_variable_selection)
 
         # Menu "Graph"
         self.menu_graph = self.menu_bar.addMenu("Graph")
