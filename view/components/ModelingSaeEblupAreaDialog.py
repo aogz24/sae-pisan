@@ -594,7 +594,7 @@ class ModelingSaeDialog(QDialog):
         def check_run_time():
             if thread.is_alive():
                 self.parent.autosave_data()
-                reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 1 minute. Do you want to continue?')
+                reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minute. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
@@ -607,7 +607,7 @@ class ModelingSaeDialog(QDialog):
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(check_run_time)
-        timer.start(60000)
+        timer.start(5*60*1000)
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
         if self.console_dialog:

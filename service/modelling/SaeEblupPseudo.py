@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QHBoxLayout
 from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QLabel, QLineEdit
 
 def assign_of_interest(parent):
     """
@@ -159,6 +160,30 @@ def assign_domain(parent):
             parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
         show_r_script(parent)
 
+def assign_sample_weight(parent):
+    """
+    Assigns a selected sample weight variable from the variables list to the sample weight variable of the parent object.
+    Parameters:
+    parent (object): The parent object that contains the variables list and sample weight variable.
+    The function performs the following steps:
+    1. Retrieves the selected indexes from the parent's variables list.
+    2. If there are selected indexes, it assigns the first selected index's data to the parent's sample weight variable.
+    3. Updates the parent's sample weight model with the new sample weight variable.
+    4. Removes the selected index from the variables list.
+    5. Calls the show_r_script function with the parent object.
+    """
+    
+    selected_indexes = parent.variables_list.selectedIndexes()
+    if selected_indexes:
+        old_var = parent.sample_weight_var[0] if parent.sample_weight_var else None
+        parent.sample_weight_var = [selected_indexes[0].data()]
+        parent.sample_weight_model.setStringList(parent.sample_weight_var)
+        parent.variables_list.model().removeRow(selected_indexes[0].row())  # Remove from variables list
+        if old_var:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), old_var)
+        show_r_script(parent)
+
 def unassign_variable(parent):
     """
     Unassigns selected variables from various lists in the parent object and adds them back to the variables list.
@@ -196,24 +221,13 @@ def unassign_variable(parent):
         show_r_script(parent)
         return
 
-    selected_indexes = parent.vardir_list.selectedIndexes()
-    if selected_indexes:
-        selected_items = [index.data() for index in selected_indexes]
-        parent.vardir_var = [var for var in parent.vardir_var if var not in selected_items]
-        parent.vardir_model.setStringList(parent.vardir_var)
-        for item in selected_items:
-            parent.variables_list.model().insertRow(0)  # Add back to variables list
-            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
-        show_r_script(parent)
-        return
-
     selected_indexes = parent.as_factor_list.selectedIndexes()
     if selected_indexes:
         selected_items = [index.data() for index in selected_indexes]
         parent.as_factor_var = [var for var in parent.as_factor_var if var not in selected_items]
         parent.as_factor_model.setStringList(parent.as_factor_var)
         for item in selected_items:
-            parent.variables_list.model().insertRow(0)  # Add back to variables list
+            parent.variables_list.model().insertRow(0)
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
         show_r_script(parent)
         
@@ -225,7 +239,18 @@ def unassign_variable(parent):
         for item in selected_items:
             parent.variables_list.model().insertRow(0)
             parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
-        show_r_script()
+        show_r_script(parent)
+        return
+        
+    selected_indexes = parent.sample_weight_list.selectedIndexes()
+    if selected_indexes:
+        selected_items = [index.data() for index in selected_indexes]
+        parent.sample_weight_var = [var for var in parent.sample_weight_var if var not in selected_items]
+        parent.sample_weight_model.setStringList(parent.sample_weight_var)
+        for item in selected_items:
+            parent.variables_list.model().insertRow(0)
+            parent.variables_list.model().setData(parent.variables_list.model().index(0), item)
+        show_r_script(parent)
 
 def get_selected_variables(parent):
     """
@@ -256,13 +281,13 @@ def generate_r_script(parent):
     Returns:
         str: The generated R script as a string.
     """
-    
+
     of_interest_var = f'{parent.of_interest_var[0].split(" [")[0].replace(" ", "_")}' if parent.of_interest_var else '""'
     auxilary_vars = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.auxilary_vars]) if parent.auxilary_vars else '""'
-    vardir_var = f'{parent.vardir_var[0].split(" [")[0].replace(" ", "_")}' if parent.vardir_var else '""'
-    as_factor_var = " + ".join([f'as.factor({var.split(" [")[0].replace(" ", "_")})' for var in parent.as_factor_var]) if parent.as_factor_var else '""'
+    as_factor_var = " + ".join([var.split(" [")[0].replace(" ", "_") for var in parent.as_factor_var]) if parent.as_factor_var else '""'
     domain_var = f'"{parent.domain_var[0].split(" [")[0].replace(" ", "_")}"' if parent.domain_var else 'NULL'
-    
+    sample_weight_var = f'{parent.sample_weight_var[0].split(" [")[0].replace(" ", "_")}' if parent.sample_weight_var else ''
+
     if (auxilary_vars=='""' or auxilary_vars is None) and as_factor_var=='""':
         formula = f'{of_interest_var} ~ 1'
     elif as_factor_var=='""':
@@ -274,15 +299,18 @@ def generate_r_script(parent):
 
     r_script = f'names(data_pseudo) <- gsub(" ", "_", names(data_pseudo)); #Replace space with underscore\n'
     r_script += f'formula <- {formula}\n'
-    r_script += f'vardir_var_pseudo <- data_pseudo["{vardir_var}"]\n'
+    r_script += f'pop_data <- data_pseudo[is.na(data_pseudo${sample_weight_var}), ]\n'
+    r_script += f'smp_data <- data_pseudo[!is.na(data_pseudo${sample_weight_var}), ]\n'
+    
     if parent.selection_method=="Stepwise":
         parent.selection_method = "both"
+        
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_pseudo<-fh(final_formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-ebp(final_formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores(), L={parent.L}, B={parent.B})'
     else:
-        r_script += f'model_pseudo<-fh(formula, vardir="{vardir_var}", combined_data =data_pseudo, domains={domain_var}, method = "reblupbc", MSE=TRUE, mse_type = "pseudo")'
+        r_script += f'model_pseudo<-ebp(formula, pop_data= pop_data, pop_domains={domain_var}, smp_data= smp_data, smp_domains={domain_var}, weight="{sample_weight_var}", MSE=TRUE, transformation="no", cpus=parallelly::availableCores(), L={parent.L}, B={parent.B})'
     return r_script
 
 def show_r_script(parent):
@@ -293,7 +321,7 @@ def show_r_script(parent):
                 `generate_r_script(parent)` is expected to return a string representing the R script.
                 `parent.r_script_edit` is expected to have a method `setText` to set the generated R script.
     """
-    
+
     r_script = generate_r_script(parent)
     parent.r_script_edit.setText(r_script)
 
@@ -305,30 +333,37 @@ def get_script(parent):
     Returns:
         str: The text content of the `r_script_edit` widget as a plain string.
     """
-    
+
     return parent.r_script_edit.toPlainText()  
 
 def show_options(parent):
     """
-    Displays an options dialog with OK and Cancel buttons.
+    Displays an options dialog with two text edits for "L" and "B", and OK/Cancel buttons.
     Parameters:
     parent (QWidget): The parent widget for the dialog.
-    The dialog allows the user to confirm or cancel their selection.
-    When the OK button is clicked, the `set_selection_method` function is called.
-    When the Cancel button is clicked, the dialog is rejected.
+    When OK is clicked, the entered options are stored in the parent object and set_selection_method is called.
     """
-    
+
     options_dialog = QDialog(parent)
     options_dialog.setWindowTitle("Options")
 
     layout = QVBoxLayout()
+    
+    from PyQt6.QtGui import QIntValidator
 
-    # method_label = QLabel("Stepwise Selection Method:")
-    # layout.addWidget(method_label)
+    l_label = QLabel("L:")
+    layout.addWidget(l_label)
+    parent.l_edit = QLineEdit()
+    parent.l_edit.setText("50")
+    parent.l_edit.setValidator(QIntValidator(1, 999999, parent.l_edit))  # Only allow integer input
+    layout.addWidget(parent.l_edit)
 
-    # parent.method_combo = QComboBox()
-    # parent.method_combo.addItems(["None", "Stepwise", "Forward", "Backward"])
-    # layout.addWidget(parent.method_combo)
+    b_label = QLabel("Bootstrap:")
+    layout.addWidget(b_label)
+    parent.b_edit = QLineEdit()
+    parent.b_edit.setText("50")
+    parent.b_edit.setValidator(QIntValidator(1, 999999, parent.b_edit))  # Only allow integer input
+    layout.addWidget(parent.b_edit)
 
     button_layout = QHBoxLayout()
     ok_button = QPushButton("OK")
@@ -340,7 +375,10 @@ def show_options(parent):
 
     options_dialog.setLayout(layout)
 
-    ok_button.clicked.connect(lambda: set_selection_method(parent, options_dialog))
+    def on_ok():
+        set_selection_method(parent, options_dialog)
+
+    ok_button.clicked.connect(on_ok)
     cancel_button.clicked.connect(options_dialog.reject)
 
     options_dialog.exec()
@@ -357,7 +395,9 @@ def set_selection_method(parent, dialog):
     Returns:
         None
     """
-    
+
     # parent.selection_method = parent.method_combo.currentText()
+    parent.L = parent.l_edit.text()
+    parent.B = parent.b_edit.text()
     dialog.accept()
     show_r_script(parent)

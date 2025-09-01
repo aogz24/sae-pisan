@@ -1,11 +1,14 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QVBoxLayout, QWidget, QTabWidget, QMenu, QFrame, QSpacerItem,
     QAbstractItemView, QApplication, QSplitter, QScrollArea, QSizePolicy, QToolBar, QInputDialog, 
-    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel
+    QTextEdit, QDialog, QComboBox, QPushButton, QHBoxLayout, QMessageBox, QLabel, QHeaderView
 )
-from PyQt6.QtCore import Qt, QSize, QTimer 
+from PyQt6.QtCore import Qt, QSize, QTimer, QItemSelectionModel, QEvent
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
+from view.components.ExcelLikeItemDelegate import ExcelLikeItemDelegate
+from view.components.TutorialManager import TutorialManager
 import polars as pl
+import datetime
 from model.TableModel import TableModel
 import os
 from service.table.GoToRow import go_to_start_row, go_to_end_row
@@ -143,7 +146,10 @@ class MainWindow(QMainWindow):
         self.model1 = TableModel(self.data1)
         self.model2 = TableModel(self.data2)
         self.path = os.path.join(os.path.dirname(__file__), '..')
-        self.font_size = 12
+        
+        # Load font size preference from settings
+        from view.components.FontPreferenceDialog import load_font_preference
+        self.font_size = load_font_preference()
         self.set_font_size(self.font_size)
         self.data = []
 
@@ -156,7 +162,16 @@ class MainWindow(QMainWindow):
         self.autosave_timer.timeout.connect(self.autosave_data)
         self.autosave_timer.start(self.autosave_interval)
         self.setup_logging()
+        
+        # Set up tutorial manager
+        self.tutorial_manager = TutorialManager(self)
+        self.tutorial_manager.tutorial_completed.connect(self.on_tutorial_completed)
+        self.tutorial_manager.tutorial_skipped.connect(self.on_tutorial_skipped)
+        
         self.showMaximized()
+        
+        # Show tutorial for first-time users
+        self.check_first_run()
 
     def setup_logging(self):
         """Setup logging to AppData folder"""
@@ -268,6 +283,7 @@ class MainWindow(QMainWindow):
 
         # Tab pertama (Data Editor)
         self.tab1 = QWidget()
+        self.tab1.setObjectName("tab1")
         self.spreadsheet = QTableView(self.tab1)
         self.spreadsheet.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
@@ -277,6 +293,37 @@ class MainWindow(QMainWindow):
         self.spreadsheet.horizontalHeader().sectionDoubleClicked.connect(self.rename_column)
         self.spreadsheet.verticalHeader().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.spreadsheet.verticalHeader().customContextMenuRequested.connect(lambda pos: show_context_menu(self, pos))
+        
+        # Excel-like editing setup
+        self.excel_delegate = ExcelLikeItemDelegate(self.spreadsheet)
+        self.spreadsheet.setItemDelegate(self.excel_delegate)
+        
+        # Set edit triggers to make it Excel-like
+        self.spreadsheet.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked | 
+            QAbstractItemView.EditTrigger.AnyKeyPressed |
+            QAbstractItemView.EditTrigger.EditKeyPressed
+        )
+        
+        # Enable tab navigation between cells
+        self.spreadsheet.setTabKeyNavigation(True)
+        
+        # Adjust header behavior to be more Excel-like
+        self.spreadsheet.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.spreadsheet.horizontalHeader().setStretchLastSection(True)
+        
+        # Allow cell resizing more like Excel
+        self.spreadsheet.horizontalHeader().setSectionsMovable(True)
+        self.spreadsheet.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        
+        # Connect cell changed signal to move to next cell
+        self.spreadsheet.installEventFilter(self)
+        
+        # Set alternating row colors for better readability (like Excel)
+        self.spreadsheet.setAlternatingRowColors(True)
+        
+        # Enable sorting when clicking on headers (like Excel)
+        self.spreadsheet.setSortingEnabled(True)
 
         tab1_layout = QVBoxLayout(self.tab1)
         tab1_layout.addWidget(self.spreadsheet)
@@ -284,6 +331,7 @@ class MainWindow(QMainWindow):
 
         # Tab kedua (Data Output)
         self.tab2 = QWidget()
+        self.tab2.setObjectName("tab2")
         self.table_view2 = QTableView(self.tab2)
         self.table_view2.setModel(self.model2)
         self.table_view2.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -293,6 +341,7 @@ class MainWindow(QMainWindow):
 
         # Tab ketiga (Output)
         self.tab3 = QWidget()
+        self.tab3.setObjectName("tab3")
         self.scroll_area = QScrollArea(self.tab3)
         
         # Tab output
@@ -343,7 +392,7 @@ class MainWindow(QMainWindow):
         self.load_action.setStatusTip("Ctrl+O")
         
         self.load_secondary_data = QAction("Open File for Secondary Data", self)
-        self.load_secondary_data.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_2))
+        self.load_secondary_data.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_2))
         self.load_secondary_data.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'secondary.svg')))
         self.load_secondary_data.setStatusTip("Ctrl+2")
         
@@ -496,6 +545,12 @@ class MainWindow(QMainWindow):
         action_r_packages_info.triggered.connect(self.show_r_packages_info)
         menu_about.addAction(action_r_packages_info)
         
+        # Add Interactive Tutorial option
+        action_tutorial = QAction("Interactive Tutorial", self)
+        action_tutorial.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'tutorial.svg')))
+        action_tutorial.triggered.connect(self.start_tutorial)
+        menu_about.addAction(action_tutorial)
+        
 
         # Tool Bar
         self.toolBar = QToolBar(self)
@@ -538,22 +593,22 @@ class MainWindow(QMainWindow):
         
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
-        self.go_to_start_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Up))
+        self.go_to_start_row_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Up))
         self.go_to_start_row_action.triggered.connect(lambda : go_to_start_row(self))
         self.addAction(self.go_to_start_row_action)
 
         self.go_to_end_row_action = QAction(self)
-        self.go_to_end_row_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Down))
+        self.go_to_end_row_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Down))
         self.go_to_end_row_action.triggered.connect(lambda : go_to_end_row(self))
         self.addAction(self.go_to_end_row_action)
 
         self.go_to_start_column_action = QAction(self)
-        self.go_to_start_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Left))
+        self.go_to_start_column_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Left))
         self.go_to_start_column_action.triggered.connect(lambda : go_to_start_column(self))
         self.addAction(self.go_to_start_column_action)
 
         self.go_to_end_column_action = QAction(self)
-        self.go_to_end_column_action.setShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Right))
+        self.go_to_end_column_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Right))
         self.go_to_end_column_action.triggered.connect(lambda : go_to_end_column(self))
         self.addAction(self.go_to_end_column_action)
 
@@ -585,7 +640,7 @@ class MainWindow(QMainWindow):
     def change_font_size(self):
         """
         Opens a dialog to change the font size of the application.
-        The dialog presents three font size options: "Small", "Medium", and "Big".
+        The dialog presents four font size options: "Small", "Medium", "Large", and "Extra Large".
         The user can select a font size from a combo box, and the selected size
         will be applied to the application if the user confirms the selection.
         The dialog also displays a sample text ("AaBbCc") that updates in real-time
@@ -604,7 +659,7 @@ class MainWindow(QMainWindow):
             update_display_font_size: Updates the sample text's font size based on the selected size in the combo box.
         """
         
-        sizes = {"Small": 10, "Medium": 12, "Large": 16}
+        sizes = {"Small": 10, "Medium": 12, "Large": 16, "Extra Large": 20}
         items = list(sizes.keys())
 
         dialog = QDialog(self)
@@ -646,6 +701,21 @@ class MainWindow(QMainWindow):
             selected_size = combo_box.currentText()
             self.set_font_size(sizes[selected_size])
             self.font_size = sizes[selected_size]
+            
+            # Save the font preference
+            from view.components.FontPreferenceDialog import save_font_preference
+            save_font_preference(self.font_size)
+            
+            # Show confirmation toast
+            toast = CustomToast(
+                parent=self,
+                title="Font Size Updated",
+                text=f"Font size changed to {selected_size}",
+                duration=2000,
+                position="bottom-right"
+            )
+            toast.set_border_radius(8)
+            toast.show()
 
     def set_font_size(self, size):
         """
@@ -1081,24 +1151,62 @@ class MainWindow(QMainWindow):
         modifiers = event.modifiers()
         key = event.key()
         
-        if modifiers == Qt.Modifier.CTRL:
-            if key == Qt.Key.Key_Up:
-                go_to_start_row(self)
-                return
-            elif key == Qt.Key.Key_Down:
-                go_to_end_row(self)
-                return
-            elif key == Qt.Key.Key_Left:
-                go_to_start_column(self)
-                return
-            elif key == Qt.Key.Key_Right:
-                go_to_end_column(self)
-                return
-            elif key == Qt.Key.Key_D:
-                # Handle Ctrl+D for recent data
-                self.load_temp_data()
-                return
-            elif key == Qt.Key.Key_2:
+        # Only apply Excel-like shortcuts when data editor tab is active
+        if self.tab_widget.currentIndex() == 0:
+            # Excel-like shortcuts
+            if modifiers == Qt.KeyboardModifier.ControlModifier:
+                if key == Qt.Key.Key_Up:
+                    go_to_start_row(self)
+                    return
+                elif key == Qt.Key.Key_Down:
+                    go_to_end_row(self)
+                    return
+                elif key == Qt.Key.Key_Left:
+                    go_to_start_column(self)
+                    return
+                elif key == Qt.Key.Key_Right:
+                    go_to_end_column(self)
+                    return
+                elif key == Qt.Key.Key_Home:
+                    # Go to first cell (like Excel)
+                    first_index = self.model1.index(0, 0)
+                    self.spreadsheet.setCurrentIndex(first_index)
+                    return
+                elif key == Qt.Key.Key_End:
+                    # Go to last populated cell (like Excel)
+                    last_row = self.model1.rowCount(None) - 1
+                    last_col = self.model1.columnCount(None) - 1
+                    last_index = self.model1.index(last_row, last_col)
+                    self.spreadsheet.setCurrentIndex(last_index)
+                    return
+                elif key == Qt.Key.Key_Space:
+                    # Select entire column (like Excel)
+                    current = self.spreadsheet.currentIndex()
+                    if current.isValid():
+                        self.spreadsheet.selectColumn(current.column())
+                        return
+                elif key == Qt.Key.Key_D:
+                    # Handle Ctrl+D for recent data
+                    self.load_temp_data()
+                    return
+            
+            # Shift+Space selects entire row (like Excel)
+            elif modifiers == Qt.KeyboardModifier.ShiftModifier and key == Qt.Key.Key_Space:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.selectRow(current.row())
+                    return
+            
+            # F2 to edit the current cell (like Excel)
+            elif key == Qt.Key.Key_F2 and modifiers == Qt.KeyboardModifier.NoModifier:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.edit(current)
+                    return
+        
+        # Handle other shortcuts for any tab
+        if modifiers == Qt.KeyboardModifier.ControlModifier:
+            if key == Qt.Key.Key_2:
                 # Handle Ctrl+2 for secondary data
                 if hasattr(self, 'load_secondary_data') and self.load_secondary_data.triggered:
                     self.load_secondary_data.triggered.emit()
@@ -1116,17 +1224,61 @@ class MainWindow(QMainWindow):
             clipboard.setText(data)
 
     def paste_selection(self):
-        """Paste clipboard content to selected cells."""
+        """Paste clipboard content to selected cells, Excel-style."""
         clipboard = QApplication.clipboard()
-        data = clipboard.text().split('\n')
+        clipboard_text = clipboard.text()
+        data = [row.split('\t') for row in clipboard_text.split('\n') if row]  # Parse clipboard data into a 2D array
+        
+        if not data:
+            return  # No data to paste
+            
         selection = self.spreadsheet.selectionModel().selectedIndexes()
         if selection:
-            start_row = selection[0].row()
-            start_col = selection[0].column()
-            for i, row in enumerate(data):
-                for j, value in enumerate(row.split('\t')):
-                    index = self.model1.index(start_row + i, start_col + j)
-                    self.model1.setData(index, value, Qt.ItemDataRole.EditRole)
+            # Group selection by row to prepare for Excel-like pasting
+            selection_by_row = self.group_by_row(selection)
+            
+            # Sort each row by column to ensure we start from left to right
+            for i in range(len(selection_by_row)):
+                selection_by_row[i] = sorted(selection_by_row[i], key=lambda x: x.column())
+                
+            # Get the top-left cell of the selection as the starting point
+            start_row = min(index.row() for index in selection)
+            start_col = min(index.column() for index in selection)
+            
+            # Get the dimensions of the selection
+            selection_height = max(index.row() for index in selection) - start_row + 1
+            selection_width = max(index.column() for index in selection) - start_col + 1
+            
+            # Create a single undo command for the entire paste operation
+            from service.command.PasteCommand import PasteCommand
+            
+            # Excel-like paste: fill the selected range by repeating the clipboard data if needed
+            if len(selection_by_row) > 1 or len(selection_by_row[0]) > 1:
+                # For multiple cell selection: calculate how many times to repeat the data
+                data_height = len(data)
+                data_width = max(len(row) for row in data)
+                
+                # Create a new data array that fills the entire selection
+                filled_data = []
+                for i in range(selection_height):
+                    row_data = []
+                    for j in range(selection_width):
+                        # Get the corresponding value from clipboard data, wrapping around if needed
+                        if i < data_height and j < len(data[i % data_height]):
+                            row_data.append(data[i % data_height][j % len(data[i % data_height])])
+                        else:
+                            row_data.append("")  # Empty cell if no data
+                    filled_data.append(row_data)
+                
+                # Apply the filled data to the selection
+                paste_command = PasteCommand(self.model1, start_row, start_col, filled_data)
+                self.model1.undo_stack.push(paste_command)
+            else:
+                # Single cell selection: paste all data starting from this cell
+                paste_command = PasteCommand(self.model1, start_row, start_col, data)
+                self.model1.undo_stack.push(paste_command)
+            
+            # No need to manually set data here since redo() is automatically called when a command is pushed
 
     def undo_action(self):
         """Undo the last action."""
@@ -1470,23 +1622,159 @@ class MainWindow(QMainWindow):
         toast.set_border_radius(8)
         toast.show()
     
+    def start_tutorial(self):
+        """Start the interactive tutorial"""
+        try:
+            if hasattr(self, 'tutorial_manager') and self.tutorial_manager:
+                self.tutorial_manager.start_tutorial()
+            else:
+                self.logger.error("Tutorial manager not initialized")
+        except Exception as e:
+            self.logger.error(f"Error starting tutorial: {e}")
+            # Show error toast
+            error_toast = CustomToast(
+                parent=self,
+                title="Tutorial Error",
+                text="Could not start the tutorial. Please try again later.",
+                duration=3000,
+                position="top-right"
+            )
+            error_toast.set_border_radius(8)
+            error_toast.set_background_color("#FFEBEE")  # Light red
+            error_toast.show()
+        
+    def on_tutorial_completed(self):
+        """Handle the tutorial completion event"""
+        toast = CustomToast(
+            parent=self,
+            title="Tutorial Completed",
+            text="You've completed the saePisan tutorial! You can access it again anytime from the About menu.",
+            duration=5000,
+            position="bottom-right"
+        )
+        toast.set_border_radius(8)
+        toast.set_background_color("#E8F5E9")  # Light green
+        toast.set_duration_bar_color("#4CAF50")  # Green
+        toast.show()
+        
+    def on_tutorial_skipped(self):
+        """Handle the tutorial skipped event"""
+        toast = CustomToast(
+            parent=self,
+            title="Tutorial Skipped",
+            text="You can restart the tutorial anytime from the About menu.",
+            duration=3000,
+            position="bottom-right"
+        )
+        toast.set_border_radius(8)
+        toast.show()
+    
+    def check_first_run(self):
+        """Check if this is the first time the app is run and show font preference and tutorial if it is"""
+        try:
+            app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            os.makedirs(app_data_dir, exist_ok=True)
+            tutorial_flag_file = os.path.join(app_data_dir, 'tutorial_shown.flag')
+            settings_file = os.path.join(app_data_dir, 'settings.json')
+            
+            if not os.path.exists(tutorial_flag_file):
+                # First show the font preference dialog after splash screen completes
+                QTimer.singleShot(1500, self._show_font_preference_dialog)
+                
+                # Then show the welcome and tutorial with a longer delay
+                QTimer.singleShot(5000, self._show_welcome_and_tutorial)
+                
+                # Create the flag file to mark that tutorial has been shown
+                with open(tutorial_flag_file, 'w') as f:
+                    f.write(f"Tutorial shown on {datetime.datetime.now().isoformat()}")
+        except Exception as e:
+            self.log_exception(e, "Error checking first run")
+    
+    def _show_font_preference_dialog(self):
+        """Show font preference dialog and apply selected font size"""
+        try:
+            from view.components.FontPreferenceDialog import FontPreferenceDialog, save_font_preference
+            
+            dialog = FontPreferenceDialog(self)
+            
+            # Make sure dialog is modal and appears on top
+            dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+            
+            # Connect the font size selection signal
+            dialog.font_size_selected.connect(self._apply_font_preference)
+            
+            # Show the dialog
+            dialog.exec()
+        except Exception as e:
+            self.log_exception(e, "Error showing font preference dialog")
+    
+    def _apply_font_preference(self, font_size):
+        """Apply the selected font size preference and save it"""
+        try:
+            # Apply the font size
+            self.font_size = font_size
+            self.set_font_size(font_size)
+            
+            # Save the preference
+            from view.components.FontPreferenceDialog import save_font_preference
+            save_font_preference(font_size)
+            
+            # Show confirmation toast
+            toast = CustomToast(
+                parent=self,
+                title="Font Size Applied",
+                text=f"Your preferred font size has been applied. You can change it anytime in Settings.",
+                duration=3000,
+                position="bottom-right"
+            )
+            toast.set_border_radius(8)
+            toast.show()
+        except Exception as e:
+            self.log_exception(e, "Error applying font preference")
+    
+    def _show_welcome_and_tutorial(self):
+        """Show welcome message and start tutorial after a delay"""
+        # Show welcome message
+        welcome_toast = CustomToast(
+            parent=self,
+            title="Welcome to saePisan!",
+            text="Starting interactive tutorial to help you get familiar with the application. You can skip or restart it anytime.",
+            duration=5000,
+            position="top-right"
+        )
+        welcome_toast.set_border_radius(8)
+        welcome_toast.set_background_color("#E1F5FE")  # Light blue
+        welcome_toast.show()
+        
+        # Start tutorial with a short delay after the welcome message
+        QTimer.singleShot(3000, self.start_tutorial)
+        
+    def resizeEvent(self, event):
+        """Handle window resize events"""
+        super().resizeEvent(event)
+        # Resize the tutorial overlay if it's active
+        if hasattr(self, 'tutorial_manager') and self.tutorial_manager:
+            self.tutorial_manager.resize_overlay()
+    
     def closeEvent(self, event):
         """Handle the close event to show a confirmation dialog."""
-        
         try:
             reply = QMessageBox.question(self, 'Confirm Exit',
-                                     'Are you sure you want to exit?',
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                     QMessageBox.StandardButton.No)
+                                         'Are you sure you want to exit?',
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                         QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                self.autosave_data()
                 import rpy2.robjects as ro
                 if 'saeHB' in ro.r('loadedNamespaces()'):
                     ro.r('detach("package:saeHB", unload=TRUE)')
                 if 'rjags' in ro.r('loadedNamespaces()'):
                     ro.r("unloadNamespace('rjags')")
                 
-                #to kill the process
+                # Autosave before closing
+                self.autosave_data()
+                
+                # to kill the process
                 import os
                 import psutil
 
@@ -1500,4 +1788,53 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.log_exception(e, "Close Event")
             QMessageBox.warning(self, 'Error', f'An error occurred while closing the application: {e}')
+            event.accept()  # Force close if there's an error
+            
+    def eventFilter(self, obj, event):
+        """
+        Handle events for Excel-like behavior, especially for keyboard navigation
+        between cells after editing.
+        """
+        if obj == self.spreadsheet and event.type() == QEvent.Type.KeyPress:
+            key = event.key()
+            
+            # Handle Enter key to move down like Excel
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    # If not in edit mode, start editing
+                    if not self.spreadsheet.state() == QAbstractItemView.State.EditingState:
+                        self.spreadsheet.edit(current)
+                    else:
+                        # If already editing, move down after edit completes
+                        next_row = min(current.row() + 1, self.model1.rowCount(None) - 1)
+                        next_index = self.model1.index(next_row, current.column())
+                        self.spreadsheet.setCurrentIndex(next_index)
+                        return True
+            
+            # Handle Tab key to move right like Excel
+            elif key == Qt.Key.Key_Tab:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    # If not in edit mode, start editing
+                    if not self.spreadsheet.state() == QAbstractItemView.State.EditingState:
+                        self.spreadsheet.edit(current)
+                    else:
+                        # If already editing, move right after edit completes
+                        next_col = min(current.column() + 1, self.model1.columnCount(None) - 1)
+                        next_index = self.model1.index(current.row(), next_col)
+                        self.spreadsheet.setCurrentIndex(next_index)
+                        return True
+                        
+            # F2 to edit current cell (like Excel)
+            elif key == Qt.Key.Key_F2:
+                current = self.spreadsheet.currentIndex()
+                if current.isValid():
+                    self.spreadsheet.edit(current)
+                    return True
+        
+        # Delegate handles post-edit navigation
+        
+        return super().eventFilter(obj, event)
+                
 
