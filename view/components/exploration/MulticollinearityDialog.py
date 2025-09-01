@@ -144,7 +144,7 @@ class MulticollinearityDialog(QDialog):
 
         # Limit height 
         item_height = 30  
-        self.dependent_variable_list.setFixedHeight(item_height + 4)  
+        self.dependent_variable_list.setFixedHeight(item_height + 10)  
 
         dependent_variable_layout.addWidget(self.dependent_variable_label)
         dependent_variable_layout.addWidget(self.dependent_variable_list)

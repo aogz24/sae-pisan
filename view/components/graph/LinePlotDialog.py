@@ -140,7 +140,7 @@ class LinePlotDialog(QDialog):
 
         # Batasi tinggi 
         item_height = 30  
-        self.horizontal_list.setFixedHeight(item_height + 4)  
+        self.horizontal_list.setFixedHeight(item_height + 10)  
 
         horizontal_layout.addWidget(self.horizontal_label)
         horizontal_layout.addWidget(self.horizontal_list)
