@@ -92,10 +92,18 @@ class TutorialManager(QObject):
             action="activate_tab_2"
         ))
         
+        # Exploration menu
+        self.steps.append(TutorialStep(
+            target="Exploration",
+            message="The Exploration menu provides tools for initial data analysis, including summary statistics and normality tests.",
+            target_type="menu_text",
+            action="activate_tab_0"
+        ))
+
         # Pre-Modeling menu
         self.steps.append(TutorialStep(
             target="Pre-Modeling",
-            message="The Pre-Modeling menu provides tools for data exploration, including summary statistics, normality tests, correlation analysis, and variable selection.",
+            message="The Pre-Modeling menu provides tools to prepare data before modeling, such as correlation analysis, multicollinearity checks, and variable selection.",
             target_type="menu_text",
             action="activate_tab_0"
         ))
