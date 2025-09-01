@@ -486,8 +486,8 @@ class VariableSelectionDialog(QDialog):
 
         if variable_selection.error:
             QMessageBox.critical(self, "Variable Selection", variable_selection.result)
-        else:
-            QMessageBox.information(self, "Variable Selection", "Exploration has been completed.")
+        # else:
+        #     QMessageBox.information(self, "Variable Selection", "Exploration has been completed.")
             
         # self.parent.add_output(script_text=r_script, result_text=variable_selection.result)
         display_script_and_output(self.parent,r_script, variable_selection.result)

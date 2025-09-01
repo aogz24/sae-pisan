@@ -379,10 +379,11 @@ class SummaryDataDialog(QDialog):
         controller = SummaryDataController(summary_data)
         controller.run_model(r_script)
 
-        if not summary_data.error:
-            QMessageBox.information(self, "Summary Data", "Exploration has been completed.")
-        else:
+        if summary_data.error:
             QMessageBox.critical(self, "Summary Data", summary_data.result)
+        #     QMessageBox.information(self, "Summary Data", "Exploration has been completed.")
+        # else:
+            
             
         # self.parent.add_output(r_script, summary_data.result)
         print(r_script)

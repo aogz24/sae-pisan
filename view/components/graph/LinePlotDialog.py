@@ -470,8 +470,8 @@ class LinePlotDialog(QDialog):
 
         if line_plot.error:
             QMessageBox.critical(self, "Line Plot", line_plot.result)
-        else:
-            QMessageBox.information(self, "Line Plot", "Graph has been generated.")
+        # else:
+        #     QMessageBox.information(self, "Line Plot", "Graph has been generated.")
 
         # self.parent.add_output(script_text = r_script, result_text = line_plot.result, plot_paths = line_plot.plot)
         display_script_and_output(self.parent, r_script, line_plot.result, line_plot.plot)

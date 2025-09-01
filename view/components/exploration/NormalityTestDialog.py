@@ -499,8 +499,8 @@ class NormalityTestDialog(QDialog):
 
         if not normality_test.error:
             QMessageBox.information(self, "Normality Test", "Exploration has been completed.")
-        else:
-            QMessageBox.critical(self, "Normality Test", normality_test.result) 
+        # else:
+        #     QMessageBox.critical(self, "Normality Test", normality_test.result) 
         print("Plot:", normality_test.plot)
         # self.parent.add_output(r_script, normality_test.result, normality_test.plot)
         display_script_and_output(self.parent, r_script, normality_test.result, normality_test.plot)

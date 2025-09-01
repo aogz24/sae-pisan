@@ -438,8 +438,8 @@ class HistogramDialog(QDialog):
         controller.run_model(r_script)
         if histogram.error:
             QMessageBox.critical(self, "Histogram", histogram.result)
-        else:
-            QMessageBox.information(self, "Histogram", "Graph has been generated.")
+        # else:
+        #     QMessageBox.information(self, "Histogram", "Graph has been generated.")
 
         # self.parent.add_output(script_text=r_script, result_text=histogram.result, plot_paths=histogram.plot)
         display_script_and_output(self.parent, r_script, histogram.result, histogram.plot)

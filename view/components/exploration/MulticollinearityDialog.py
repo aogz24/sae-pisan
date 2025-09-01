@@ -470,8 +470,8 @@ class MulticollinearityDialog(QDialog):
 
         if multicollinearity.error:
             QMessageBox.critical(self, "Multicollinearity", multicollinearity.result)
-        else:
-            QMessageBox.information(self, "Multicollinearity", "Exploration has been completed.")
+        # else:
+        #     QMessageBox.information(self, "Multicollinearity", "Exploration has been completed.")
         # self.parent.add_output(script_text=r_script, result_text=multicollinearity.result)
         display_script_and_output(self.parent, r_script, multicollinearity.result)
         self.icon_label.setVisible(False)
