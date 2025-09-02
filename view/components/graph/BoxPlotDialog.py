@@ -404,8 +404,8 @@ class BoxPlotDialog(QDialog):
         controller.run_model(r_script)
         if box_plot.error:
             QMessageBox.critical(self, "Box Plot", box_plot.result)
-        else:
-            QMessageBox.information(self, "Box Plot", "Graph has been generated")
+        # else:
+        #     QMessageBox.information(self, "Box Plot", "Graph has been generated")
 
         display_script_and_output(self.parent, r_script, box_plot.result, box_plot.plot)
         self.parent.tab_widget.setCurrentWidget(self.parent.output_tab)

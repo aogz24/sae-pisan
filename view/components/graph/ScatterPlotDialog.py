@@ -390,8 +390,8 @@ class ScatterPlotDialog(QDialog):
 
         if scatter_plot.error:
             QMessageBox.critical(self, "Scatter Plot", scatter_plot.result)
-        else:
-            QMessageBox.information(self, "Scatter Plot", "Graph has been generated")
+        # else:
+        #     QMessageBox.information(self, "Scatter Plot", "Graph has been generated")
 
         # self.parent.add_output(script_text=r_script, result_text=scatter_plot.result, plot_paths=scatter_plot.plot)
         display_script_and_output(self.parent, r_script, scatter_plot.result, scatter_plot.plot)

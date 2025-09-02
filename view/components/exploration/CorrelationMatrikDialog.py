@@ -402,8 +402,8 @@ class CorrelationMatrixDialog(QDialog):
 
         if not correlation_matrix.error:
             QMessageBox.information(self, "Correlation Matrix", "Exploration has been completed.")
-        else:
-            QMessageBox.warning(self, "Correlation Matrix", correlation_matrix.result)
+        # else:
+        #     QMessageBox.warning(self, "Correlation Matrix", correlation_matrix.result)
 
         # self.parent.add_output(script_text = r_script, result_text =  correlation_matrix.result ,plot_paths = correlation_matrix.plot)
         display_script_and_output(self.parent, r_script, correlation_matrix.result, correlation_matrix.plot)
