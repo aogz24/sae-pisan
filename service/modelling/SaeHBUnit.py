@@ -393,9 +393,9 @@ def generate_r_script(parent):
     if parent.selection_method and parent.selection_method != "None" and auxilary_vars:
         r_script += f'stepwise_model <- step(formula, direction="{parent.selection_method.lower()}")\n'
         r_script += f'final_formula <- formula(stepwise_model)\n'
-        r_script += f'model_unit<-hb_unit(final_formula, data_unit = datahb_unit, data_area= Xmeans,domain="{domain_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin})'
+        r_script += f'model_hb_unit<-hb_unit(final_formula, data_unit = datahb_unit, data_area= Xmeans,domain="{domain_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin})'
     else:
-        r_script += f'model_unit<-hb_unit(formula, data_unit = datahb_unit, data_area= Xmeans,domain="{domain_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin})'
+        r_script += f'model_hb_unit<-hb_unit(formula, data_unit = datahb_unit, data_area= Xmeans,domain="{domain_var}", iter.update={parent.iter_update}, iter.mcmc = {parent.iter_mcmc}, burn.in = {parent.burn_in}, thin = {parent.thin})'
     return r_script
 
 def show_r_script(parent):
@@ -419,7 +419,7 @@ def get_script_hb(parent):
     
     return parent.r_script_edit.toPlainText()  
 
-def show_options(parent):
+def show_options_hb(parent):
     """
     Displays a dialog window with options for configuring the stepwise selection method and iteration parameters.
     Parameters:

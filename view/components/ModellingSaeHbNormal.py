@@ -5,7 +5,7 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 from view.components.ConsoleDialog import ConsoleDialog
 from PyQt6.QtWidgets import (QMessageBox)
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal
 from model.SaeHBUnit import SaeHBUnit
 from controller.modelling.SaeHBUnitController import SaeHBUnitController
 import polars as pl
@@ -34,15 +34,22 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         __init__(parent): Initializes the dialog with the given parent.
     """
     
+    run_model_finished = pyqtSignal(object, object, object, object, object)
+    update_console = pyqtSignal(str)
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("SAE HB Normal")
         self.model_method = "Normal"
         self.Normal = True
         self.population_sample_size.setVisible(False)
-        self.population_sample_size_list = None
+        self.population_sample_size_list.setVisible(False)
         self.population_sample_size_model = None
         self.assign_population_sample_size_button.setVisible(False)
+        try:
+            self.option_button.clicked.disconnect()
+        except Exception:
+            pass
+        self.option_button.clicked.connect(lambda : show_options_hb(self))
         
         self.iter_update="3"
         self.iter_mcmc="10000"
@@ -70,6 +77,16 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         event.accept()
         
 
+    import sys
+    class ConsoleStream:
+        def __init__(self, signal):
+            self.signal = signal
+        def write(self, text):
+            if text.strip():
+                self.signal.emit(text)
+        def flush(self):
+            pass
+
     def set_model(self, model):
         self.model = model
         self.columns = [
@@ -95,16 +112,13 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         self.as_factor_var = []
         self.domain_var = []
         self.aux_mean_vars = []
-        self.population_sample_size_var = []
-        self.selection_method = "None"
-        self.method = "REML"
-        self.bootstrap = "50"
+        self.iter_update="3"
+        self.iter_mcmc="10000"
+        self.thin="2"
+        self.burn_in="2000"
     
     def _append_console(self, text):
-        if self.console_dialog:
-            if any(char.isdigit() for char in text):
-                text = f"Bootstrap={text}"
-            self.console_dialog.append_text(text)
+        self.console_dialog.append_text(text)
     
     def toggle_r_script_visibility(self):
         """
@@ -334,7 +348,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             self.console_dialog.close()
         threads = threading.enumerate()
         for thread in threads:
-            if thread.name == "Unit Level" and thread.is_alive():
+            if thread.name == "HB Unit Level" and thread.is_alive():
                 self.parent.autosave_data()
                 if self.reply is None:
                     self.reply = QMessageBox(self)
@@ -405,7 +419,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             self.console_dialog.show()
         
         def run_model_thread():
-            results, error, df = None, None, None
+            results, error, df, plot_paths = None, None, None, None
             try:
                 if self.console_dialog:
                     import sys
@@ -413,7 +427,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
                     sys.stdout = ConsoleStream(self.update_console)
                 from rpy2.rinterface_lib import openrlib
                 with openrlib.rlock:
-                    results, error, df = current_context.run(controller.run_model, r_script)
+                    results, error, df, plot_paths = current_context.run(controller.run_model, r_script)
                 if self.console_dialog:
                     sys.stdout = old_stdout
                 if not error:
@@ -422,7 +436,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
                 error = e
             finally:
                 if not self.stop_thread.is_set():
-                    self.run_model_finished.emit(results, error, sae_model, r_script)
+                    self.run_model_finished.emit(results, error, sae_model, r_script, plot_paths)
                     self.finnish = True
 
         def check_run_time():
@@ -434,7 +448,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
                     enable_service(self, False, "")
 
 
-        thread = threading.Thread(target=run_model_thread, name="Unit Level")
+        thread = threading.Thread(target=run_model_thread, name="HB Unit Level")
         thread.start()
 
         timer = QTimer(self)
@@ -442,7 +456,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         timer.timeout.connect(check_run_time)
         timer.start(5*60*1000)
     
-    def on_run_model_finished(self, results, error, sae_model, r_script):
+    def on_run_model_finished(self, results, error, sae_model, r_script, plot_paths):
         if self.console_dialog:
             self.console_dialog.stop_loading()
             self.console_dialog.close()
@@ -450,7 +464,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             self.parent.update_table(2, sae_model.get_model2())
         if self.reply is not None:
             self.reply.reject()
-        display_script_and_output(self.parent, r_script, results)
+        display_script_and_output(self.parent, r_script, results, plot_paths)
         enable_service(self, error, results)
         self.finnish = True
         self.close()
