@@ -388,7 +388,19 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             self.option_button.setEnabled(True)
             self.ok_button.setText("Run Model")
             return
-        
+        if not self.domain_var or self.domain_var == [""]:
+            QMessageBox.warning(self, "Warning", "Domain cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+        if not self.index_var or self.index_var == [""]:
+            QMessageBox.warning(self, "Warning", "Index variable cannot be empty.")
+            self.ok_button.setEnabled(True)
+            self.option_button.setEnabled(True)
+            self.ok_button.setText("Run Model")
+            return
+
         r_script = get_script_hb(self)
         if not check_script(r_script):
             return
