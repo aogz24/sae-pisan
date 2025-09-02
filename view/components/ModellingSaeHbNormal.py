@@ -63,26 +63,6 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         # Connect update_console signal to _append_console method
         self.update_console.connect(self._append_console)
         
-    def closeEvent(self, event):
-        if self.console_dialog:
-            self.console_dialog.close()
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == "Unit Level" and thread.is_alive():
-                self.parent.autosave_data()
-                if self.reply is None:
-                    self.reply = QMessageBox(self)
-                    self.reply.setWindowTitle('Run in Background')
-                    self.reply.setText('Do you want to run the model in the background?')
-                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
-                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
-                    self.stop_thread.set()
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
-        self.finnish=False
-        self.reply=None
-        event.accept()
-        
 
     import sys
     class ConsoleStream:
