@@ -4,7 +4,7 @@ from view.components.ModelingSaeEblupUnitDialog import ModelingSaeUnitDialog
 from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 from view.components.ConsoleDialog import ConsoleDialog
-from PyQt6.QtWidgets import (QMessageBox)
+from PyQt6.QtWidgets import (QMessageBox, QCheckBox)
 from PyQt6.QtCore import QTimer, pyqtSignal
 from model.SaeHBUnit import SaeHBUnit
 from controller.modelling.SaeHBUnitController import SaeHBUnitController
@@ -55,6 +55,13 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
         self.iter_mcmc="10000"
         self.thin="2"
         self.burn_in="2000"
+        
+        try:
+           self.update_console.disconnect()
+        except Exception:
+            pass
+        # Connect update_console signal to _append_console method
+        self.update_console.connect(self._append_console)
         
     def closeEvent(self, event):
         if self.console_dialog:
