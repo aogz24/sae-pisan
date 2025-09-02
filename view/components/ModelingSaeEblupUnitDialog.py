@@ -586,7 +586,8 @@ class ModelingSaeUnitDialog(QDialog):
         self.of_interest_model.setStringList([])
         self.domain_model.setStringList([])
         self.index_model.setStringList([])
-        self.population_sample_size_model.setStringList([])
+        if self.population_sample_size_model is not None:
+            self.population_sample_size_model.setStringList([])
         self.as_factor_model.setStringList([])
         self.of_interest_var = []
         self.auxilary_vars = []
