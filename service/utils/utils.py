@@ -53,7 +53,6 @@ def copy_output_image(parent, image_label):
         os.makedirs(temp_folder, exist_ok=True)
 
         if pixmap.save(temp_path):
-            print(f"Gambar disimpan di: {temp_path}")
             
             clipboard = QApplication.clipboard()
             clipboard.setPixmap(QPixmap(temp_path))
@@ -429,7 +428,6 @@ def display_script_and_output(parent, r_script, results, plot_paths=None, timest
     parent.output_layout.addWidget(card_frame)
     if hasattr(parent, "scroll_area"):
         from PyQt6.QtCore import QTimer
-        print(parent.scroll_area.verticalScrollBar().maximum())
         QTimer.singleShot(100, lambda: parent.scroll_area.verticalScrollBar().setValue(parent.scroll_area.verticalScrollBar().maximum()))
         parent.tab_widget.setCurrentWidget(parent.tab3)
     if not hasattr(parent, "data") or not isinstance(parent.data, list):
