@@ -428,6 +428,9 @@ class MainWindow(QMainWindow):
         # Task Queue action
         self.task_queue_action = QAction("Task Queue", self)
         self.task_queue_action.setStatusTip("View and manage running and queued tasks")
+        self.task_queue_action.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'queue.svg')))
+        self.task_queue_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Q))
+        self.task_queue_action.setToolTip("Ctrl+Q")
         self.task_queue_action.triggered.connect(self.show_task_queue_dialog)
         self.file_menu.addAction(self.task_queue_action)
 

@@ -789,12 +789,12 @@ class ProjectionDialog(QDialog):
         
         # Set up a timer to check for long-running tasks
         def check_run_time():
-            if thread_manager.is_task_running("Projection"):
+            if thread_manager.is_task_running("Projection Estimation"):
                 self.parent.autosave_data()
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minutes. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
-                    thread_manager.cancel_task("Projection")
+                    thread_manager.cancel_task("Projection Estimation")
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
                     enable_service(self, False, "")
 
