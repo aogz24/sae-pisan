@@ -607,6 +607,12 @@ class MainWindow(QMainWindow):
         self.actionCompute.triggered.connect(self.show_compute_variable_dialog_lazy)
         self.toolBar.addAction(self.actionCompute)
         
+        self.task_queue_action_toolbar = QAction(self)
+        self.task_queue_action_toolbar.setIcon(QIcon(os.path.join(os.path.dirname(__file__), '..', 'assets', 'queue.svg')))
+        self.task_queue_action_toolbar.setText("Task Queue")
+        self.task_queue_action_toolbar.triggered.connect(self.show_task_queue_dialog)
+        self.toolBar.addAction(self.task_queue_action_toolbar)
+        
         # Shortcuts for "Go to Start/End Row/Column"
         self.go_to_start_row_action = QAction(self)
         self.go_to_start_row_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Up))
