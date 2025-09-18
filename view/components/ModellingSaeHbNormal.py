@@ -442,6 +442,16 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             except Exception as e:
                 error = e
                 return (None, error, sae_model, r_script, None)
+            finally:
+                import os
+                folder = "temp"
+                for filename in os.listdir(folder):
+                    if filename.lower().endswith(".png"):
+                        try:
+                            os.remove(os.path.join(folder, filename))
+                        except Exception:
+                            pass
+                
         
         def on_complete(results):
             if not self.stop_thread.is_set():
