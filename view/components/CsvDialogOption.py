@@ -1,6 +1,7 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox, QTableView, QDialogButtonBox, QPushButton, QFileDialog
 import polars as pl
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QIcon
+from PyQt6.QtCore import QSize, Qt
 
 class CSVOptionsDialog(QDialog):
     """
@@ -25,6 +26,63 @@ class CSVOptionsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("CSV Options")
+        
+        # Apply styling from style.qss
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #FFFFFF;
+                border: 1px solid #BFBEBE;
+                border-radius: 8px;
+                padding: 10px;
+            }
+            QLabel {
+                color: #5A5759;
+                padding: 5px 0;
+            }
+            QPushButton {
+                background-color: #95C843;
+                color: #FFFFFF;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #7AB432;
+            }
+            QPushButton:pressed {
+                background-color: #5E8E2B;
+            }
+            QTableView {
+                background-color: #FFFFFF;
+                gridline-color: #BFBEBE;
+                color: #5A5759;
+                selection-background-color: #A1D9F3;
+                selection-color: #FFFFFF;
+                border: 1px solid #EAEAEA;
+            }
+            QTableView::item:selected {
+                background-color: #A1D9F3;
+                color: #FFFFFF;
+            }
+            QHeaderView::section {
+                background-color: #BFBEBE;
+                color: #5A5759;
+                border: 1px solid #EAEAEA;
+                padding: 5px;
+                font-weight: bold;
+            }
+            QLineEdit {
+                background-color: #FFFFFF;
+                border: 1px solid #BFBEBE;
+                border-radius: 4px;
+                padding: 5px;
+                color: #5A5759;
+            }
+            QCheckBox {
+                color: #5A5759;
+            }
+        """)
 
         self.file_path = None
         self.separator = ","
@@ -35,15 +93,54 @@ class CSVOptionsDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # File picker
+        # File picker - create horizontal layout for label and button
+        file_layout = QHBoxLayout()
+        
+        # File label
         self.file_label = QLabel("No file selected")
-        layout.addWidget(self.file_label)
-        self.file_button = QPushButton("Select File")
+        self.file_label.setStyleSheet("font-weight: bold;")
+        file_layout.addWidget(self.file_label)
+        
+        # Icon-only button - exactly match label font height
+        self.file_button = QPushButton()
+        self.file_button.setIcon(QIcon("assets/folder.svg"))
+        self.file_button.setStyleSheet("""
+            QPushButton {
+                background-color: #95C843;
+                color: #FFFFFF;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #7AB432;
+            }
+            QPushButton:pressed {
+                background-color: #5E8E2B;
+            }
+        """)
+        
+        # Calculate proper sizing based on font metrics
+        font_height = self.file_label.fontMetrics().height()
+        button_size = font_height + 8  # Add a bit of padding
+        icon_size = font_height - 2  # Make icon slightly smaller than text
+        
+        self.file_button.setIconSize(QSize(icon_size, icon_size))
+        self.file_button.setFixedSize(button_size, button_size)
+        self.file_button.setToolTip("Select CSV File")
         self.file_button.clicked.connect(self.select_file)
-        layout.addWidget(self.file_button)
+        file_layout.addWidget(self.file_button)
+        file_layout.addStretch()
+        
+        # Add the file layout to the main layout
+        layout.addLayout(file_layout)
 
         # Separator input
-        layout.addWidget(QLabel("Separator (e.g. , or ; For tab use \\t)"))
+        separator_label = QLabel("Separator (e.g. , or ; For tab use \\t)")
+        separator_label.setStyleSheet("margin-top: 10px;")
+        layout.addWidget(separator_label)
+        
         self.separator_input = QLineEdit(",")
         self.separator_input.textChanged.connect(self.update_preview)
         layout.addWidget(self.separator_input)
@@ -56,7 +153,9 @@ class CSVOptionsDialog(QDialog):
 
         # Preview Table
         self.preview_label = QLabel("Preview")
+        self.preview_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
         layout.addWidget(self.preview_label)
+        
         self.preview_table = QTableView()
         layout.addWidget(self.preview_table)
 
@@ -74,6 +173,7 @@ class CSVOptionsDialog(QDialog):
         if file_path:
             self.file_path = file_path
             self.file_label.setText(f"Selected: {file_path}")
+            self.file_label.setStyleSheet("font-weight: bold; color: #2BA3E2;")
             self.update_preview()
 
     def update_preview(self):
