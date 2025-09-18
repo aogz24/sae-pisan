@@ -444,7 +444,7 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
                 return (None, error, sae_model, r_script, None)
             finally:
                 import os
-                folder = "temp"
+                folder = os.path.join(self.parent.path, "temp")
                 for filename in os.listdir(folder):
                     if filename.lower().endswith(".png"):
                         try:

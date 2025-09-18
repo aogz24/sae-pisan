@@ -626,6 +626,15 @@ class ModelingSaeHBDialog(QDialog):
                 if result is None:
                     result = str(e)
                 return (result, error, sae_model, r_script, None)
+            finally:
+                import os
+                folder = os.path.join(self.parent.path, "temp")
+                for filename in os.listdir(folder):
+                    if filename.lower().endswith(".png"):
+                        try:
+                            os.remove(os.path.join(folder, filename))
+                        except Exception:
+                            pass
         
         def on_complete(results):
             if not self.stop_thread.is_set():
