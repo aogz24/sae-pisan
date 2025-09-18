@@ -1,7 +1,8 @@
 
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QComboBox, QTextEdit, QMessageBox, QInputDialog
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, 
+                         QComboBox, QTextEdit, QMessageBox, QInputDialog, QFrame)
 from service.compute import run_compute
-from PyQt6.QtGui import QIcon, QDoubleValidator
+from PyQt6.QtGui import QIcon, QDoubleValidator, QFont
 from PyQt6.QtCore import QSize, Qt
 import os
 import shutil
@@ -40,7 +41,64 @@ class ComputeVariableDialog(QDialog):
         self.column_names = self.model.get_data().columns
         self.templates = self.load_templates()
 
+        # Set up window properties
         self.setWindowTitle("Compute New Variable")
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(450)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        
+        # Apply dialog style
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #FFFFFF;
+                border: 1px solid #BFBEBE;
+                border-radius: 8px;
+            }
+            
+            QLabel {
+                color: #5A5759;
+                font-weight: bold;
+                margin-top: 5px;
+            }
+            
+            QLineEdit, QComboBox {
+                background-color: #F8F8F8;
+                border: 1px solid #EAEAEA;
+                border-radius: 4px;
+                padding: 8px;
+                color: #5A5759;
+            }
+            
+            QTextEdit {
+                background-color: #F8F8F8;
+                border: 1px solid #EAEAEA;
+                color: #5A5759;
+                padding: 10px;
+                font-family: 'Courier New', monospace;
+            }
+            
+            QPushButton {
+                background-color: #95C843;
+                color: #FFFFFF;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            
+            QPushButton:hover {
+                background-color: #7AB432;
+            }
+            
+            QPushButton:pressed {
+                background-color: #5E8E2B;
+            }
+            
+            QPushButton:disabled {
+                background-color: #BFBEBE;
+            }
+        """)
+        
         self.init_ui()
 
     def load_templates(self):
@@ -65,25 +123,100 @@ class ComputeVariableDialog(QDialog):
     def save_template(self):
         self.save_template_button.setText("Saving...")
         self.save_template_button.setEnabled(False)
-        template_name, ok = QInputDialog.getText(self, "Save Template", "Enter template name:")
+        
+        # Setup a styled dialog
+        input_dialog = QInputDialog(self)
+        input_dialog.setWindowTitle("Save Template")
+        input_dialog.setLabelText("Enter template name:")
+        input_dialog.setStyleSheet("""
+            QDialog {
+                background-color: #FFFFFF;
+                border: 1px solid #BFBEBE;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #5A5759;
+                font-weight: bold;
+            }
+            QLineEdit {
+                background-color: #F8F8F8;
+                border: 1px solid #EAEAEA;
+                border-radius: 4px;
+                padding: 8px;
+                color: #5A5759;
+            }
+        """)
+        
+        ok = input_dialog.exec()
+        template_name = input_dialog.textValue()
+        
         if ok and template_name:
             script = self.get_script()
             self.templates[template_name] = script
-            template_file = os.path.join(os.getenv("APPDATA"), "saePisan", 'template.dat')
+            
+            # Save to template file
+            app_data_dir = os.path.join(os.getenv("APPDATA"), "saePisan")
+            template_file = os.path.join(app_data_dir, 'template.dat')
             with open(template_file, 'a') as file:
                 file.write(f"{template_name}={script}\n")
+            
+            # Update template dropdown
             self.template_selection.addItem(template_name)
-            QMessageBox.information(self, "Success", "Template saved successfully!")
+            
+            # Show success message
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Information)
+            msg_box.setWindowTitle("Success")
+            msg_box.setText("Template saved successfully!")
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    background-color: #FFFFFF;
+                }
+                QPushButton {
+                    background-color: #95C843;
+                    color: #FFFFFF;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #7AB432;
+                }
+            """)
+            msg_box.exec()
+        
+        self.save_template_button.setText("Save Template")
+        self.save_template_button.setEnabled(True)
 
     def init_ui(self):
-        self.layout = QVBoxLayout()
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.layout.setSpacing(10)
 
+        # Title
+        title_label = QLabel("Compute New Variable")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(12)
+        title_label.setFont(title_font)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(title_label)
+
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setFrameShadow(QFrame.Shadow.Sunken)
+        separator.setStyleSheet("background-color: #EAEAEA;")
+        self.layout.addWidget(separator)
+        
+        # Column name section
         self.column_label = QLabel("Enter new column name:")
         self.layout.addWidget(self.column_label)
         self.column_name_input = QLineEdit()
         self.column_name_input.setPlaceholderText("Enter column name here")
         self.layout.addWidget(self.column_name_input)
 
+        # Template section
         self.template_label = QLabel("Select template:")
         self.layout.addWidget(self.template_label)
         self.template_selection = QComboBox()
@@ -91,7 +224,8 @@ class ComputeVariableDialog(QDialog):
         self.template_selection.setCurrentIndex(0)
         self.layout.addWidget(self.template_selection)
 
-        self.variable_selected_label = QLabel("Variable :")
+        # Variable selection section
+        self.variable_selected_label = QLabel("Variable:")
         self.variable_selected_label.setVisible(False)
         self.layout.addWidget(self.variable_selected_label)
 
@@ -111,48 +245,66 @@ class ComputeVariableDialog(QDialog):
         self.variable2_selection.setVisible(False)
         self.layout.addWidget(self.variable2_selection)
 
-        # Label Lambda
+        # Lambda section
         self.lambda_label = QLabel("Lambda:")
         self.lambda_label.setVisible(False)
         self.layout.addWidget(self.lambda_label)
 
-        # Input Lambda (hanya angka)
         self.lambda_selection = QLineEdit()
         self.lambda_selection.setVisible(False)
-        self.lambda_selection.setValidator(QDoubleValidator())  # hanya menerima angka
+        self.lambda_selection.setValidator(QDoubleValidator())
         self.layout.addWidget(self.lambda_selection)
 
+        # Script section
+        script_header = QHBoxLayout()
+        
         self.script_label = QLabel("R Script:")
-
+        self.script_label.setFont(title_font)
+        script_header.addWidget(self.script_label)
+        
         self.icon_label = QLabel()
         self.icon_label.setPixmap(QIcon("assets/running.svg").pixmap(QSize(16, 30)))
         self.icon_label.setFixedSize(16, 30)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         self.icon_label.setVisible(False)
+        script_header.addStretch()
+        script_header.addWidget(self.icon_label)
 
-        # Create a horizontal layout to place the script_label and icon_label in one row
-        script_layout = QHBoxLayout()
-        script_layout.addWidget(self.script_label)
-        script_layout.addWidget(self.icon_label)
-
-        self.layout.addLayout(script_layout)
+        self.layout.addLayout(script_header)
+        
+        # Script text editor
         self.script_input = QTextEdit()
-        self.script_input.setPlaceholderText("Write r script here...")
+        self.script_input.setPlaceholderText("Write R script here...")
+        self.script_input.setMinimumHeight(150)
         self.layout.addWidget(self.script_input)
 
-        # Tombol OK dan Cancel
+        # Button section
         self.button_layout = QHBoxLayout()
-        self.ok_button = QPushButton("OK")
-        self.ok_button.clicked.connect(self.accept)
-        self.button_layout.addWidget(self.ok_button)
+        self.button_layout.setObjectName("button_layout")
+        
         self.save_template_button = QPushButton("Save Template")
+        self.save_template_button.setIcon(QIcon("assets/save.svg"))
         self.save_template_button.clicked.connect(self.save_template)
+        
+        self.ok_button = QPushButton("Compute")
+        self.ok_button.setIcon(QIcon("assets/compute.svg"))
+        self.ok_button.clicked.connect(self.accept)
+        
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.reject)
+        cancel_button.setStyleSheet("""
+            background-color: #BFBEBE;
+            color: #FFFFFF;
+        """)
+        
         self.button_layout.addWidget(self.save_template_button)
+        self.button_layout.addStretch()
+        self.button_layout.addWidget(cancel_button)
+        self.button_layout.addWidget(self.ok_button)
 
         self.layout.addLayout(self.button_layout)
-        self.setLayout(self.layout)
 
-        # Event handler untuk perubahan template
+        # Connect events
         self.template_selection.currentIndexChanged.connect(self.update_script_input)
         self.variable1_selection.currentIndexChanged.connect(self.update_script_input)
         self.variable2_selection.currentIndexChanged.connect(self.update_script_input)
@@ -220,16 +372,49 @@ class ComputeVariableDialog(QDialog):
 
     def accept(self):
         if self.column_name_input.text() == "":
-            QMessageBox.warning(self, "Error", "Column name cannot be empty!")
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("Column name cannot be empty!")
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    background-color: #FFFFFF;
+                }
+                QPushButton {
+                    background-color: #95C843;
+                    color: #FFFFFF;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #7AB432;
+                }
+            """)
+            msg_box.exec()
             return
+        
+        # Update UI to show computing state
         self.ok_button.setText("Computing...")
         self.ok_button.setEnabled(False)
         self.icon_label.setVisible(True)
+        
+        # Run the computation
         df = self.model.get_data()
         new_column_series = run_compute(self)
         self.model.set_data(df.with_columns(new_column_series))
         self.parent.update_table(1, self.model)
+        
+        # Reset UI state
         self.icon_label.setVisible(False)
-        self.ok_button.setText("OK")
+        self.ok_button.setText("Compute")
         self.ok_button.setEnabled(True)
+        
         super().accept()
+        
+    def keyPressEvent(self, event):
+        # Allow Escape key to close the dialog
+        if event.key() == Qt.Key.Key_Escape:
+            self.close()
+        else:
+            super().keyPressEvent(event)

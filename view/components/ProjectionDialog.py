@@ -371,45 +371,82 @@ class ProjectionDialog(QDialog):
     
     def show_prerequisites(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Prerequisites")
-        dialog.setModal(True)  # Membuat dialog tetap di atas
+        dialog.setWindowTitle("Projection Prerequisites")
+        dialog.setModal(True)
+        dialog.setMinimumWidth(400)
 
         layout = QVBoxLayout(dialog)
+        layout.setSpacing(15)
+
+        # Title
+        title_label = QLabel("Configure Projection Prerequisites")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        layout.addWidget(title_label)
 
         # Separator selection
-        layout.addWidget(QLabel("Separator:"))
+        sep_layout = QHBoxLayout()
+        sep_label = QLabel("Separator:")
+        sep_label.setMinimumWidth(120)
         self.separator_combo = QComboBox()
         self.separator_combo.addItems([".", ";", "|"])
-        layout.addWidget(self.separator_combo)
+        sep_layout.addWidget(sep_label)
+        sep_layout.addWidget(self.separator_combo)
+        layout.addLayout(sep_layout)
 
         # Variable position selection
-        layout.addWidget(QLabel("Variable position relative to separator:"))
+        pos_layout = QHBoxLayout()
+        pos_label = QLabel("Variable position:")
+        pos_label.setMinimumWidth(120)
         self.var_position_combo = QComboBox()
         self.var_position_combo.addItems(["Before", "After"])
-        layout.addWidget(self.var_position_combo)
+        pos_layout.addWidget(pos_label)
+        pos_layout.addWidget(self.var_position_combo)
+        layout.addLayout(pos_layout)
 
-        layout.addWidget(QLabel("The difference between data projection and model (after separator)"))
+        # Info
+        info_label = QLabel("The difference between data projection and model (after separator)")
+        info_label.setStyleSheet("color: #666; font-size: 11px; margin-bottom: 8px;")
+        layout.addWidget(info_label)
 
         # Model name input
-        layout.addWidget(QLabel("Model name:"))
-        self.model_name_edit = QLineEdit()  # Menggunakan QLineEdit karena lebih cocok untuk input pendek
-        layout.addWidget(self.model_name_edit)
+        model_name_layout = QHBoxLayout()
+        model_name_label = QLabel("Model name:")
+        model_name_label.setMinimumWidth(120)
+        self.model_name_edit = QLineEdit()
+        self.model_name_edit.setPlaceholderText("Enter model name")
+        model_name_layout.addWidget(model_name_label)
+        model_name_layout.addWidget(self.model_name_edit)
+        layout.addLayout(model_name_layout)
 
         # Projection name input
-        layout.addWidget(QLabel("Projection name:"))
-        self.projection_name_edit = QLineEdit()  
-        layout.addWidget(self.projection_name_edit)
-        
+        proj_name_layout = QHBoxLayout()
+        proj_name_label = QLabel("Projection name:")
+        proj_name_label.setMinimumWidth(120)
+        self.projection_name_edit = QLineEdit()
+        self.projection_name_edit.setPlaceholderText("Enter projection name")
+        proj_name_layout.addWidget(proj_name_label)
+        proj_name_layout.addWidget(self.projection_name_edit)
+        layout.addLayout(proj_name_layout)
+
         # Model selection
-        layout.addWidget(QLabel("Select Model:"))
+        model_combo_layout = QHBoxLayout()
+        model_combo_label = QLabel("Select Model:")
+        model_combo_label.setMinimumWidth(120)
         self.model_combo = QComboBox()
         self.model_combo.addItems(["Linear", "Logistic", "SVM Linear", "SVM RBF", "Gradient Boost", "Neural Network"])
-        layout.addWidget(self.model_combo)
+        model_combo_layout.addWidget(model_combo_label)
+        model_combo_layout.addWidget(self.model_combo)
+        layout.addLayout(model_combo_layout)
 
         # Button Layout
         button_layout = QHBoxLayout()
+        button_layout.addStretch()
         ok_button = QPushButton("OK")
         cancel_button = QPushButton("Cancel")
+        ok_button.setFixedWidth(80)
+        cancel_button.setFixedWidth(80)
+        ok_button.setStyleSheet("background-color: #95C843; color: white; font-weight: bold;")
+        cancel_button.setStyleSheet("background-color: #e0e0e0;")
         ok_button.clicked.connect(dialog.accept)
         cancel_button.clicked.connect(dialog.reject)
         button_layout.addWidget(ok_button)
