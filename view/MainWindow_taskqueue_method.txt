@@ -1,0 +1,9 @@
+    def show_task_queue_dialog(self):
+        """
+        Shows the task queue dialog to manage running and queued tasks.
+        This method initializes the TaskQueueDialog if it doesn't exist yet,
+        and shows it to the user.
+        """
+        if self.task_queue_dialog is None:
+            self.task_queue_dialog = TaskQueueDialog(self)
+        self.task_queue_dialog.show()

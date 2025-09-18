@@ -12,8 +12,8 @@ import polars as pl
 from service.modelling.SaeHBUnit import *
 from PyQt6.QtCore import QItemSelectionModel
 from PyQt6.QtGui import QIcon
-
 import sys
+from service.threading.ThreadManager import get_thread_manager, ModelTask
 class ConsoleStream:
     def __init__(self, signal):
         self.signal = signal
@@ -62,6 +62,11 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             pass
         # Connect update_console signal to _append_console method
         self.update_console.connect(self._append_console)
+        
+        self.stop_thread = threading.Event()
+        self.finnish = False
+        self.reply = None
+        self.console_dialog = None
         
 
     import sys
@@ -333,23 +338,23 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == "HB Unit Level" and thread.is_alive():
-                self.parent.autosave_data()
-                if self.reply is None:
-                    self.reply = QMessageBox(self)
-                    self.reply.setWindowTitle('Run in Background')
-                    self.reply.setText('Do you want to run the model in the background?')
-                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
-                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
-                    self.stop_thread.set()
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+            
+        thread_manager = get_thread_manager()
+        if thread_manager.is_task_running("HB Unit Level"):
+            self.parent.autosave_data()
+            if self.reply is None:
+                self.reply = QMessageBox(self)
+                self.reply.setWindowTitle('Run in Background')
+                self.reply.setText('Do you want to run the model in the background?')
+                self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                self.reply.setDefaultButton(QMessageBox.StandardButton.No)
+            if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
+                self.stop_thread.set()
+                thread_manager.cancel_task("HB Unit Level")
+                self.run_model_finished.emit(None, "Threads are stopped", None, None, None)
         self.finnish=False
         self.reply=None
         event.accept()
-        
 
     def set_model(self, model):
         self.model = model
@@ -417,11 +422,10 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
             self.console_dialog = ConsoleDialog(self)
             self.console_dialog.show()
         
-        def run_model_thread():
+        def run_model_func(*args, **kwargs):
             results, error, df, plot_paths = None, None, None, None
             try:
                 if self.console_dialog:
-                    import sys
                     old_stdout = sys.stdout
                     sys.stdout = ConsoleStream(self.update_console)
                 from rpy2.rinterface_lib import openrlib
@@ -431,25 +435,51 @@ class ModelingSaeHBNormalDialog(ModelingSaeUnitDialog):
                     sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
+                
+                return (results, error, sae_model, r_script, plot_paths)
             except Exception as e:
                 error = e
-            finally:
-                if not self.stop_thread.is_set():
-                    self.run_model_finished.emit(results, error, sae_model, r_script, plot_paths)
-                    self.finnish = True
-
+                return (None, error, sae_model, r_script, None)
+        
+        def on_complete(results):
+            if not self.stop_thread.is_set():
+                self.finnish = True
+                self.run_model_finished.emit(*results)
+        
+        def on_error(error):
+            self.run_model_finished.emit(None, error, sae_model, r_script, None)
+        
+        # Create and add the task to the thread manager queue
+        thread_manager = get_thread_manager()
+        task = ModelTask(
+            dialog=self,
+            run_func=run_model_func,
+            name="HB Unit Level",
+            on_complete=on_complete,
+            on_error=on_error
+        )
+        
+        position = thread_manager.add_task(task)
+        
+        if position > 0:
+            QMessageBox.information(
+                self, 
+                "Task Queued", 
+                f"Your modelling task has been queued and will run after {position} previous task(s) complete.\n\n"
+                f"You can view and manage the queue from the File menu > Task Queue."
+            )
+        
+        # Set up a timer to check for long-running tasks
         def check_run_time():
-            if thread.is_alive():
+            if thread_manager.is_task_running("HB Unit Level"):
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minute. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
+                    thread_manager.cancel_task("HB Unit Level")
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
                     enable_service(self, False, "")
 
-
-        thread = threading.Thread(target=run_model_thread, name="HB Unit Level")
-        thread.start()
-
+        # Set up a timer to check long-running tasks
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(check_run_time)

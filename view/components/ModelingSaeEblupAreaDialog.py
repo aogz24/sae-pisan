@@ -15,6 +15,7 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
+from service.threading.ThreadManager import get_thread_manager, ModelTask
 
 import sys
 
@@ -67,7 +68,6 @@ class ModelingSaeDialog(QDialog):
         selection_method (str): Method of selection.
         method (str): Method for the model.
         finnish (bool): Flag to indicate if the model run is finished.
-        stop_thread (threading.Event): Event to stop the thread.
     Methods:
         closeEvent(event): Handles the close event of the dialog.
         set_model(model): Sets the model and updates the variables list.
@@ -249,7 +249,6 @@ class ModelingSaeDialog(QDialog):
 
         self.run_model_finished.connect(self.on_run_model_finished)
         
-        self.stop_thread = threading.Event()
         self.reply=None
         
         self.console_dialog = None
@@ -492,20 +491,24 @@ class ModelingSaeDialog(QDialog):
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == "SAE EBLUP Area Level" and thread.is_alive():
-                if self.reply is None:
-                    self.reply = QMessageBox(self)
-                    self.reply.setWindowTitle('Run in Background')
-                    self.reply.setText('Do you want to run the model in the background?')
-                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
-                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
-                    self.stop_thread.set()
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
-        self.finnish=False
-        self.reply=None
+        
+        # Get thread manager and check for our tasks
+        thread_manager = get_thread_manager()
+        task = thread_manager.get_running_task()
+        
+        if task and task.name == "SAE EBLUP Area Level" and not self.finnish:
+            if self.reply is None:
+                self.reply = QMessageBox(self)
+                self.reply.setWindowTitle('Run in Background')
+                self.reply.setText('Do you want to run the model in the background?')
+                self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                self.reply.setDefaultButton(QMessageBox.StandardButton.No)
+            if self.reply.exec() != QMessageBox.StandardButton.Yes:
+                thread_manager.cancel_task(task)
+                self.run_model_finished.emit("Task was cancelled", True, "sae_model", "")
+        
+        self.finnish = False
+        self.reply = None
         event.accept()
         
     def set_model(self, model):
@@ -566,7 +569,7 @@ class ModelingSaeDialog(QDialog):
             self.console_dialog = ConsoleDialog(self)
             self.console_dialog.show()
         
-        def run_model_thread():
+        def run_model_func():
             result, error, df = None, None, None
             try:
                 if self.console_dialog:
@@ -582,32 +585,38 @@ class ModelingSaeDialog(QDialog):
                     sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
+                
+                return result, error, df
             except Exception as e:
-                error = e
-            finally:
-                if not self.stop_thread.is_set():
-                    self.finnish = True
-                    self.run_model_finished.emit(result, error, sae_model, r_script)
-                else:
-                    return
+                raise e
 
-        def check_run_time():
-            if thread.is_alive():
-                self.parent.autosave_data()
-                reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minute. Do you want to continue?')
-                if reply == QMessageBox.StandardButton.No:
-                    self.stop_thread.set()
-                    QMessageBox.information(self, 'Info', 'Run has been stopped.')
-                    enable_service(self, False, "")
+        def on_complete(result):
+            result_data, error, df = result
+            self.finnish = True
+            self.run_model_finished.emit(result_data, error, sae_model, r_script)
 
+        def on_error(error):
+            self.run_model_finished.emit(str(error), True, sae_model, r_script)
 
-        thread = threading.Thread(target=run_model_thread, name="SAE EBLUP Area Level")
-        thread.start()
-
-        timer = QTimer(self)
-        timer.setSingleShot(True)
-        timer.timeout.connect(check_run_time)
-        timer.start(5*60*1000)
+        # Create and add the task to the thread manager queue
+        thread_manager = get_thread_manager()
+        task = ModelTask(
+            dialog=self,
+            run_func=run_model_func,
+            name="SAE EBLUP Area Level",
+            on_complete=on_complete,
+            on_error=on_error
+        )
+        
+        position = thread_manager.add_task(task)
+        
+        if position > 0:
+            QMessageBox.information(
+                self,
+                "Task Queued",
+                f"Your task has been added to the queue at position {position}.\n"
+                "You can monitor and manage tasks in the Task Queue window."
+            )
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
         if self.console_dialog:

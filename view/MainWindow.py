@@ -7,6 +7,8 @@ from PyQt6.QtCore import Qt, QSize, QTimer, QItemSelectionModel, QEvent
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QPixmap, QFont
 from view.components.ExcelLikeItemDelegate import ExcelLikeItemDelegate
 from view.components.TutorialManager import TutorialManager
+from view.components.TaskQueueDialog import TaskQueueDialog
+from service.threading.ThreadManager import ThreadManager
 import polars as pl
 import datetime
 from model.TableModel import TableModel
@@ -279,6 +281,11 @@ class MainWindow(QMainWindow):
         self.show_modellig_sae_pseudo_dialog = None
         self.show_compute_variable_dialog = None
         self.show_projection_variabel_dialog = None
+        self.task_queue_dialog = None
+        
+        # Get thread manager singleton instance
+        from service.threading.ThreadManager import get_thread_manager
+        self.thread_manager = get_thread_manager()  # Get the singleton instance
         
 
         # Tab pertama (Data Editor)
@@ -417,6 +424,12 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_data_output_action)
         self.file_menu.addAction(self.save_output_pdf)
+        
+        # Task Queue action
+        self.task_queue_action = QAction("Task Queue", self)
+        self.task_queue_action.setStatusTip("View and manage running and queued tasks")
+        self.task_queue_action.triggered.connect(self.show_task_queue_dialog)
+        self.file_menu.addAction(self.task_queue_action)
 
         # Menu "Exploration"
         self.menu_exploration = self.menu_bar.addMenu("Exploration")
@@ -1040,6 +1053,16 @@ class MainWindow(QMainWindow):
             self.show_modellig_sae_pseudo_dialog = ModelingSaePseudoDialog(self)
         self.show_modellig_sae_pseudo_dialog.set_model(self.model1)
         self.show_modellig_sae_pseudo_dialog.show()
+
+    def show_task_queue_dialog(self):
+        """
+        Shows the task queue dialog to manage running and queued tasks.
+        This method initializes the TaskQueueDialog if it doesn't exist yet,
+        and shows it to the user.
+        """
+        if self.task_queue_dialog is None:
+            self.task_queue_dialog = TaskQueueDialog(self)
+        self.task_queue_dialog.show()
 
     def show_compute_variable_dialog_lazy(self):
         """

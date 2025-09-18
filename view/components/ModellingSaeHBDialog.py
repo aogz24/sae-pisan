@@ -15,8 +15,8 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
-
 import sys
+from service.threading.ThreadManager import get_thread_manager, ModelTask
 
 class ConsoleStream:
     def __init__(self, signal):
@@ -281,20 +281,22 @@ class ModelingSaeHBDialog(QDialog):
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == "SAE HB" and thread.is_alive():
-                self.parent.autosave_data()
-                if self.reply is None:
-                    self.reply = QMessageBox(self)
-                    self.reply.setWindowTitle('Run in Background')
-                    self.reply.setText('Do you want to run the model in the background?')
-                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
-                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
-                    self.stop_thread.set()
-                    print(self.stop_thread.is_set())
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "", None)
+        
+        thread_manager = get_thread_manager()
+        if thread_manager.is_task_running("SAE HB"):
+            self.parent.autosave_data()
+            if self.reply is None:
+                self.reply = QMessageBox(self)
+                self.reply.setWindowTitle('Run in Background')
+                self.reply.setText('Do you want to run the model in the background?')
+                self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                self.reply.setDefaultButton(QMessageBox.StandardButton.No)
+            
+            if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
+                self.stop_thread.set()
+                thread_manager.cancel_task("SAE HB")
+                self.run_model_finished.emit("Threads are stopped", True, "sae_model", "", None)
+        
         self.finnish=False
         self.reply=None
         event.accept()
@@ -602,9 +604,8 @@ class ModelingSaeHBDialog(QDialog):
             self.console_dialog = ConsoleDialog(self)
             self.console_dialog.show()
         
-        def run_model_thread():
-            import sys
-            results, error, df = None, None, None
+        def run_model_func(*args, **kwargs):
+            result, error, df, plot_paths = None, None, None, None
             try:
                 if self.console_dialog:
                     old_stdout = sys.stdout
@@ -616,39 +617,63 @@ class ModelingSaeHBDialog(QDialog):
                     sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
+                
+                return (result, error, sae_model, r_script, plot_paths)
             except Exception as e:
-                error=True
+                error = True
                 if result is None:
                     result = str(e)
-            finally:
-                if not self.stop_thread.is_set():
-                    self.run_model_finished.emit(result, error, sae_model, r_script, plot_paths)
-                    self.finnish = True
-                    return
-                else:
-                    import os
-                    temp_dir = os.path.join(os.getcwd(), "temp")
-                    if os.path.exists(temp_dir):
-                        for file in os.listdir(temp_dir):
-                            file_path = os.path.join(temp_dir, file)
-                            try:
-                                if os.path.isfile(file_path):
-                                    os.remove(file_path)
-                            except Exception as e:
-                                print(f"Error deleting file {file_path}: {e}")
-
+                return (result, error, sae_model, r_script, None)
+        
+        def on_complete(results):
+            if not self.stop_thread.is_set():
+                self.finnish = True
+                self.run_model_finished.emit(*results)
+            else:
+                import os
+                temp_dir = os.path.join(os.getcwd(), "temp")
+                if os.path.exists(temp_dir):
+                    for file in os.listdir(temp_dir):
+                        file_path = os.path.join(temp_dir, file)
+                        try:
+                            if os.path.isfile(file_path):
+                                os.remove(file_path)
+                        except Exception as e:
+                            print(f"Error deleting file {file_path}: {e}")
+        
+        def on_error(error):
+            self.run_model_finished.emit(str(error), True, sae_model, r_script, None)
+        
+        # Create and add the task to the thread manager queue
+        thread_manager = get_thread_manager()
+        task = ModelTask(
+            dialog=self,
+            run_func=run_model_func,
+            name="SAE HB",
+            on_complete=on_complete,
+            on_error=on_error
+        )
+        
+        position = thread_manager.add_task(task)
+        
+        if position > 0:
+            QMessageBox.information(
+                self, 
+                "Task Queued", 
+                f"Your modelling task has been queued and will run after {position} previous task(s) complete.\n\n"
+                f"You can view and manage the queue from the File menu > Task Queue."
+            )
+        
+        # Set up a timer to check for long-running tasks
         def check_run_time():
-            if thread.is_alive():
+            if thread_manager.is_task_running("SAE HB"):
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minute. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
-                    print(self.stop_thread.is_set())
+                    thread_manager.cancel_task("SAE HB")
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
                     enable_service(self, False, "")
 
-
-        thread = threading.Thread(target=run_model_thread, name="SAE HB")
-        thread.start()
 
         timer = QTimer(self)
         timer.setSingleShot(True)

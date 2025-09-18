@@ -15,7 +15,7 @@ from service.utils.utils import display_script_and_output, check_script
 from service.utils.enable_disable import enable_service, disable_service
 import threading
 import contextvars
-
+from service.threading.ThreadManager import get_thread_manager, ModelTask
 import sys
 
 class ConsoleStream:
@@ -352,18 +352,19 @@ class ProjectionDialog(QDialog):
     def closeEvent(self, event):
         if self.console_dialog:
             self.console_dialog.close()
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == "Projection" and thread.is_alive():
-                if self.reply is None:
-                    self.reply = QMessageBox(self)
-                    self.reply.setWindowTitle('Run in Background')
-                    self.reply.setText('Do you want to run the model in the background?')
-                    self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    self.reply.setDefaultButton(QMessageBox.StandardButton.No)
-                if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
-                    self.stop_thread.set()
-                    self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+            
+        thread_manager = get_thread_manager()
+        if thread_manager.is_task_running("Projection"):
+            if self.reply is None:
+                self.reply = QMessageBox(self)
+                self.reply.setWindowTitle('Run in Background')
+                self.reply.setText('Do you want to run the model in the background?')
+                self.reply.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                self.reply.setDefaultButton(QMessageBox.StandardButton.No)
+            if self.reply.exec() != QMessageBox.StandardButton.Yes and not self.finnish:
+                self.stop_thread.set()
+                thread_manager.cancel_task("Projection")
+                self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
         self.finnish=False
         self.reply=None
         event.accept()
@@ -739,7 +740,7 @@ class ProjectionDialog(QDialog):
         
         current_context = contextvars.copy_context()
         
-        def run_model_thread():
+        def run_model_func(*args, **kwargs):
             result, error, df = None, None, None
             try:
                 if self.console_dialog:
@@ -752,26 +753,53 @@ class ProjectionDialog(QDialog):
                     sys.stdout = old_stdout
                 if not error:
                     sae_model.model2.set_data(df)
+                
+                return (result, error, sae_model, r_script)
             except Exception as e:
                 error = e
-            finally:
-                if not self.stop_thread.is_set():
-                    self.run_model_finished.emit(result, error, sae_model, r_script)
-                    self.finnish = True
-
+                return (None, error, sae_model, r_script)
+        
+        def on_complete(results):
+            if not self.stop_thread.is_set():
+                self.finnish = True
+                self.run_model_finished.emit(*results)
+        
+        def on_error(error):
+            self.run_model_finished.emit(None, error, sae_model, r_script)
+        
+        # Create and add the task to the thread manager queue
+        thread_manager = get_thread_manager()
+        task = ModelTask(
+            dialog=self,
+            run_func=run_model_func,
+            name="Projection",
+            on_complete=on_complete,
+            on_error=on_error
+        )
+        
+        position = thread_manager.add_task(task)
+        
+        if position > 0:
+            QMessageBox.information(
+                self, 
+                "Task Queued", 
+                f"Your modelling task has been queued and will run after {position} previous task(s) complete.\n\n"
+                f"You can view and manage the queue from the File menu > Task Queue."
+            )
+        
+        # Set up a timer to check for long-running tasks
         def check_run_time():
-            if thread.is_alive():
+            if thread_manager.is_task_running("Projection"):
                 self.parent.autosave_data()
                 reply = QMessageBox.question(self, 'Warning', 'Run has been running for more than 5 minutes. Do you want to continue?')
                 if reply == QMessageBox.StandardButton.No:
                     self.stop_thread.set()
+                    thread_manager.cancel_task("Projection")
                     QMessageBox.information(self, 'Info', 'Run has been stopped.')
                     enable_service(self, False, "")
 
 
-        thread = threading.Thread(target=run_model_thread, name="Projection")
-        thread.start()
-
+        # Set up a timer to check long-running tasks
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(check_run_time)

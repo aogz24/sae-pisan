@@ -1,0 +1,859 @@
+import threadingimport threadingimport threading
+
+import queue
+
+import timeimport queueimport queue
+
+from PyQt6.QtCore import QObject, pyqtSignal, QMutex, QWaitCondition
+
+import timeimport time
+
+class ModelTask:
+
+    """from PyQt6.QtCore import QObject, pyqtSignal, QMutex, QWaitConditionfrom PyQt6.QtCore import QObject, pyqtSignal, QMutex, QWaitCondition
+
+    A class representing a modelling task to be executed.
+
+    
+
+    Attributes:
+
+        dialog: The dialog initiating the taskclass ModelTask:class ModelTask:
+
+        run_func: The function to run
+
+        name: The name of the task    """    """
+
+        args: Arguments for the run function
+
+        kwargs: Keyword arguments for the run function    A class representing a modelling task to be executed.    A class representing a modelling task to be executed.
+
+        on_complete: Function to call when task completes
+
+        on_error: Function to call when task errors        
+
+    """
+
+    def __init__(self, dialog, run_func, name, *args, on_complete=None, on_error=None, **kwargs):    Attributes:    Attributes:
+
+        self.dialog = dialog
+
+        self.run_func = run_func        dialog: The dialog initiating the task        dialog: The dialog initiating the task
+
+        self.name = name
+
+        self.args = args        run_func: The function to run        run_func: The function to run
+
+        self.kwargs = kwargs
+
+        self.on_complete = on_complete        name: The name of the task        name: The name of the task
+
+        self.on_error = on_error
+
+        self.is_cancelled = False        args: Arguments for the run function        args: Arguments for the run function
+
+        
+
+    def cancel(self):        kwargs: Keyword arguments for the run function        kwargs: Keyword arguments for the run function
+
+        """Mark the task as cancelled"""
+
+        self.is_cancelled = True        on_complete: Function to call when task completes        on_complete: Function to call when task completes
+
+        
+
+    def __str__(self):        on_error: Function to call when task errors        on_error: Function to call when task errors
+
+        return f"ModelTask({self.name})"
+
+    """    """
+
+# Global singleton instance
+
+_thread_manager_instance = None    def __init__(self, dialog, run_func, name, *args, on_complete=None, on_error=None, **kwargs):    def __init__(self, dialog, run_func, name, *args, on_complete=None, on_error=None, **kwargs):
+
+_thread_manager_initialized = False
+
+_thread_manager_mutex = QMutex()        self.dialog = dialog        self.dialog = dialog
+
+
+
+class ThreadManager(QObject):        self.run_func = run_func        self.run_func = run_func
+
+    """
+
+    Manager for handling modelling threads and task queue.        self.name = name        self.name = name
+
+    
+
+    This class implements a queue system for modelling tasks with only         self.args = args        self.args = args
+
+    one modelling task running at a time. It provides a main thread for
+
+    the UI and a dedicated thread for running modelling tasks.        self.kwargs = kwargs        self.kwargs = kwargs
+
+    
+
+    Signals:        self.on_complete = on_complete        self.on_complete = on_complete
+
+        task_started: Emitted when a task starts (task_name)
+
+        task_finished: Emitted when a task finishes (task_name, success)        self.on_error = on_error        self.on_error = on_error
+
+        queue_updated: Emitted when the queue is updated
+
+    """        self.is_cancelled = False        self.is_cancelled = False
+
+    # Signals
+
+    task_started = pyqtSignal(str)                
+
+    task_finished = pyqtSignal(str, bool)
+
+    queue_updated = pyqtSignal()    def cancel(self):    def cancel(self):
+
+    
+
+    def __new__(cls):        """Mark the task as cancelled"""        """Mark the task as cancelled"""
+
+        """Singleton pattern to ensure only one thread manager exists"""
+
+        global _thread_manager_instance, _thread_manager_mutex        self.is_cancelled = True        self.is_cancelled = True
+
+        
+
+        _thread_manager_mutex.lock()                
+
+        try:
+
+            if _thread_manager_instance is None:    def __str__(self):    def __str__(self):
+
+                # Create the instance
+
+                instance = super(ThreadManager, cls).__new__(cls)        return f"ModelTask({self.name})"        return f"ModelTask({self.name})"
+
+                # Initialize the parent class immediately
+
+                QObject.__init__(instance)
+
+                _thread_manager_instance = instance
+
+            return _thread_manager_instance# Global singleton instance# Global singleton instance
+
+        finally:
+
+            _thread_manager_mutex.unlock()_thread_manager_instance = None_thread_manager_instance = None
+
+    
+
+    def __init__(self):_thread_manager_initialized = False_thread_manager_mutex = QMutex()
+
+        """Initialize the thread manager if it hasn't been initialized already"""
+
+        global _thread_manager_instance, _thread_manager_initialized_thread_manager_mutex = QMutex()
+
+        
+
+        # Only initialize once - no need to call super().__init__() againclass ThreadManager(QObject):
+
+        # since we already called QObject.__init__() in __new__
+
+        if not _thread_manager_initialized:class ThreadManager(QObject):    """
+
+            self.task_queue = queue.Queue()
+
+            self.running_task = None    """    Manager for handling modelling threads and task queue.
+
+            self.active_threads = {}
+
+            self.is_modelling_running = False    Manager for handling modelling threads and task queue.    
+
+            self.stop_requested = False
+
+            self.modelling_thread = None        This class implements a queue system for modelling tasks with only 
+
+            self.mutex = QMutex()
+
+            self.condition = QWaitCondition()    This class implements a queue system for modelling tasks with only     one modelling task running at a time. It provides a main thread for
+
+            
+
+            # Start the modelling thread    one modelling task running at a time. It provides a main thread for    the UI and a dedicated thread for running modelling tasks.
+
+            self._start_modelling_thread()
+
+                the UI and a dedicated thread for running modelling tasks.    
+
+            _thread_manager_initialized = True
+
+            Signals:
+
+    def _start_modelling_thread(self):
+
+        """Start the modelling thread that processes tasks from the queue"""    Signals:        task_started: Emitted when a task starts (task_name)
+
+        if self.modelling_thread is None or not self.modelling_thread.is_alive():
+
+            self.stop_requested = False        task_started: Emitted when a task starts (task_name)        task_finished: Emitted when a task finishes (task_name, success)
+
+            self.modelling_thread = threading.Thread(target=self._process_modelling_tasks, name="ModellingThread", daemon=True)
+
+            self.modelling_thread.start()        task_finished: Emitted when a task finishes (task_name, success)        queue_updated: Emitted when the queue is updated
+
+    
+
+    def _process_modelling_tasks(self):        queue_updated: Emitted when the queue is updated    """
+
+        """Process tasks from the queue one at a time"""
+
+        while not self.stop_requested:    """    # Signals
+
+            try:
+
+                # Wait for a task to be available    # Signals    task_started = pyqtSignal(str)
+
+                task = self.task_queue.get(block=True, timeout=0.5)
+
+                    task_started = pyqtSignal(str)    task_finished = pyqtSignal(str, bool)
+
+                if task.is_cancelled:
+
+                    self.task_queue.task_done()    task_finished = pyqtSignal(str, bool)    queue_updated = pyqtSignal()
+
+                    self.queue_updated.emit()
+
+                    continue    queue_updated = pyqtSignal()    
+
+                
+
+                # Set the running task and notify UI        def __new__(cls):
+
+                self.mutex.lock()
+
+                self.running_task = task    def __new__(cls):        """Singleton pattern to ensure only one thread manager exists"""
+
+                self.is_modelling_running = True
+
+                self.mutex.unlock()        """Singleton pattern to ensure only one thread manager exists"""        global _thread_manager_instance, _thread_manager_mutex
+
+                
+
+                self.task_started.emit(task.name)        global _thread_manager_instance, _thread_manager_mutex        
+
+                self.queue_updated.emit()
+
+                                _thread_manager_mutex.lock()
+
+                try:
+
+                    # Run the task        _thread_manager_mutex.lock()        try:
+
+                    results = task.run_func(*task.args, **task.kwargs)
+
+                            try:            if _thread_manager_instance is None:
+
+                    # Check if task was cancelled during execution
+
+                    if not task.is_cancelled and task.on_complete:            if _thread_manager_instance is None:                _thread_manager_instance = super(ThreadManager, cls).__new__(cls)
+
+                        task.on_complete(results)
+
+                                    # Create the instance            return _thread_manager_instance
+
+                    self.task_finished.emit(task.name, True)
+
+                except Exception as e:                instance = super(ThreadManager, cls).__new__(cls)        finally:
+
+                    print(f"Error in task {task.name}: {e}")
+
+                    if task.on_error:                # Initialize the parent class immediately            _thread_manager_mutex.unlock()
+
+                        task.on_error(e)
+
+                    self.task_finished.emit(task.name, False)                QObject.__init__(instance)    
+
+                finally:
+
+                    # Clean up                _thread_manager_instance = instance    def __init__(self):
+
+                    self.mutex.lock()
+
+                    self.running_task = None            return _thread_manager_instance        """Initialize the thread manager if it hasn't been initialized already"""
+
+                    self.is_modelling_running = False
+
+                    self.mutex.unlock()        finally:        global _thread_manager_instance
+
+                    
+
+                    self.task_queue.task_done()            _thread_manager_mutex.unlock()        
+
+                    self.queue_updated.emit()
+
+                                # Only initialize once
+
+                    # Notify any waiting threads
+
+                    self.condition.wakeAll()    def __init__(self):        if not hasattr(self, '_initialized'):
+
+            
+
+            except queue.Empty:        """Initialize the thread manager if it hasn't been initialized already"""            super().__init__()
+
+                # No tasks in the queue, just continue
+
+                pass        global _thread_manager_instance, _thread_manager_initialized            self.task_queue = queue.Queue()
+
+    
+
+    def add_task(self, task):                    self.running_task = None
+
+        """
+
+        Add a task to the queue        # Only initialize once - no need to call super().__init__() again            self.active_threads = {}
+
+        
+
+        Args:        # since we already called QObject.__init__() in __new__            self.is_modelling_running = False
+
+            task: The ModelTask to add
+
+                    if not _thread_manager_initialized:            self.stop_requested = False
+
+        Returns:
+
+            int: Position in the queue (0 = running now)            self.task_queue = queue.Queue()            self.modelling_thread = None
+
+        """
+
+        self.mutex.lock()            self.running_task = None            self.mutex = QMutex()
+
+        try:
+
+            # Check if there's a running task            self.active_threads = {}            self.condition = QWaitCondition()
+
+            if self.is_modelling_running:
+
+                position = self.task_queue.qsize() + 1            self.is_modelling_running = False            self._initialized = True
+
+                self.task_queue.put(task)
+
+                self.queue_updated.emit()            self.stop_requested = False            
+
+                return position
+
+            else:            self.modelling_thread = None            # Start the modelling thread
+
+                # No running task, this will run immediately
+
+                self.task_queue.put(task)            self.mutex = QMutex()            self._start_modelling_thread()
+
+                self.queue_updated.emit()
+
+                return 0            self.condition = QWaitCondition()    
+
+        finally:
+
+            self.mutex.unlock()                def _start_modelling_thread(self):
+
+    
+
+    def cancel_task(self, task_name):            # Start the modelling thread        """Start the modelling thread that processes tasks from the queue"""
+
+        """
+
+        Cancel a task by name            self._start_modelling_thread()        if self.modelling_thread is None or not self.modelling_thread.is_alive():
+
+        
+
+        Args:                        self.stop_requested = False
+
+            task_name: The name of the task to cancel
+
+        """            _thread_manager_initialized = True            self.modelling_thread = threading.Thread(target=self._process_modelling_tasks, name="ModellingThread", daemon=True)
+
+        self.mutex.lock()
+
+        try:                self.modelling_thread.start()
+
+            # Check if the running task matches
+
+            if self.running_task and self.running_task.name == task_name:    def _start_modelling_thread(self):    
+
+                self.running_task.cancel()
+
+                self.stop_thread_by_name(task_name)        """Start the modelling thread that processes tasks from the queue"""    def _process_modelling_tasks(self):
+
+            else:
+
+                # Check the queue        if self.modelling_thread is None or not self.modelling_thread.is_alive():        """Process tasks from the queue one at a time"""
+
+                new_queue = queue.Queue()
+
+                cancelled = False            self.stop_requested = False        while not self.stop_requested:
+
+                
+
+                # Move tasks from old queue to new queue, skipping the one to cancel            self.modelling_thread = threading.Thread(target=self._process_modelling_tasks, name="ModellingThread", daemon=True)            try:
+
+                while not self.task_queue.empty():
+
+                    task = self.task_queue.get()            self.modelling_thread.start()                # Wait for a task to be available
+
+                    if task.name == task_name and not cancelled:
+
+                        task.cancel()                    task = self.task_queue.get(block=True, timeout=0.5)
+
+                        cancelled = True
+
+                    else:    def _process_modelling_tasks(self):                
+
+                        new_queue.put(task)
+
+                        """Process tasks from the queue one at a time"""                if task.is_cancelled:
+
+                # Replace the old queue with the new one
+
+                self.task_queue = new_queue        while not self.stop_requested:                    self.task_queue.task_done()
+
+                self.queue_updated.emit()
+
+        finally:            try:                    self.queue_updated.emit()
+
+            self.mutex.unlock()
+
+                    # Wait for a task to be available                    continue
+
+    def stop_thread_by_name(self, thread_name):
+
+        """                task = self.task_queue.get(block=True, timeout=0.5)                
+
+        Attempt to stop a running thread by name
+
+                                        # Set the running task and notify UI
+
+        Args:
+
+            thread_name: The name of the thread to stop                if task.is_cancelled:                self.mutex.lock()
+
+        """
+
+        for thread in threading.enumerate():                    self.task_queue.task_done()                self.running_task = task
+
+            if thread.name == thread_name and thread.is_alive():
+
+                # We can't directly stop a thread, but we can set a flag                    self.queue_updated.emit()                self.is_modelling_running = True
+
+                # that the thread should check periodically
+
+                if self.running_task:                    continue                self.mutex.unlock()
+
+                    self.running_task.cancel()
+
+                                                
+
+                # Wake up any waiting threads
+
+                self.condition.wakeAll()                # Set the running task and notify UI                self.task_started.emit(task.name)
+
+                return True
+
+        return False                self.mutex.lock()                self.queue_updated.emit()
+
+    
+
+    def is_task_running(self, task_name):                self.running_task = task                
+
+        """
+
+        Check if a task is currently running                self.is_modelling_running = True                try:
+
+        
+
+        Args:                self.mutex.unlock()                    # Run the task
+
+            task_name: The name of the task to check
+
+                                                results = task.run_func(*task.args, **task.kwargs)
+
+        Returns:
+
+            bool: True if the task is running, False otherwise                self.task_started.emit(task.name)                    
+
+        """
+
+        self.mutex.lock()                self.queue_updated.emit()                    # Check if task was cancelled during execution
+
+        try:
+
+            return self.running_task is not None and self.running_task.name == task_name                                    if not task.is_cancelled and task.on_complete:
+
+        finally:
+
+            self.mutex.unlock()                try:                        task.on_complete(results)
+
+    
+
+    def get_task_count(self):                    # Run the task                    
+
+        """
+
+        Get the number of tasks in the queue                    results = task.run_func(*task.args, **task.kwargs)                    self.task_finished.emit(task.name, True)
+
+        
+
+        Returns:                                    except Exception as e:
+
+            int: The number of tasks
+
+        """                    # Check if task was cancelled during execution                    print(f"Error in task {task.name}: {e}")
+
+        return self.task_queue.qsize() + (1 if self.running_task else 0)
+
+                        if not task.is_cancelled and task.on_complete:                    if task.on_error:
+
+    def get_queue_tasks(self):
+
+        """                        task.on_complete(results)                        task.on_error(e)
+
+        Get a list of all tasks in the queue
+
+                                                self.task_finished.emit(task.name, False)
+
+        Returns:
+
+            list: List of tasks                    self.task_finished.emit(task.name, True)                finally:
+
+        """
+
+        self.mutex.lock()                except Exception as e:                    # Clean up
+
+        try:
+
+            tasks = []                    print(f"Error in task {task.name}: {e}")                    self.mutex.lock()
+
+            
+
+            # Add the running task if any                    if task.on_error:                    self.running_task = None
+
+            if self.running_task:
+
+                tasks.append({                        task.on_error(e)                    self.is_modelling_running = False
+
+                    'name': self.running_task.name,
+
+                    'status': 'running',                    self.task_finished.emit(task.name, False)                    self.mutex.unlock()
+
+                    'task': self.running_task
+
+                })                finally:                    
+
+            
+
+            # Get all tasks from the queue                    # Clean up                    self.task_queue.task_done()
+
+            queue_list = list(self.task_queue.queue)
+
+            for i, task in enumerate(queue_list):                    self.mutex.lock()                    self.queue_updated.emit()
+
+                tasks.append({
+
+                    'name': task.name,                    self.running_task = None                    
+
+                    'status': 'queued',
+
+                    'position': i + 1,                    self.is_modelling_running = False                    # Notify any waiting threads
+
+                    'task': task
+
+                })                    self.mutex.unlock()                    self.condition.wakeAll()
+
+            
+
+            return tasks                                
+
+        finally:
+
+            self.mutex.unlock()                    self.task_queue.task_done()            except queue.Empty:
+
+                    self.queue_updated.emit()                # No tasks in the queue, just continue
+
+                                    pass
+
+                    # Notify any waiting threads    
+
+                    self.condition.wakeAll()    def add_task(self, task):
+
+                    """
+
+            except queue.Empty:        Add a task to the queue
+
+                # No tasks in the queue, just continue        
+
+                pass        Args:
+
+                task: The ModelTask to add
+
+    def add_task(self, task):            
+
+        """        Returns:
+
+        Add a task to the queue            int: Position in the queue (0 = running now)
+
+                """
+
+        Args:        self.mutex.lock()
+
+            task: The ModelTask to add        try:
+
+                        # Check if there's a running task
+
+        Returns:            if self.is_modelling_running:
+
+            int: Position in the queue (0 = running now)                position = self.task_queue.qsize() + 1
+
+        """                self.task_queue.put(task)
+
+        self.mutex.lock()                self.queue_updated.emit()
+
+        try:                return position
+
+            # Check if there's a running task            else:
+
+            if self.is_modelling_running:                # No running task, this will run immediately
+
+                position = self.task_queue.qsize() + 1                self.task_queue.put(task)
+
+                self.task_queue.put(task)                self.queue_updated.emit()
+
+                self.queue_updated.emit()                return 0
+
+                return position        finally:
+
+            else:            self.mutex.unlock()
+
+                # No running task, this will run immediately    
+
+                self.task_queue.put(task)    def cancel_task(self, task_name):
+
+                self.queue_updated.emit()        """
+
+                return 0        Cancel a task by name
+
+        finally:        
+
+            self.mutex.unlock()        Args:
+
+                task_name: The name of the task to cancel
+
+    def cancel_task(self, task_name):        """
+
+        """        self.mutex.lock()
+
+        Cancel a task by name        try:
+
+                    # Check if the running task matches
+
+        Args:            if self.running_task and self.running_task.name == task_name:
+
+            task_name: The name of the task to cancel                self.running_task.cancel()
+
+        """                self.stop_thread_by_name(task_name)
+
+        self.mutex.lock()            else:
+
+        try:                # Check the queue
+
+            # Check if the running task matches                new_queue = queue.Queue()
+
+            if self.running_task and self.running_task.name == task_name:                cancelled = False
+
+                self.running_task.cancel()                
+
+                self.stop_thread_by_name(task_name)                # Move tasks from old queue to new queue, skipping the one to cancel
+
+            else:                while not self.task_queue.empty():
+
+                # Check the queue                    task = self.task_queue.get()
+
+                new_queue = queue.Queue()                    if task.name == task_name and not cancelled:
+
+                cancelled = False                        task.cancel()
+
+                                        cancelled = True
+
+                # Move tasks from old queue to new queue, skipping the one to cancel                    else:
+
+                while not self.task_queue.empty():                        new_queue.put(task)
+
+                    task = self.task_queue.get()                
+
+                    if task.name == task_name and not cancelled:                # Replace the old queue with the new one
+
+                        task.cancel()                self.task_queue = new_queue
+
+                        cancelled = True                self.queue_updated.emit()
+
+                    else:        finally:
+
+                        new_queue.put(task)            self.mutex.unlock()
+
+                    
+
+                # Replace the old queue with the new one    def stop_thread_by_name(self, thread_name):
+
+                self.task_queue = new_queue        """
+
+                self.queue_updated.emit()        Attempt to stop a running thread by name
+
+        finally:        
+
+            self.mutex.unlock()        Args:
+
+                thread_name: The name of the thread to stop
+
+    def stop_thread_by_name(self, thread_name):        """
+
+        """        for thread in threading.enumerate():
+
+        Attempt to stop a running thread by name            if thread.name == thread_name and thread.is_alive():
+
+                        # We can't directly stop a thread, but we can set a flag
+
+        Args:                # that the thread should check periodically
+
+            thread_name: The name of the thread to stop                if self.running_task:
+
+        """                    self.running_task.cancel()
+
+        for thread in threading.enumerate():                
+
+            if thread.name == thread_name and thread.is_alive():                # Wake up any waiting threads
+
+                # We can't directly stop a thread, but we can set a flag                self.condition.wakeAll()
+
+                # that the thread should check periodically                return True
+
+                if self.running_task:        return False
+
+                    self.running_task.cancel()    
+
+                    def is_task_running(self, task_name):
+
+                # Wake up any waiting threads        """
+
+                self.condition.wakeAll()        Check if a task is currently running
+
+                return True        
+
+        return False        Args:
+
+                task_name: The name of the task to check
+
+    def is_task_running(self, task_name):            
+
+        """        Returns:
+
+        Check if a task is currently running            bool: True if the task is running, False otherwise
+
+                """
+
+        Args:        self.mutex.lock()
+
+            task_name: The name of the task to check        try:
+
+                        return self.running_task is not None and self.running_task.name == task_name
+
+        Returns:        finally:
+
+            bool: True if the task is running, False otherwise            self.mutex.unlock()
+
+        """    
+
+        self.mutex.lock()    def get_task_count(self):
+
+        try:        """
+
+            return self.running_task is not None and self.running_task.name == task_name        Get the number of tasks in the queue
+
+        finally:        
+
+            self.mutex.unlock()        Returns:
+
+                int: The number of tasks
+
+    def get_task_count(self):        """
+
+        """        return self.task_queue.qsize() + (1 if self.running_task else 0)
+
+        Get the number of tasks in the queue    
+
+            def get_queue_tasks(self):
+
+        Returns:        """
+
+            int: The number of tasks        Get a list of all tasks in the queue
+
+        """        
+
+        return self.task_queue.qsize() + (1 if self.running_task else 0)        Returns:
+
+                list: List of tasks
+
+    def get_queue_tasks(self):        """
+
+        """        self.mutex.lock()
+
+        Get a list of all tasks in the queue        try:
+
+                    tasks = []
+
+        Returns:            
+
+            list: List of tasks            # Add the running task if any
+
+        """            if self.running_task:
+
+        self.mutex.lock()                tasks.append({
+
+        try:                    'name': self.running_task.name,
+
+            tasks = []                    'status': 'running',
+
+                                'task': self.running_task
+
+            # Add the running task if any                })
+
+            if self.running_task:            
+
+                tasks.append({            # Get all tasks from the queue
+
+                    'name': self.running_task.name,            queue_list = list(self.task_queue.queue)
+
+                    'status': 'running',            for i, task in enumerate(queue_list):
+
+                    'task': self.running_task                tasks.append({
+
+                })                    'name': task.name,
+
+                                'status': 'queued',
+
+            # Get all tasks from the queue                    'position': i + 1,
+
+            queue_list = list(self.task_queue.queue)                    'task': task
+
+            for i, task in enumerate(queue_list):                })
+
+                tasks.append({            
+
+                    'name': task.name,            return tasks
+
+                    'status': 'queued',        finally:
+
+                    'position': i + 1,            self.mutex.unlock()
+                    'task': task
+                })
+            
+            return tasks
+        finally:
+            self.mutex.unlock()
