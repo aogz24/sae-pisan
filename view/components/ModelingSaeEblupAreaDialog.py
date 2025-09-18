@@ -506,7 +506,9 @@ class ModelingSaeDialog(QDialog):
             if self.reply.exec() != QMessageBox.StandardButton.Yes:
                 thread_manager.cancel_task(task)
                 self.run_model_finished.emit("Task was cancelled", True, "sae_model", "")
-        
+            else:
+                self.parent.show_task_queue_dialog()
+
         self.finnish = False
         self.reply = None
         event.accept()
@@ -617,6 +619,8 @@ class ModelingSaeDialog(QDialog):
                 f"Your task has been added to the queue at position {position}.\n"
                 "You can monitor and manage tasks in the Task Queue window."
             )
+            self.parent.show_task_queue_dialog()
+            self.close()
     
     def on_run_model_finished(self, result, error, sae_model, r_script):
         if self.console_dialog:

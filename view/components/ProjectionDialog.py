@@ -365,6 +365,8 @@ class ProjectionDialog(QDialog):
                 self.stop_thread.set()
                 thread_manager.cancel_task("Projection")
                 self.run_model_finished.emit("Threads are stopped", True, "sae_model", "")
+            else:
+                self.parent.show_task_queue_dialog()
         self.finnish=False
         self.reply=None
         event.accept()
@@ -823,6 +825,8 @@ class ProjectionDialog(QDialog):
                 f"Your modelling task has been queued and will run after {position} previous task(s) complete.\n\n"
                 f"You can view and manage the queue from the File menu > Task Queue."
             )
+            self.parent.show_task_queue_dialog()
+            self.close()
         
         # Set up a timer to check for long-running tasks
         def check_run_time():
